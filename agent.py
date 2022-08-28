@@ -53,19 +53,20 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         self.configs = request
 
         sifunc_src = request.states_inputs_func + '\ninputs = func(states)'
-        self.sifunc = compile(source=sifunc_src, model='exec')
+        self.sifunc = compile(sifunc_src, '', 'exec')
         oafunc_src = request.outputs_actions_func + '\nactions = func(outputs)'
-        self.oafunc = compile(source=oafunc_src, model='exec')
+        self.oafunc = compile(oafunc_src, '', 'exec')
         if self.configs.training:
             rfunc_src = request.reward_func + '\nreward = func(states, actions, next_states, done)'
-            self.rfunc = compile(source=rfunc_src, model='exec')
+            self.rfunc = compile(rfunc_src, '', 'exec')
 
-        structures = json.loads(request.structures)
         if request.builder:
             result = {}
-            exec(request.builder, result)
+            builder_src = request.builder + '\nnetworks = func()'
+            exec(builder_src, result)
             networks = result['networks']
         else:
+            structures = json.loads(request.structures)
             networks = default_builder(structures)
         hypers = json.loads(request.hypers)
         self.model = RLModels[request.type](
@@ -170,7 +171,7 @@ def agent_server(ip, port, max_workers):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run an agent service.')
     parser.add_argument('-i', '--ip', type=str, default='0.0.0.0', help='IP address to listen on.')
-    parser.add_argument('-p', '--port', type=int, default=0, help='Port to listen on.')
+    parser.add_argument('-p', '--port', type=int, default=50051, help='Port to listen on.')
     parser.add_argument('-w', '--work', type=int, default=10, help='Max workers.')
     args = parser.parse_args()
     agent_server(args.ip, args.port, args.work)

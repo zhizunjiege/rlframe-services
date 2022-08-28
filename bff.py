@@ -76,7 +76,7 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
         self.sim_configs = request
 
         sdfunc_src = request.sample_done_func + '\ndone = func(states)'
-        self.sdfunc = compile(source=sdfunc_src, model='exec')
+        self.sdfunc = compile(sdfunc_src, '', 'exec')
 
         return types_pb2.CommonResponse()
 
@@ -203,7 +203,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run an bff service.')
     parser.add_argument('-e', '--engine', type=str, default='localhost:50041', help='Engine address')
     parser.add_argument('-i', '--ip', type=str, default='0.0.0.0', help='IP address to listen on.')
-    parser.add_argument('-p', '--port', type=int, default=0, help='Port to listen on.')
+    parser.add_argument('-p', '--port', type=int, default=50050, help='Port to listen on.')
     parser.add_argument('-w', '--work', type=int, default=10, help='Max workers.')
     args = parser.parse_args()
     bff_server(args.engine, args.ip, args.port, args.work)

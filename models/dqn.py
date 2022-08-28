@@ -151,7 +151,7 @@ class DQN(RLModelBase):
             self._epsilon = epsilon_max
             self._react_steps = 0
             self._train_steps = 0
-            self._states_dim = self.__online_net.layers[0].input_shape[1]
+            self._states_dim = self.__online_net.layers[0].input_shape[0][1]
             self._actions_num = self.__online_net.layers[-1].output_shape[1]
 
             self.__optimizer = tf.keras.optimizers.Adam(lr)

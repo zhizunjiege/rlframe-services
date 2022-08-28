@@ -8,6 +8,12 @@
       "type": "shell",
       "command": "conda activate game; python -m grpc_tools.protoc --proto_path=. --python_out=. --grpc_python_out=. ./protos/*.proto; yapf protos -i -p -r",
       "group": "build"
+    },
+    {
+      "label": "Run UnitTest",
+      "type": "shell",
+      "command": "conda activate game; python -m unittest discover -s tests",
+      "group": "test"
     }
   ]
 }
