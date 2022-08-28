@@ -1,0 +1,13 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Compile Protos",
+      "type": "shell",
+      "command": "conda activate game; python -m grpc_tools.protoc --proto_path=. --python_out=. --grpc_python_out=. ./protos/*.proto; yapf protos -i -p -r",
+      "group": "build"
+    }
+  ]
+}

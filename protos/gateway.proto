@@ -1,0 +1,156 @@
+syntax = "proto3";
+
+package game.gateway;
+
+import "protos/types.proto";
+import "protos/agent.proto";
+
+service Gateway {
+  // 注册智能体
+  rpc RegisterAgent(AgentInfo) returns (types.CommonResponse);
+  // 卸载智能体
+  rpc UnRegisterAgent(AgentInfo) returns (types.CommonResponse);
+  // 获取智能体信息
+  rpc GetAgentsInfo(types.CommonRequest) returns (AgentsInfo);
+
+  // 获取参数配置
+  rpc GetParamConfig(types.CommonRequest) returns (ParamConfig);
+  // 设置参数配置
+  rpc SetParamConfig(ParamConfig) returns (types.CommonResponse);
+
+  // 获取路由配置
+  rpc GetRouteConfig(types.CommonRequest) returns (RouteConfig);
+  // 设置路由配置
+  rpc SetRouteConfig(RouteConfig) returns (types.CommonResponse);
+
+  // 获取仿真配置
+  rpc GetSimConfig(types.CommonRequest) returns (SimConfig);
+  // 设置仿真配置
+  rpc SetSimConfig(SimConfig) returns (types.CommonResponse);
+
+  // 仿真+训练流程控制
+  rpc Control(ControlCommand) returns (types.CommonResponse);
+
+  // 获取仿真状态
+  rpc GetSimStatus(types.CommonRequest) returns (stream SimStatus);
+
+  // 获取智能体配置
+  rpc GetAgentsConfig(RequiredAgents) returns (AgentsConfig);
+  // 设置智能体配置
+  rpc SetAgentsConfig(AgentsConfig) returns (types.CommonResponse);
+  // 清除智能体配置
+  rpc RstAgentsConfig(types.CommonRequest) returns (types.CommonResponse);
+
+  // 设置智能体模式
+  rpc GetAgentsMode(RequiredAgents) returns (AgentsMode);
+  // 设置智能体模式
+  rpc SetAgentsMode(AgentsMode) returns (types.CommonResponse);
+
+  // 获取智能体权重
+  rpc GetAgentsWeight(RequiredAgents) returns (AgentsWeight);
+  // 设置智能体权重
+  rpc SetAgentsWeight(AgentsWeight) returns (types.CommonResponse);
+
+  // 获取智能体经验池
+  rpc GetAgentsBuffer(RequiredAgents) returns (AgentsBuffer);
+  // 设置智能体经验池
+  rpc SetAgentsBuffer(AgentsBuffer) returns (types.CommonResponse);
+
+  // 获取智能体状态
+  rpc GetAgentsStatus(RequiredAgents) returns (AgentsStatus);
+  // 设置智能体状态
+  rpc SetAgentsStatus(AgentsStatus) returns (types.CommonResponse);
+
+  // 获取决策动作
+  rpc GetAction(stream JsonString) returns (stream JsonString);
+}
+
+message AgentInfo {
+  string addr = 1;  // Agent地址，格式：ip:port
+}
+message AgentsInfo {
+  repeated AgentInfo infos = 1;  // Agent信息
+}
+
+message ParamConfig {
+  message Parameter {
+    string name = 1;   // 参数名称
+    string type = 2;   // 参数类型
+    string value = 3;  // 参数初始值
+  }
+  message Config {
+    string model_type = 1;                 // 模型类型
+    repeated Parameter input_params = 2;   // 输入参数
+    repeated Parameter output_params = 3;  // 输出参数
+  }
+  repeated Config configs = 1;  // 参数配置列表
+}
+
+message RouteConfig {
+  repeated string configs = 1;  // Agent地址列表
+}
+
+message SimConfig {
+  uint64 exp_design_id = 1;     // 试验设计ID
+  double time_step = 2;         // 仿真步长，单位：毫秒
+  double speed_ratio = 3;       // 仿真倍速，小于0为尽速
+  uint32 sim_start_time = 4;    // 仿真开始时间戳，单位：秒
+  uint32 sim_duration = 5;      // 仿真持续时长，单位：秒
+  uint32 exp_repeat_times = 6;  // 试验设计重复次数
+  uint32 sim_steps_ratio = 7;   // 仿真步数比
+  string sample_done_func = 8;  // 样本结束判断函数
+}
+
+message ControlCommand {
+  enum CommandType {
+    START = 0;     // 开始
+    SUSPEND = 1;   // 暂停
+    CONTINUE = 2;  // 继续
+    STOP = 3;      // 结束
+  }
+  CommandType cmd = 1;  // 命令
+}
+
+message SimStatus {
+  enum ServerState {
+    STOPPED = 0;    // 停止
+    RUNNING = 1;    // 运行
+    SUSPENDED = 2;  // 暂停
+  }
+  ServerState srv_state = 1;       // 服务状态
+  uint32 sim_cur_time = 2;         // 当前仿真时间
+  uint32 sim_duration = 3;         // 仿真时钟运行时长
+  uint32 real_duration = 4;        // 墙上时钟运行时长
+  double real_speed_ratio = 5;     // 真实倍速
+  uint32 cur_sample_id = 6;        // 当前试验设计样本ID
+  uint32 exp_repeated_time = 7;    // 试验设计已重复次数
+  uint32 sim_steps_remainder = 8;  // 仿真步数余数
+}
+
+message RequiredAgents {
+  repeated string addrs = 1;  // Agent地址列表
+}
+
+message AgentsConfig {
+  map<string, agent.AgentConfig> configs = 1;  // <Agent地址,Agent配置>
+}
+
+message AgentsMode {
+  map<string, agent.AgentMode> modes = 1;  // <Agent地址,Agent模式>
+}
+
+message AgentsWeight {
+  map<string, agent.AgentWeight> weights = 1;  // <Agent地址,Agent权重>
+}
+
+message AgentsBuffer {
+  map<string, agent.AgentBuffer> buffers = 1;  // <Agent地址,Agent经验>
+}
+
+message AgentsStatus {
+  map<string, agent.AgentStatus> status = 1;  // <Agent地址,Agent状态>
+}
+
+message JsonString {
+  string json = 1;  // JSON字符串
+}

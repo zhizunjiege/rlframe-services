@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package game.agent;
+
+import "protos/types.proto";
+
+service Agent {
+  // 检测服务是否在线
+  rpc PingPong(types.CommonRequest) returns (types.CommonResponse);
+
+  // 获取智能体配置
+  rpc GetAgentConfig(types.CommonRequest) returns (AgentConfig);
+  // 设置智能体配置
+  rpc SetAgentConfig(AgentConfig) returns (types.CommonResponse);
+  // 清除智能体配置
+  rpc RstAgentConfig(types.CommonRequest) returns (types.CommonResponse);
+
+  // 获取智能体模式
+  rpc GetAgentMode(types.CommonRequest) returns (AgentMode);
+  // 设置智能体模式
+  rpc SetAgentMode(AgentMode) returns (types.CommonResponse);
+
+  // 获取智能体权重
+  rpc GetAgentWeight(types.CommonRequest) returns (AgentWeight);
+  // 设置智能体权重
+  rpc SetAgentWeight(AgentWeight) returns (types.CommonResponse);
+
+  // 获取智能体经验池
+  rpc GetAgentBuffer(types.CommonRequest) returns (AgentBuffer);
+  // 设置智能体经验池
+  rpc SetAgentBuffer(AgentBuffer) returns (types.CommonResponse);
+
+  // 获取智能体状态
+  rpc GetAgentStatus(types.CommonRequest) returns (AgentStatus);
+  // 设置智能体状态
+  rpc SetAgentStatus(AgentStatus) returns (types.CommonResponse);
+
+  // 获取决策动作
+  rpc GetAction(stream PickleBytes) returns (stream PickleBytes);
+}
+
+message AgentConfig {
+  bool training = 1;                // 是否训练模式
+  string states_inputs_func = 2;    // 状态到输入预处理函数
+  string outputs_actions_func = 3;  // 输出到动作后处理函数
+  string reward_func = 4;           // 奖励函数
+  string type = 5;                  // 模型类型
+  double gamma = 6;                 // 奖励折扣因子
+  uint32 batch = 7;                 // 训练批尺寸
+  string builder = 8;               // 模型构建函数代码
+  string structures = 9;            // 网络结构，格式：Json字符串
+  string options = 10;              // 其他超参数，格式：Json字符串
+}
+
+message AgentMode {
+  bool training = 1;  // 是否为训练模式
+}
+
+message AgentWeight {
+  bytes weights = 1;  // 模型权重，格式：Pickle字节流
+}
+
+message AgentBuffer {
+  bytes buffer = 1;  // 经验回放，格式：Pickle字节流
+}
+
+message AgentStatus {
+  string status = 1;  // 模型状态，格式：Json字符串
+}
+
+message PickleBytes {
+  bytes pkl = 1;  // Pickle字节流
+}

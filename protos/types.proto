@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package game.types;
+
+message CommonRequest {}
+message CommonResponse {
+  enum StatusCode {
+    OK = 0;           // 良好
+    WARNING = 1;      // 警告
+    ERROR = 2;        // 错误
+    FATAL_ERROR = 3;  // 严重错误
+  }
+  StatusCode code = 1;  // 消息代码
+  string msg = 2;       // 消息内容
+}

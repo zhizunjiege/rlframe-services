@@ -1,0 +1,268 @@
+syntax = "proto3";
+package cqsim.control;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+// 仿真运行控制
+service SimController {
+  // 获取想定中的实体列表 (用于节点设计)
+  rpc GetEntityList(EntityListRequest) returns (EntityListResponse);
+
+  // 初始化
+  rpc Init(InitInfo) returns (CommonResponse);
+
+  // 发送控制指令
+  rpc Control(ControlCmd) returns (CommonResponse);
+
+  // 获取系统信息
+  rpc GetSysInfo(CommonRequest) returns (stream SysInfoResponse);
+
+  // 获取数据服务系统信息
+  rpc GetDataSysInfo(CommonRequest) returns (stream DataSysInfoResponse);
+
+  // 获取所有节点
+  rpc GetAllNode(CommonRequest) returns (NodeResponse);
+
+  // 获取分布式下初始化进度
+  rpc GetInitedPercent(CommonRequest) returns (stream InitedResponse);
+
+  // 持续获取错误信息
+  rpc GetErrorMsg(CommonRequest) returns (stream ErrMsgResponse);
+
+  // 节点加入退出
+  rpc GetNodeJoinExit(CommonRequest) returns (stream NodeJoinExitResponse);
+
+  // 设置日志等级
+  rpc SetLogLevel(LogLevelRequest) returns (CommonResponse);
+}
+
+// 通用返回结果
+message CommonResponse {
+  // 返回消息
+  string msg = 1;
+}
+// 日志等级枚举
+enum LogLevel {
+  TRACE = 0;
+  DEBUG = 1;
+  INFO = 2;
+  WARN = 3;
+  ERROR = 4;
+  CRITICAL_ERROR = 5;
+}
+// 日志等级请求
+message LogLevelRequest {
+  // 日志等级
+  repeated LogLevel levels = 1;
+}
+// 错误信息返回结果
+message ErrMsgResponse {
+  // 返回消息
+  string msg = 1;
+  // 等级
+  LogLevel level = 2;
+}
+
+message CommonRequest {}
+
+// 节点加入退出
+message NodeJoinExitResponse {
+  // 节点地址
+  string address = 1;
+  // 节点类型
+  bool is_master_node = 2;
+  // 加入/退出 true 加入 false 退出
+  bool is_join = 3;
+}
+
+// 请求获得实体列表
+message EntityListRequest {
+  // 仿真任务ID
+  uint64 task_id = 1;
+}
+
+// 模型实体
+message Entity {
+  // ID
+  string id = 1;
+  // 模型类型ID
+  string model_id = 2;
+}
+
+// 返回实体列表
+message EntityListResponse {
+  // 实体列表信息
+  message EntityInfo {
+    // ID
+    string id = 1;
+    // 名称
+    string name = 2;
+    // 模型名称
+    string model_name = 3;
+    // 阵营名称
+    string camp_name = 4;
+  }
+  repeated EntityInfo entity_list = 1;
+}
+
+// 节点设计结果
+message NodeDesign {
+  // 节点IP:PORT
+  string address = 1;
+  // 节点挂载的模型实例
+  repeated Entity entities = 2;
+}
+
+// 初始信息
+message InitInfo {
+  // 单样本仿真运行模式
+  message OneSample {
+    // 仿真任务ID
+    uint64 task_id = 1;
+    // (仅多节点情况)各节点的实体分配结果(节点设计结果)
+    repeated NodeDesign nodes = 2;
+  }
+  // 多样本仿真运行模式
+  message MultiSample {
+    // 试验设计ID
+    uint64 exp_design_id = 1;
+    // (仅多节点情况)各节点的实体分配结果(节点设计结果)
+    repeated NodeDesign nodes = 2;
+  }
+  // 初始信息详情
+  oneof init_info {
+    // 单样本仿真运行模式的设置
+    OneSample one_sample_config = 1;
+    // 多样本仿真运行模式的设置
+    MultiSample multi_sample_config = 2;
+    // (数据回放模式)仿真数据ID
+    uint64 data_id = 3;
+  }
+}
+
+// 仿真控制指令
+message ControlCmd {
+  // 运行控制指令
+  enum RunCmdType {
+    // 开始
+    START = 0;
+    // 暂停
+    SUSPEND = 1;
+    // 继续
+    CONTINUE = 2;
+    // 停止
+    STOP = 3;
+    // 停止当前样本
+    STOP_CURRENT_SAMPLE = 4;
+  }
+  enum Mode {
+    RECORD = 0;    // 记录(默认推送态势数据)
+    REPLAY = 1;    // 回放(默认推送态势数据)
+    CONVERSE = 2;  // 转换(只推送态势数据)
+  }
+  oneof cmd {
+    // 仿真开始时间(仅仿真运行模式)
+    google.protobuf.Timestamp sim_start_time = 1;
+    // 仿真持续时长(仅仿真运行模式)
+    google.protobuf.Duration sim_duration = 2;
+    // 运行控制指令
+    RunCmdType run_cmd = 3;
+    // 仿真步长(ms)(仅仿真运行模式)
+    uint32 time_step = 4;
+    // 倍速(speed_ratio<0.0为尽速模式)
+    double speed_ratio = 5;
+    // 工作模式
+    Mode mode = 6;
+  }
+}
+
+// 引擎节点状态
+message EngineNodeState {
+  // 引擎节点状态分类
+  enum State {
+    // 未初始化
+    UNINITED = 0;
+    // 初始化完成(想定和交互关系已给定)
+    INITED = 1;
+    // 正在运行(Start/Continue)
+    RUNNING = 2;
+    // 暂停(Suspend)
+    SUSPENDED = 3;
+    // 停止(Stop)
+    STOPPED = 4;
+    // 发生异常
+    ERROR = 5;
+  }
+  // 节点IP:PORT
+  string address = 1;
+  // 节点状态
+  State state = 2;
+  // CPU占用率
+  double cpu_load = 3;
+  // 存储占用率
+  double memory_load = 4;
+  // 网络利用率
+  double network_load = 5;
+  // 节点类型
+  bool is_master_node = 6;
+}
+
+// 系统信息
+message SysInfoResponse {
+  // 当前仿真时间
+  google.protobuf.Timestamp sim_current_time = 1;
+  // 仿真时钟运行时长
+  google.protobuf.Duration sim_duration = 2;
+  // 墙上时钟运行时长
+  google.protobuf.Duration real_duration = 3;
+  // 仿真步长(ms)
+  uint32 sim_time_step = 4;
+  // 仿真倍速
+  double speed_ratio = 5;
+  // 真实倍速
+  double real_speed_ratio = 6;
+  // 各节点的状态
+  repeated EngineNodeState node_state = 7;
+  // 当前样本数量
+  uint32 current_sample_id = 8;
+}
+
+// 数据服务系统信息响应
+message DataSysInfoResponse {
+  // 服务状态
+  enum ServiceState {
+    // 未初始化
+    UNINITED = 0;
+    // 初始化完成
+    INITED = 1;
+    // 正在运行(Start/Continue)
+    RUNNING = 2;
+    // 暂停(Suspend)
+    SUSPENDED = 3;
+    // 停止(Stop)
+    STOPPED = 4;
+    // 发生异常
+    ERROR = 5;
+  }
+  // 服务状态
+  ServiceState state = 1;
+  // 当前仿真时间
+  google.protobuf.Timestamp current_time = 2;
+  // 仿真时钟运行时长
+  google.protobuf.Duration duration = 3;
+  // 运行进度
+  double schedule_val = 4;
+}
+
+// 所有节点
+message NodeResponse {
+  // 节点列表
+  repeated string nodes = 1;
+}
+
+// 分布式下初始化进度
+message InitedResponse {
+  // 初始化进度(百分比)
+  uint32 init_percent = 1;
+}
