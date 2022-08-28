@@ -2,11 +2,11 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from protos import gateway_pb2 as protos_dot_gateway__pb2
+from protos import bff_pb2 as protos_dot_bff__pb2
 from protos import types_pb2 as protos_dot_types__pb2
 
 
-class GatewayStub(object):
+class BFFStub(object):
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -15,170 +15,139 @@ class GatewayStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.RegisterAgent = channel.unary_unary(
-            '/game.gateway.Gateway/RegisterAgent',
-            request_serializer=protos_dot_gateway__pb2.AgentInfo.SerializeToString,
+        self.GetProxyConfig = channel.unary_unary(
+            '/game.bff.BFF/GetProxyConfig',
+            request_serializer=protos_dot_types__pb2.CommonRequest.SerializeToString,
+            response_deserializer=protos_dot_bff__pb2.ProxyConfig.FromString,
+        )
+        self.SetProxyConfig = channel.unary_unary(
+            '/game.bff.BFF/SetProxyConfig',
+            request_serializer=protos_dot_bff__pb2.ProxyConfig.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
         )
-        self.UnRegisterAgent = channel.unary_unary(
-            '/game.gateway.Gateway/UnRegisterAgent',
-            request_serializer=protos_dot_gateway__pb2.AgentInfo.SerializeToString,
-            response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
+        self.ProxyChat = channel.stream_stream(
+            '/game.bff.BFF/ProxyChat',
+            request_serializer=protos_dot_types__pb2.JsonString.SerializeToString,
+            response_deserializer=protos_dot_types__pb2.JsonString.FromString,
         )
-        self.GetAgentsInfo = channel.unary_unary(
-            '/game.gateway.Gateway/GetAgentsInfo',
-            request_serializer=protos_dot_types__pb2.CommonRequest.SerializeToString,
-            response_deserializer=protos_dot_gateway__pb2.AgentsInfo.FromString,
-        )
-        self.GetParamConfig = channel.unary_unary(
-            '/game.gateway.Gateway/GetParamConfig',
-            request_serializer=protos_dot_types__pb2.CommonRequest.SerializeToString,
-            response_deserializer=protos_dot_gateway__pb2.ParamConfig.FromString,
-        )
-        self.SetParamConfig = channel.unary_unary(
-            '/game.gateway.Gateway/SetParamConfig',
-            request_serializer=protos_dot_gateway__pb2.ParamConfig.SerializeToString,
-            response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
-        )
-        self.GetRouteConfig = channel.unary_unary(
-            '/game.gateway.Gateway/GetRouteConfig',
-            request_serializer=protos_dot_types__pb2.CommonRequest.SerializeToString,
-            response_deserializer=protos_dot_gateway__pb2.RouteConfig.FromString,
-        )
-        self.SetRouteConfig = channel.unary_unary(
-            '/game.gateway.Gateway/SetRouteConfig',
-            request_serializer=protos_dot_gateway__pb2.RouteConfig.SerializeToString,
+        self.Control = channel.unary_unary(
+            '/game.bff.BFF/Control',
+            request_serializer=protos_dot_bff__pb2.ControlCommand.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
         )
         self.GetSimConfig = channel.unary_unary(
-            '/game.gateway.Gateway/GetSimConfig',
+            '/game.bff.BFF/GetSimConfig',
             request_serializer=protos_dot_types__pb2.CommonRequest.SerializeToString,
-            response_deserializer=protos_dot_gateway__pb2.SimConfig.FromString,
+            response_deserializer=protos_dot_bff__pb2.SimConfig.FromString,
         )
         self.SetSimConfig = channel.unary_unary(
-            '/game.gateway.Gateway/SetSimConfig',
-            request_serializer=protos_dot_gateway__pb2.SimConfig.SerializeToString,
-            response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
-        )
-        self.Control = channel.unary_unary(
-            '/game.gateway.Gateway/Control',
-            request_serializer=protos_dot_gateway__pb2.ControlCommand.SerializeToString,
+            '/game.bff.BFF/SetSimConfig',
+            request_serializer=protos_dot_bff__pb2.SimConfig.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
         )
         self.GetSimStatus = channel.unary_stream(
-            '/game.gateway.Gateway/GetSimStatus',
+            '/game.bff.BFF/GetSimStatus',
             request_serializer=protos_dot_types__pb2.CommonRequest.SerializeToString,
-            response_deserializer=protos_dot_gateway__pb2.SimStatus.FromString,
+            response_deserializer=protos_dot_bff__pb2.SimStatus.FromString,
+        )
+        self.RegisterAgent = channel.unary_unary(
+            '/game.bff.BFF/RegisterAgent',
+            request_serializer=protos_dot_bff__pb2.AgentsInfo.Info.SerializeToString,
+            response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
+        )
+        self.UnRegisterAgent = channel.unary_unary(
+            '/game.bff.BFF/UnRegisterAgent',
+            request_serializer=protos_dot_bff__pb2.AgentsInfo.Info.SerializeToString,
+            response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
+        )
+        self.GetAgentsInfo = channel.unary_unary(
+            '/game.bff.BFF/GetAgentsInfo',
+            request_serializer=protos_dot_types__pb2.CommonRequest.SerializeToString,
+            response_deserializer=protos_dot_bff__pb2.AgentsInfo.FromString,
         )
         self.GetAgentsConfig = channel.unary_unary(
-            '/game.gateway.Gateway/GetAgentsConfig',
-            request_serializer=protos_dot_gateway__pb2.RequiredAgents.SerializeToString,
-            response_deserializer=protos_dot_gateway__pb2.AgentsConfig.FromString,
+            '/game.bff.BFF/GetAgentsConfig',
+            request_serializer=protos_dot_bff__pb2.RequiredAgents.SerializeToString,
+            response_deserializer=protos_dot_bff__pb2.AgentsConfig.FromString,
         )
         self.SetAgentsConfig = channel.unary_unary(
-            '/game.gateway.Gateway/SetAgentsConfig',
-            request_serializer=protos_dot_gateway__pb2.AgentsConfig.SerializeToString,
+            '/game.bff.BFF/SetAgentsConfig',
+            request_serializer=protos_dot_bff__pb2.AgentsConfig.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
         )
         self.RstAgentsConfig = channel.unary_unary(
-            '/game.gateway.Gateway/RstAgentsConfig',
+            '/game.bff.BFF/RstAgentsConfig',
             request_serializer=protos_dot_types__pb2.CommonRequest.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
         )
         self.GetAgentsMode = channel.unary_unary(
-            '/game.gateway.Gateway/GetAgentsMode',
-            request_serializer=protos_dot_gateway__pb2.RequiredAgents.SerializeToString,
-            response_deserializer=protos_dot_gateway__pb2.AgentsMode.FromString,
+            '/game.bff.BFF/GetAgentsMode',
+            request_serializer=protos_dot_bff__pb2.RequiredAgents.SerializeToString,
+            response_deserializer=protos_dot_bff__pb2.AgentsMode.FromString,
         )
         self.SetAgentsMode = channel.unary_unary(
-            '/game.gateway.Gateway/SetAgentsMode',
-            request_serializer=protos_dot_gateway__pb2.AgentsMode.SerializeToString,
+            '/game.bff.BFF/SetAgentsMode',
+            request_serializer=protos_dot_bff__pb2.AgentsMode.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
         )
         self.GetAgentsWeight = channel.unary_unary(
-            '/game.gateway.Gateway/GetAgentsWeight',
-            request_serializer=protos_dot_gateway__pb2.RequiredAgents.SerializeToString,
-            response_deserializer=protos_dot_gateway__pb2.AgentsWeight.FromString,
+            '/game.bff.BFF/GetAgentsWeight',
+            request_serializer=protos_dot_bff__pb2.RequiredAgents.SerializeToString,
+            response_deserializer=protos_dot_bff__pb2.AgentsWeight.FromString,
         )
         self.SetAgentsWeight = channel.unary_unary(
-            '/game.gateway.Gateway/SetAgentsWeight',
-            request_serializer=protos_dot_gateway__pb2.AgentsWeight.SerializeToString,
+            '/game.bff.BFF/SetAgentsWeight',
+            request_serializer=protos_dot_bff__pb2.AgentsWeight.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
         )
         self.GetAgentsBuffer = channel.unary_unary(
-            '/game.gateway.Gateway/GetAgentsBuffer',
-            request_serializer=protos_dot_gateway__pb2.RequiredAgents.SerializeToString,
-            response_deserializer=protos_dot_gateway__pb2.AgentsBuffer.FromString,
+            '/game.bff.BFF/GetAgentsBuffer',
+            request_serializer=protos_dot_bff__pb2.RequiredAgents.SerializeToString,
+            response_deserializer=protos_dot_bff__pb2.AgentsBuffer.FromString,
         )
         self.SetAgentsBuffer = channel.unary_unary(
-            '/game.gateway.Gateway/SetAgentsBuffer',
-            request_serializer=protos_dot_gateway__pb2.AgentsBuffer.SerializeToString,
+            '/game.bff.BFF/SetAgentsBuffer',
+            request_serializer=protos_dot_bff__pb2.AgentsBuffer.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
         )
         self.GetAgentsStatus = channel.unary_unary(
-            '/game.gateway.Gateway/GetAgentsStatus',
-            request_serializer=protos_dot_gateway__pb2.RequiredAgents.SerializeToString,
-            response_deserializer=protos_dot_gateway__pb2.AgentsStatus.FromString,
+            '/game.bff.BFF/GetAgentsStatus',
+            request_serializer=protos_dot_bff__pb2.RequiredAgents.SerializeToString,
+            response_deserializer=protos_dot_bff__pb2.AgentsStatus.FromString,
         )
         self.SetAgentsStatus = channel.unary_unary(
-            '/game.gateway.Gateway/SetAgentsStatus',
-            request_serializer=protos_dot_gateway__pb2.AgentsStatus.SerializeToString,
+            '/game.bff.BFF/SetAgentsStatus',
+            request_serializer=protos_dot_bff__pb2.AgentsStatus.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
         )
-        self.GetAction = channel.stream_stream(
-            '/game.gateway.Gateway/GetAction',
-            request_serializer=protos_dot_gateway__pb2.JsonString.SerializeToString,
-            response_deserializer=protos_dot_gateway__pb2.JsonString.FromString,
-        )
 
 
-class GatewayServicer(object):
+class BFFServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def RegisterAgent(self, request, context):
-        """注册智能体
+    def GetProxyConfig(self, request, context):
+        """获取代理配置
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def UnRegisterAgent(self, request, context):
-        """卸载智能体
+    def SetProxyConfig(self, request, context):
+        """设置代理配置
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetAgentsInfo(self, request, context):
-        """获取智能体信息
+    def ProxyChat(self, request_iterator, context):
+        """与代理通信
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetParamConfig(self, request, context):
-        """获取参数配置
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def SetParamConfig(self, request, context):
-        """设置参数配置
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def GetRouteConfig(self, request, context):
-        """获取路由配置
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def SetRouteConfig(self, request, context):
-        """设置路由配置
+    def Control(self, request, context):
+        """仿真+训练流程控制
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -198,15 +167,29 @@ class GatewayServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def Control(self, request, context):
-        """仿真+训练流程控制
+    def GetSimStatus(self, request, context):
+        """获取仿真状态
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetSimStatus(self, request, context):
-        """获取仿真状态
+    def RegisterAgent(self, request, context):
+        """注册智能体
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UnRegisterAgent(self, request, context):
+        """卸载智能体
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetAgentsInfo(self, request, context):
+        """获取智能体信息
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -289,92 +272,79 @@ class GatewayServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetAction(self, request_iterator, context):
-        """获取决策动作
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
 
-
-def add_GatewayServicer_to_server(servicer, server):
+def add_BFFServicer_to_server(servicer, server):
     rpc_method_handlers = {
-        'RegisterAgent':
+        'GetProxyConfig':
             grpc.unary_unary_rpc_method_handler(
-                servicer.RegisterAgent,
-                request_deserializer=protos_dot_gateway__pb2.AgentInfo.FromString,
+                servicer.GetProxyConfig,
+                request_deserializer=protos_dot_types__pb2.CommonRequest.FromString,
+                response_serializer=protos_dot_bff__pb2.ProxyConfig.SerializeToString,
+            ),
+        'SetProxyConfig':
+            grpc.unary_unary_rpc_method_handler(
+                servicer.SetProxyConfig,
+                request_deserializer=protos_dot_bff__pb2.ProxyConfig.FromString,
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
             ),
-        'UnRegisterAgent':
-            grpc.unary_unary_rpc_method_handler(
-                servicer.UnRegisterAgent,
-                request_deserializer=protos_dot_gateway__pb2.AgentInfo.FromString,
-                response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
+        'ProxyChat':
+            grpc.stream_stream_rpc_method_handler(
+                servicer.ProxyChat,
+                request_deserializer=protos_dot_types__pb2.JsonString.FromString,
+                response_serializer=protos_dot_types__pb2.JsonString.SerializeToString,
             ),
-        'GetAgentsInfo':
+        'Control':
             grpc.unary_unary_rpc_method_handler(
-                servicer.GetAgentsInfo,
-                request_deserializer=protos_dot_types__pb2.CommonRequest.FromString,
-                response_serializer=protos_dot_gateway__pb2.AgentsInfo.SerializeToString,
-            ),
-        'GetParamConfig':
-            grpc.unary_unary_rpc_method_handler(
-                servicer.GetParamConfig,
-                request_deserializer=protos_dot_types__pb2.CommonRequest.FromString,
-                response_serializer=protos_dot_gateway__pb2.ParamConfig.SerializeToString,
-            ),
-        'SetParamConfig':
-            grpc.unary_unary_rpc_method_handler(
-                servicer.SetParamConfig,
-                request_deserializer=protos_dot_gateway__pb2.ParamConfig.FromString,
-                response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
-            ),
-        'GetRouteConfig':
-            grpc.unary_unary_rpc_method_handler(
-                servicer.GetRouteConfig,
-                request_deserializer=protos_dot_types__pb2.CommonRequest.FromString,
-                response_serializer=protos_dot_gateway__pb2.RouteConfig.SerializeToString,
-            ),
-        'SetRouteConfig':
-            grpc.unary_unary_rpc_method_handler(
-                servicer.SetRouteConfig,
-                request_deserializer=protos_dot_gateway__pb2.RouteConfig.FromString,
+                servicer.Control,
+                request_deserializer=protos_dot_bff__pb2.ControlCommand.FromString,
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
             ),
         'GetSimConfig':
             grpc.unary_unary_rpc_method_handler(
                 servicer.GetSimConfig,
                 request_deserializer=protos_dot_types__pb2.CommonRequest.FromString,
-                response_serializer=protos_dot_gateway__pb2.SimConfig.SerializeToString,
+                response_serializer=protos_dot_bff__pb2.SimConfig.SerializeToString,
             ),
         'SetSimConfig':
             grpc.unary_unary_rpc_method_handler(
                 servicer.SetSimConfig,
-                request_deserializer=protos_dot_gateway__pb2.SimConfig.FromString,
-                response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
-            ),
-        'Control':
-            grpc.unary_unary_rpc_method_handler(
-                servicer.Control,
-                request_deserializer=protos_dot_gateway__pb2.ControlCommand.FromString,
+                request_deserializer=protos_dot_bff__pb2.SimConfig.FromString,
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
             ),
         'GetSimStatus':
             grpc.unary_stream_rpc_method_handler(
                 servicer.GetSimStatus,
                 request_deserializer=protos_dot_types__pb2.CommonRequest.FromString,
-                response_serializer=protos_dot_gateway__pb2.SimStatus.SerializeToString,
+                response_serializer=protos_dot_bff__pb2.SimStatus.SerializeToString,
+            ),
+        'RegisterAgent':
+            grpc.unary_unary_rpc_method_handler(
+                servicer.RegisterAgent,
+                request_deserializer=protos_dot_bff__pb2.AgentsInfo.Info.FromString,
+                response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
+            ),
+        'UnRegisterAgent':
+            grpc.unary_unary_rpc_method_handler(
+                servicer.UnRegisterAgent,
+                request_deserializer=protos_dot_bff__pb2.AgentsInfo.Info.FromString,
+                response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
+            ),
+        'GetAgentsInfo':
+            grpc.unary_unary_rpc_method_handler(
+                servicer.GetAgentsInfo,
+                request_deserializer=protos_dot_types__pb2.CommonRequest.FromString,
+                response_serializer=protos_dot_bff__pb2.AgentsInfo.SerializeToString,
             ),
         'GetAgentsConfig':
             grpc.unary_unary_rpc_method_handler(
                 servicer.GetAgentsConfig,
-                request_deserializer=protos_dot_gateway__pb2.RequiredAgents.FromString,
-                response_serializer=protos_dot_gateway__pb2.AgentsConfig.SerializeToString,
+                request_deserializer=protos_dot_bff__pb2.RequiredAgents.FromString,
+                response_serializer=protos_dot_bff__pb2.AgentsConfig.SerializeToString,
             ),
         'SetAgentsConfig':
             grpc.unary_unary_rpc_method_handler(
                 servicer.SetAgentsConfig,
-                request_deserializer=protos_dot_gateway__pb2.AgentsConfig.FromString,
+                request_deserializer=protos_dot_bff__pb2.AgentsConfig.FromString,
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
             ),
         'RstAgentsConfig':
@@ -386,175 +356,121 @@ def add_GatewayServicer_to_server(servicer, server):
         'GetAgentsMode':
             grpc.unary_unary_rpc_method_handler(
                 servicer.GetAgentsMode,
-                request_deserializer=protos_dot_gateway__pb2.RequiredAgents.FromString,
-                response_serializer=protos_dot_gateway__pb2.AgentsMode.SerializeToString,
+                request_deserializer=protos_dot_bff__pb2.RequiredAgents.FromString,
+                response_serializer=protos_dot_bff__pb2.AgentsMode.SerializeToString,
             ),
         'SetAgentsMode':
             grpc.unary_unary_rpc_method_handler(
                 servicer.SetAgentsMode,
-                request_deserializer=protos_dot_gateway__pb2.AgentsMode.FromString,
+                request_deserializer=protos_dot_bff__pb2.AgentsMode.FromString,
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
             ),
         'GetAgentsWeight':
             grpc.unary_unary_rpc_method_handler(
                 servicer.GetAgentsWeight,
-                request_deserializer=protos_dot_gateway__pb2.RequiredAgents.FromString,
-                response_serializer=protos_dot_gateway__pb2.AgentsWeight.SerializeToString,
+                request_deserializer=protos_dot_bff__pb2.RequiredAgents.FromString,
+                response_serializer=protos_dot_bff__pb2.AgentsWeight.SerializeToString,
             ),
         'SetAgentsWeight':
             grpc.unary_unary_rpc_method_handler(
                 servicer.SetAgentsWeight,
-                request_deserializer=protos_dot_gateway__pb2.AgentsWeight.FromString,
+                request_deserializer=protos_dot_bff__pb2.AgentsWeight.FromString,
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
             ),
         'GetAgentsBuffer':
             grpc.unary_unary_rpc_method_handler(
                 servicer.GetAgentsBuffer,
-                request_deserializer=protos_dot_gateway__pb2.RequiredAgents.FromString,
-                response_serializer=protos_dot_gateway__pb2.AgentsBuffer.SerializeToString,
+                request_deserializer=protos_dot_bff__pb2.RequiredAgents.FromString,
+                response_serializer=protos_dot_bff__pb2.AgentsBuffer.SerializeToString,
             ),
         'SetAgentsBuffer':
             grpc.unary_unary_rpc_method_handler(
                 servicer.SetAgentsBuffer,
-                request_deserializer=protos_dot_gateway__pb2.AgentsBuffer.FromString,
+                request_deserializer=protos_dot_bff__pb2.AgentsBuffer.FromString,
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
             ),
         'GetAgentsStatus':
             grpc.unary_unary_rpc_method_handler(
                 servicer.GetAgentsStatus,
-                request_deserializer=protos_dot_gateway__pb2.RequiredAgents.FromString,
-                response_serializer=protos_dot_gateway__pb2.AgentsStatus.SerializeToString,
+                request_deserializer=protos_dot_bff__pb2.RequiredAgents.FromString,
+                response_serializer=protos_dot_bff__pb2.AgentsStatus.SerializeToString,
             ),
         'SetAgentsStatus':
             grpc.unary_unary_rpc_method_handler(
                 servicer.SetAgentsStatus,
-                request_deserializer=protos_dot_gateway__pb2.AgentsStatus.FromString,
+                request_deserializer=protos_dot_bff__pb2.AgentsStatus.FromString,
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
             ),
-        'GetAction':
-            grpc.stream_stream_rpc_method_handler(
-                servicer.GetAction,
-                request_deserializer=protos_dot_gateway__pb2.JsonString.FromString,
-                response_serializer=protos_dot_gateway__pb2.JsonString.SerializeToString,
-            ),
     }
-    generic_handler = grpc.method_handlers_generic_handler('game.gateway.Gateway', rpc_method_handlers)
+    generic_handler = grpc.method_handlers_generic_handler('game.bff.BFF', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
 # This class is part of an EXPERIMENTAL API.
-class Gateway(object):
+class BFF(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def RegisterAgent(request,
-                      target,
-                      options=(),
-                      channel_credentials=None,
-                      call_credentials=None,
-                      insecure=False,
-                      compression=None,
-                      wait_for_ready=None,
-                      timeout=None,
-                      metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/RegisterAgent',
-                                             protos_dot_gateway__pb2.AgentInfo.SerializeToString,
+    def GetProxyConfig(request,
+                       target,
+                       options=(),
+                       channel_credentials=None,
+                       call_credentials=None,
+                       insecure=False,
+                       compression=None,
+                       wait_for_ready=None,
+                       timeout=None,
+                       metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/GetProxyConfig',
+                                             protos_dot_types__pb2.CommonRequest.SerializeToString,
+                                             protos_dot_bff__pb2.ProxyConfig.FromString, options, channel_credentials, insecure,
+                                             call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def SetProxyConfig(request,
+                       target,
+                       options=(),
+                       channel_credentials=None,
+                       call_credentials=None,
+                       insecure=False,
+                       compression=None,
+                       wait_for_ready=None,
+                       timeout=None,
+                       metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/SetProxyConfig',
+                                             protos_dot_bff__pb2.ProxyConfig.SerializeToString,
                                              protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def UnRegisterAgent(request,
-                        target,
-                        options=(),
-                        channel_credentials=None,
-                        call_credentials=None,
-                        insecure=False,
-                        compression=None,
-                        wait_for_ready=None,
-                        timeout=None,
-                        metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/UnRegisterAgent',
-                                             protos_dot_gateway__pb2.AgentInfo.SerializeToString,
-                                             protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+    def ProxyChat(request_iterator,
+                  target,
+                  options=(),
+                  channel_credentials=None,
+                  call_credentials=None,
+                  insecure=False,
+                  compression=None,
+                  wait_for_ready=None,
+                  timeout=None,
+                  metadata=None):
+        return grpc.experimental.stream_stream(request_iterator, target, '/game.bff.BFF/ProxyChat',
+                                               protos_dot_types__pb2.JsonString.SerializeToString,
+                                               protos_dot_types__pb2.JsonString.FromString, options, channel_credentials,
+                                               insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def GetAgentsInfo(request,
-                      target,
-                      options=(),
-                      channel_credentials=None,
-                      call_credentials=None,
-                      insecure=False,
-                      compression=None,
-                      wait_for_ready=None,
-                      timeout=None,
-                      metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/GetAgentsInfo',
-                                             protos_dot_types__pb2.CommonRequest.SerializeToString,
-                                             protos_dot_gateway__pb2.AgentsInfo.FromString, options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def GetParamConfig(request,
-                       target,
-                       options=(),
-                       channel_credentials=None,
-                       call_credentials=None,
-                       insecure=False,
-                       compression=None,
-                       wait_for_ready=None,
-                       timeout=None,
-                       metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/GetParamConfig',
-                                             protos_dot_types__pb2.CommonRequest.SerializeToString,
-                                             protos_dot_gateway__pb2.ParamConfig.FromString, options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def SetParamConfig(request,
-                       target,
-                       options=(),
-                       channel_credentials=None,
-                       call_credentials=None,
-                       insecure=False,
-                       compression=None,
-                       wait_for_ready=None,
-                       timeout=None,
-                       metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/SetParamConfig',
-                                             protos_dot_gateway__pb2.ParamConfig.SerializeToString,
-                                             protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def GetRouteConfig(request,
-                       target,
-                       options=(),
-                       channel_credentials=None,
-                       call_credentials=None,
-                       insecure=False,
-                       compression=None,
-                       wait_for_ready=None,
-                       timeout=None,
-                       metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/GetRouteConfig',
-                                             protos_dot_types__pb2.CommonRequest.SerializeToString,
-                                             protos_dot_gateway__pb2.RouteConfig.FromString, options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def SetRouteConfig(request,
-                       target,
-                       options=(),
-                       channel_credentials=None,
-                       call_credentials=None,
-                       insecure=False,
-                       compression=None,
-                       wait_for_ready=None,
-                       timeout=None,
-                       metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/SetRouteConfig',
-                                             protos_dot_gateway__pb2.RouteConfig.SerializeToString,
+    def Control(request,
+                target,
+                options=(),
+                channel_credentials=None,
+                call_credentials=None,
+                insecure=False,
+                compression=None,
+                wait_for_ready=None,
+                timeout=None,
+                metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/Control',
+                                             protos_dot_bff__pb2.ControlCommand.SerializeToString,
                                              protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -569,10 +485,10 @@ class Gateway(object):
                      wait_for_ready=None,
                      timeout=None,
                      metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/GetSimConfig',
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/GetSimConfig',
                                              protos_dot_types__pb2.CommonRequest.SerializeToString,
-                                             protos_dot_gateway__pb2.SimConfig.FromString, options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+                                             protos_dot_bff__pb2.SimConfig.FromString, options, channel_credentials, insecure,
+                                             call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def SetSimConfig(request,
@@ -585,24 +501,8 @@ class Gateway(object):
                      wait_for_ready=None,
                      timeout=None,
                      metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/SetSimConfig',
-                                             protos_dot_gateway__pb2.SimConfig.SerializeToString,
-                                             protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def Control(request,
-                target,
-                options=(),
-                channel_credentials=None,
-                call_credentials=None,
-                insecure=False,
-                compression=None,
-                wait_for_ready=None,
-                timeout=None,
-                metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/Control',
-                                             protos_dot_gateway__pb2.ControlCommand.SerializeToString,
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/SetSimConfig',
+                                             protos_dot_bff__pb2.SimConfig.SerializeToString,
                                              protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -617,10 +517,58 @@ class Gateway(object):
                      wait_for_ready=None,
                      timeout=None,
                      metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/game.gateway.Gateway/GetSimStatus',
+        return grpc.experimental.unary_stream(request, target, '/game.bff.BFF/GetSimStatus',
                                               protos_dot_types__pb2.CommonRequest.SerializeToString,
-                                              protos_dot_gateway__pb2.SimStatus.FromString, options, channel_credentials,
-                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+                                              protos_dot_bff__pb2.SimStatus.FromString, options, channel_credentials, insecure,
+                                              call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def RegisterAgent(request,
+                      target,
+                      options=(),
+                      channel_credentials=None,
+                      call_credentials=None,
+                      insecure=False,
+                      compression=None,
+                      wait_for_ready=None,
+                      timeout=None,
+                      metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/RegisterAgent',
+                                             protos_dot_bff__pb2.AgentsInfo.Info.SerializeToString,
+                                             protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
+                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def UnRegisterAgent(request,
+                        target,
+                        options=(),
+                        channel_credentials=None,
+                        call_credentials=None,
+                        insecure=False,
+                        compression=None,
+                        wait_for_ready=None,
+                        timeout=None,
+                        metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/UnRegisterAgent',
+                                             protos_dot_bff__pb2.AgentsInfo.Info.SerializeToString,
+                                             protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
+                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetAgentsInfo(request,
+                      target,
+                      options=(),
+                      channel_credentials=None,
+                      call_credentials=None,
+                      insecure=False,
+                      compression=None,
+                      wait_for_ready=None,
+                      timeout=None,
+                      metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/GetAgentsInfo',
+                                             protos_dot_types__pb2.CommonRequest.SerializeToString,
+                                             protos_dot_bff__pb2.AgentsInfo.FromString, options, channel_credentials, insecure,
+                                             call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def GetAgentsConfig(request,
@@ -633,9 +581,9 @@ class Gateway(object):
                         wait_for_ready=None,
                         timeout=None,
                         metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/GetAgentsConfig',
-                                             protos_dot_gateway__pb2.RequiredAgents.SerializeToString,
-                                             protos_dot_gateway__pb2.AgentsConfig.FromString, options, channel_credentials,
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/GetAgentsConfig',
+                                             protos_dot_bff__pb2.RequiredAgents.SerializeToString,
+                                             protos_dot_bff__pb2.AgentsConfig.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
@@ -649,8 +597,8 @@ class Gateway(object):
                         wait_for_ready=None,
                         timeout=None,
                         metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/SetAgentsConfig',
-                                             protos_dot_gateway__pb2.AgentsConfig.SerializeToString,
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/SetAgentsConfig',
+                                             protos_dot_bff__pb2.AgentsConfig.SerializeToString,
                                              protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -665,7 +613,7 @@ class Gateway(object):
                         wait_for_ready=None,
                         timeout=None,
                         metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/RstAgentsConfig',
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/RstAgentsConfig',
                                              protos_dot_types__pb2.CommonRequest.SerializeToString,
                                              protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -681,10 +629,10 @@ class Gateway(object):
                       wait_for_ready=None,
                       timeout=None,
                       metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/GetAgentsMode',
-                                             protos_dot_gateway__pb2.RequiredAgents.SerializeToString,
-                                             protos_dot_gateway__pb2.AgentsMode.FromString, options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/GetAgentsMode',
+                                             protos_dot_bff__pb2.RequiredAgents.SerializeToString,
+                                             protos_dot_bff__pb2.AgentsMode.FromString, options, channel_credentials, insecure,
+                                             call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def SetAgentsMode(request,
@@ -697,8 +645,8 @@ class Gateway(object):
                       wait_for_ready=None,
                       timeout=None,
                       metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/SetAgentsMode',
-                                             protos_dot_gateway__pb2.AgentsMode.SerializeToString,
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/SetAgentsMode',
+                                             protos_dot_bff__pb2.AgentsMode.SerializeToString,
                                              protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -713,9 +661,9 @@ class Gateway(object):
                         wait_for_ready=None,
                         timeout=None,
                         metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/GetAgentsWeight',
-                                             protos_dot_gateway__pb2.RequiredAgents.SerializeToString,
-                                             protos_dot_gateway__pb2.AgentsWeight.FromString, options, channel_credentials,
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/GetAgentsWeight',
+                                             protos_dot_bff__pb2.RequiredAgents.SerializeToString,
+                                             protos_dot_bff__pb2.AgentsWeight.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
@@ -729,8 +677,8 @@ class Gateway(object):
                         wait_for_ready=None,
                         timeout=None,
                         metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/SetAgentsWeight',
-                                             protos_dot_gateway__pb2.AgentsWeight.SerializeToString,
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/SetAgentsWeight',
+                                             protos_dot_bff__pb2.AgentsWeight.SerializeToString,
                                              protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -745,9 +693,9 @@ class Gateway(object):
                         wait_for_ready=None,
                         timeout=None,
                         metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/GetAgentsBuffer',
-                                             protos_dot_gateway__pb2.RequiredAgents.SerializeToString,
-                                             protos_dot_gateway__pb2.AgentsBuffer.FromString, options, channel_credentials,
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/GetAgentsBuffer',
+                                             protos_dot_bff__pb2.RequiredAgents.SerializeToString,
+                                             protos_dot_bff__pb2.AgentsBuffer.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
@@ -761,8 +709,8 @@ class Gateway(object):
                         wait_for_ready=None,
                         timeout=None,
                         metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/SetAgentsBuffer',
-                                             protos_dot_gateway__pb2.AgentsBuffer.SerializeToString,
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/SetAgentsBuffer',
+                                             protos_dot_bff__pb2.AgentsBuffer.SerializeToString,
                                              protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -777,9 +725,9 @@ class Gateway(object):
                         wait_for_ready=None,
                         timeout=None,
                         metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/GetAgentsStatus',
-                                             protos_dot_gateway__pb2.RequiredAgents.SerializeToString,
-                                             protos_dot_gateway__pb2.AgentsStatus.FromString, options, channel_credentials,
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/GetAgentsStatus',
+                                             protos_dot_bff__pb2.RequiredAgents.SerializeToString,
+                                             protos_dot_bff__pb2.AgentsStatus.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
@@ -793,23 +741,7 @@ class Gateway(object):
                         wait_for_ready=None,
                         timeout=None,
                         metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.gateway.Gateway/SetAgentsStatus',
-                                             protos_dot_gateway__pb2.AgentsStatus.SerializeToString,
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/SetAgentsStatus',
+                                             protos_dot_bff__pb2.AgentsStatus.SerializeToString,
                                              protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def GetAction(request_iterator,
-                  target,
-                  options=(),
-                  channel_credentials=None,
-                  call_credentials=None,
-                  insecure=False,
-                  compression=None,
-                  wait_for_ready=None,
-                  timeout=None,
-                  metadata=None):
-        return grpc.experimental.stream_stream(request_iterator, target, '/game.gateway.Gateway/GetAction',
-                                               protos_dot_gateway__pb2.JsonString.SerializeToString,
-                                               protos_dot_gateway__pb2.JsonString.FromString, options, channel_credentials,
-                                               insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

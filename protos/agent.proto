@@ -36,7 +36,7 @@ service Agent {
   rpc SetAgentStatus(AgentStatus) returns (types.CommonResponse);
 
   // 获取决策动作
-  rpc GetAction(stream PickleBytes) returns (stream PickleBytes);
+  rpc GetAction(stream types.JsonString) returns (stream types.JsonString);
 }
 
 message AgentConfig {
@@ -45,11 +45,9 @@ message AgentConfig {
   string outputs_actions_func = 3;  // 输出到动作后处理函数
   string reward_func = 4;           // 奖励函数
   string type = 5;                  // 模型类型
-  double gamma = 6;                 // 奖励折扣因子
-  uint32 batch = 7;                 // 训练批尺寸
-  string builder = 8;               // 模型构建函数代码
-  string structures = 9;            // 网络结构，格式：Json字符串
-  string options = 10;              // 其他超参数，格式：Json字符串
+  string hypers = 6;                // 超参数，格式：Json字符串
+  string builder = 7;               // 模型构建函数代码
+  string structures = 8;            // 网络结构，格式：Json字符串
 }
 
 message AgentMode {
@@ -66,8 +64,4 @@ message AgentBuffer {
 
 message AgentStatus {
   string status = 1;  // 模型状态，格式：Json字符串
-}
-
-message PickleBytes {
-  bytes pkl = 1;  // Pickle字节流
 }

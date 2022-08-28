@@ -77,8 +77,8 @@ class AgentStub(object):
         )
         self.GetAction = channel.stream_stream(
             '/game.agent.Agent/GetAction',
-            request_serializer=protos_dot_agent__pb2.PickleBytes.SerializeToString,
-            response_deserializer=protos_dot_agent__pb2.PickleBytes.FromString,
+            request_serializer=protos_dot_types__pb2.JsonString.SerializeToString,
+            response_deserializer=protos_dot_types__pb2.JsonString.FromString,
         )
 
 
@@ -254,8 +254,8 @@ def add_AgentServicer_to_server(servicer, server):
         'GetAction':
             grpc.stream_stream_rpc_method_handler(
                 servicer.GetAction,
-                request_deserializer=protos_dot_agent__pb2.PickleBytes.FromString,
-                response_serializer=protos_dot_agent__pb2.PickleBytes.SerializeToString,
+                request_deserializer=protos_dot_types__pb2.JsonString.FromString,
+                response_serializer=protos_dot_types__pb2.JsonString.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler('game.agent.Agent', rpc_method_handlers)
@@ -470,6 +470,6 @@ class Agent(object):
                   timeout=None,
                   metadata=None):
         return grpc.experimental.stream_stream(request_iterator, target, '/game.agent.Agent/GetAction',
-                                               protos_dot_agent__pb2.PickleBytes.SerializeToString,
-                                               protos_dot_agent__pb2.PickleBytes.FromString, options, channel_credentials,
+                                               protos_dot_types__pb2.JsonString.SerializeToString,
+                                               protos_dot_types__pb2.JsonString.FromString, options, channel_credentials,
                                                insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

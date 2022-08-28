@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 from protos import types_pb2 as protos_dot_types__pb2
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x12protos/agent.proto\x12\ngame.agent\x1a\x12protos/types.proto\"\xd0\x01\n\x0b\x41gentConfig\x12\x10\n\x08training\x18\x01 \x01(\x08\x12\x1a\n\x12states_inputs_func\x18\x02 \x01(\t\x12\x1c\n\x14outputs_actions_func\x18\x03 \x01(\t\x12\x13\n\x0breward_func\x18\x04 \x01(\t\x12\x0c\n\x04type\x18\x05 \x01(\t\x12\r\n\x05gamma\x18\x06 \x01(\x01\x12\r\n\x05\x62\x61tch\x18\x07 \x01(\r\x12\x0f\n\x07\x62uilder\x18\x08 \x01(\t\x12\x12\n\nstructures\x18\t \x01(\t\x12\x0f\n\x07options\x18\n \x01(\t\"\x1d\n\tAgentMode\x12\x10\n\x08training\x18\x01 \x01(\x08\"\x1e\n\x0b\x41gentWeight\x12\x0f\n\x07weights\x18\x01 \x01(\x0c\"\x1d\n\x0b\x41gentBuffer\x12\x0e\n\x06\x62uffer\x18\x01 \x01(\x0c\"\x1d\n\x0b\x41gentStatus\x12\x0e\n\x06status\x18\x01 \x01(\t\"\x1a\n\x0bPickleBytes\x12\x0b\n\x03pkl\x18\x01 \x01(\x0c\x32\x8f\x07\n\x05\x41gent\x12\x41\n\x08PingPong\x12\x19.game.types.CommonRequest\x1a\x1a.game.types.CommonResponse\x12\x44\n\x0eGetAgentConfig\x12\x19.game.types.CommonRequest\x1a\x17.game.agent.AgentConfig\x12\x45\n\x0eSetAgentConfig\x12\x17.game.agent.AgentConfig\x1a\x1a.game.types.CommonResponse\x12G\n\x0eRstAgentConfig\x12\x19.game.types.CommonRequest\x1a\x1a.game.types.CommonResponse\x12@\n\x0cGetAgentMode\x12\x19.game.types.CommonRequest\x1a\x15.game.agent.AgentMode\x12\x41\n\x0cSetAgentMode\x12\x15.game.agent.AgentMode\x1a\x1a.game.types.CommonResponse\x12\x44\n\x0eGetAgentWeight\x12\x19.game.types.CommonRequest\x1a\x17.game.agent.AgentWeight\x12\x45\n\x0eSetAgentWeight\x12\x17.game.agent.AgentWeight\x1a\x1a.game.types.CommonResponse\x12\x44\n\x0eGetAgentBuffer\x12\x19.game.types.CommonRequest\x1a\x17.game.agent.AgentBuffer\x12\x45\n\x0eSetAgentBuffer\x12\x17.game.agent.AgentBuffer\x1a\x1a.game.types.CommonResponse\x12\x44\n\x0eGetAgentStatus\x12\x19.game.types.CommonRequest\x1a\x17.game.agent.AgentStatus\x12\x45\n\x0eSetAgentStatus\x12\x17.game.agent.AgentStatus\x1a\x1a.game.types.CommonResponse\x12\x41\n\tGetAction\x12\x17.game.agent.PickleBytes\x1a\x17.game.agent.PickleBytes(\x01\x30\x01\x62\x06proto3'
+    b'\n\x12protos/agent.proto\x12\ngame.agent\x1a\x12protos/types.proto\"\xb1\x01\n\x0b\x41gentConfig\x12\x10\n\x08training\x18\x01 \x01(\x08\x12\x1a\n\x12states_inputs_func\x18\x02 \x01(\t\x12\x1c\n\x14outputs_actions_func\x18\x03 \x01(\t\x12\x13\n\x0breward_func\x18\x04 \x01(\t\x12\x0c\n\x04type\x18\x05 \x01(\t\x12\x0e\n\x06hypers\x18\x06 \x01(\t\x12\x0f\n\x07\x62uilder\x18\x07 \x01(\t\x12\x12\n\nstructures\x18\x08 \x01(\t\"\x1d\n\tAgentMode\x12\x10\n\x08training\x18\x01 \x01(\x08\"\x1e\n\x0b\x41gentWeight\x12\x0f\n\x07weights\x18\x01 \x01(\x0c\"\x1d\n\x0b\x41gentBuffer\x12\x0e\n\x06\x62uffer\x18\x01 \x01(\x0c\"\x1d\n\x0b\x41gentStatus\x12\x0e\n\x06status\x18\x01 \x01(\t2\x8d\x07\n\x05\x41gent\x12\x41\n\x08PingPong\x12\x19.game.types.CommonRequest\x1a\x1a.game.types.CommonResponse\x12\x44\n\x0eGetAgentConfig\x12\x19.game.types.CommonRequest\x1a\x17.game.agent.AgentConfig\x12\x45\n\x0eSetAgentConfig\x12\x17.game.agent.AgentConfig\x1a\x1a.game.types.CommonResponse\x12G\n\x0eRstAgentConfig\x12\x19.game.types.CommonRequest\x1a\x1a.game.types.CommonResponse\x12@\n\x0cGetAgentMode\x12\x19.game.types.CommonRequest\x1a\x15.game.agent.AgentMode\x12\x41\n\x0cSetAgentMode\x12\x15.game.agent.AgentMode\x1a\x1a.game.types.CommonResponse\x12\x44\n\x0eGetAgentWeight\x12\x19.game.types.CommonRequest\x1a\x17.game.agent.AgentWeight\x12\x45\n\x0eSetAgentWeight\x12\x17.game.agent.AgentWeight\x1a\x1a.game.types.CommonResponse\x12\x44\n\x0eGetAgentBuffer\x12\x19.game.types.CommonRequest\x1a\x17.game.agent.AgentBuffer\x12\x45\n\x0eSetAgentBuffer\x12\x17.game.agent.AgentBuffer\x1a\x1a.game.types.CommonResponse\x12\x44\n\x0eGetAgentStatus\x12\x19.game.types.CommonRequest\x1a\x17.game.agent.AgentStatus\x12\x45\n\x0eSetAgentStatus\x12\x17.game.agent.AgentStatus\x1a\x1a.game.types.CommonResponse\x12?\n\tGetAction\x12\x16.game.types.JsonString\x1a\x16.game.types.JsonString(\x01\x30\x01\x62\x06proto3'
 )
 
 _AGENTCONFIG = DESCRIPTOR.message_types_by_name['AgentConfig']
@@ -22,7 +22,6 @@ _AGENTMODE = DESCRIPTOR.message_types_by_name['AgentMode']
 _AGENTWEIGHT = DESCRIPTOR.message_types_by_name['AgentWeight']
 _AGENTBUFFER = DESCRIPTOR.message_types_by_name['AgentBuffer']
 _AGENTSTATUS = DESCRIPTOR.message_types_by_name['AgentStatus']
-_PICKLEBYTES = DESCRIPTOR.message_types_by_name['PickleBytes']
 AgentConfig = _reflection.GeneratedProtocolMessageType(
     'AgentConfig',
     (_message.Message,),
@@ -73,32 +72,20 @@ AgentStatus = _reflection.GeneratedProtocolMessageType(
     })
 _sym_db.RegisterMessage(AgentStatus)
 
-PickleBytes = _reflection.GeneratedProtocolMessageType(
-    'PickleBytes',
-    (_message.Message,),
-    {
-        'DESCRIPTOR': _PICKLEBYTES,
-        '__module__': 'protos.agent_pb2'
-        # @@protoc_insertion_point(class_scope:game.agent.PickleBytes)
-    })
-_sym_db.RegisterMessage(PickleBytes)
-
 _AGENT = DESCRIPTOR.services_by_name['Agent']
 if _descriptor._USE_C_DESCRIPTORS == False:
 
     DESCRIPTOR._options = None
     _AGENTCONFIG._serialized_start = 55
-    _AGENTCONFIG._serialized_end = 263
-    _AGENTMODE._serialized_start = 265
-    _AGENTMODE._serialized_end = 294
-    _AGENTWEIGHT._serialized_start = 296
-    _AGENTWEIGHT._serialized_end = 326
-    _AGENTBUFFER._serialized_start = 328
-    _AGENTBUFFER._serialized_end = 357
-    _AGENTSTATUS._serialized_start = 359
-    _AGENTSTATUS._serialized_end = 388
-    _PICKLEBYTES._serialized_start = 390
-    _PICKLEBYTES._serialized_end = 416
-    _AGENT._serialized_start = 419
-    _AGENT._serialized_end = 1330
+    _AGENTCONFIG._serialized_end = 232
+    _AGENTMODE._serialized_start = 234
+    _AGENTMODE._serialized_end = 263
+    _AGENTWEIGHT._serialized_start = 265
+    _AGENTWEIGHT._serialized_end = 295
+    _AGENTBUFFER._serialized_start = 297
+    _AGENTBUFFER._serialized_end = 326
+    _AGENTSTATUS._serialized_start = 328
+    _AGENTSTATUS._serialized_end = 357
+    _AGENT._serialized_start = 360
+    _AGENT._serialized_end = 1269
 # @@protoc_insertion_point(module_scope)

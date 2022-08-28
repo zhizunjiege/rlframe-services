@@ -12,11 +12,12 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x12protos/types.proto\x12\ngame.types\"\x0f\n\rCommonRequest\"\x91\x01\n\x0e\x43ommonResponse\x12\x33\n\x04\x63ode\x18\x01 \x01(\x0e\x32%.game.types.CommonResponse.StatusCode\x12\x0b\n\x03msg\x18\x02 \x01(\t\"=\n\nStatusCode\x12\x06\n\x02OK\x10\x00\x12\x0b\n\x07WARNING\x10\x01\x12\t\n\x05\x45RROR\x10\x02\x12\x0f\n\x0b\x46\x41TAL_ERROR\x10\x03\x62\x06proto3'
+    b'\n\x12protos/types.proto\x12\ngame.types\"\x0f\n\rCommonRequest\"\x91\x01\n\x0e\x43ommonResponse\x12\x33\n\x04\x63ode\x18\x01 \x01(\x0e\x32%.game.types.CommonResponse.StatusCode\x12\x0b\n\x03msg\x18\x02 \x01(\t\"=\n\nStatusCode\x12\x06\n\x02OK\x10\x00\x12\x0b\n\x07WARNING\x10\x01\x12\t\n\x05\x45RROR\x10\x02\x12\x0f\n\x0b\x46\x41TAL_ERROR\x10\x03\"\x1a\n\nJsonString\x12\x0c\n\x04json\x18\x01 \x01(\tb\x06proto3'
 )
 
 _COMMONREQUEST = DESCRIPTOR.message_types_by_name['CommonRequest']
 _COMMONRESPONSE = DESCRIPTOR.message_types_by_name['CommonResponse']
+_JSONSTRING = DESCRIPTOR.message_types_by_name['JsonString']
 _COMMONRESPONSE_STATUSCODE = _COMMONRESPONSE.enum_types_by_name['StatusCode']
 CommonRequest = _reflection.GeneratedProtocolMessageType(
     'CommonRequest',
@@ -38,6 +39,16 @@ CommonResponse = _reflection.GeneratedProtocolMessageType(
     })
 _sym_db.RegisterMessage(CommonResponse)
 
+JsonString = _reflection.GeneratedProtocolMessageType(
+    'JsonString',
+    (_message.Message,),
+    {
+        'DESCRIPTOR': _JSONSTRING,
+        '__module__': 'protos.types_pb2'
+        # @@protoc_insertion_point(class_scope:game.types.JsonString)
+    })
+_sym_db.RegisterMessage(JsonString)
+
 if _descriptor._USE_C_DESCRIPTORS == False:
 
     DESCRIPTOR._options = None
@@ -47,4 +58,6 @@ if _descriptor._USE_C_DESCRIPTORS == False:
     _COMMONRESPONSE._serialized_end = 197
     _COMMONRESPONSE_STATUSCODE._serialized_start = 136
     _COMMONRESPONSE_STATUSCODE._serialized_end = 197
+    _JSONSTRING._serialized_start = 199
+    _JSONSTRING._serialized_end = 225
 # @@protoc_insertion_point(module_scope)

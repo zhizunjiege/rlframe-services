@@ -67,13 +67,11 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             networks = result['networks']
         else:
             networks = default_builder(structures)
-        options = json.loads(request.options)
+        hypers = json.loads(request.hypers)
         self.model = RLModels[request.type](
             training=request.training,
-            gamma=request.gamma,
-            batch=request.batch,
             networks=networks,
-            **options,
+            **hypers,
         )
 
         return types_pb2.CommonResponse()
@@ -121,7 +119,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
     def GetAction(self, request_iterator, context):
         if self.model is not None:
             for request in request_iterator:
-                info = pickle.loads(request.pkl)
+                info = json.loads(request.json)
                 states, done = info['states'], info['done']
                 self.sifunc_args['states'] = states
                 exec(self.sifunc, self.sifunc_args)
@@ -130,7 +128,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
                 self.oafunc_args['outputs'] = outputs
                 exec(self.oafunc, self.oafunc_args)
                 actions = self.oafunc_args['actions']
-                if self.configs.training:
+                if self.model.training:
                     if self.rfunc_args['states'] is None:
                         self.rfunc_args['states'] = states
                         self.rfunc_args['inputs'] = inputs
@@ -153,9 +151,9 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
                         self.rfunc_args['inputs'] = self.rfunc_args['next_inputs']
                         self.rfunc_args['actions'] = actions
                         self.rfunc_args['outputs'] = outputs
-                yield agent_pb2.PickleBytes(pkl=pickle.dumps({'actions': actions}))
+                yield types_pb2.JsonString(json=json.dumps({'actions': actions}))
         self.__reset_args()
-        return agent_pb2.PickleBytes(pkl=pickle.dumps(None))
+        return types_pb2.JsonString(json=json.dumps(None))
 
 
 def agent_server(ip, port, max_workers):
@@ -171,8 +169,8 @@ def agent_server(ip, port, max_workers):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run an agent service.')
-    parser.add_argument('-i', '--ip', type=str, default='0.0.0.0', type=str, help='IP address to listen on.')
-    parser.add_argument('-p', '--port', default=0, type=int, help='Port to listen on.')
-    parser.add_argument('-w', '--work', default=10, type=int, help='Max workers.')
+    parser.add_argument('-i', '--ip', type=str, default='0.0.0.0', help='IP address to listen on.')
+    parser.add_argument('-p', '--port', type=int, default=0, help='Port to listen on.')
+    parser.add_argument('-w', '--work', type=int, default=10, help='Max workers.')
     args = parser.parse_args()
     agent_server(args.ip, args.port, args.work)

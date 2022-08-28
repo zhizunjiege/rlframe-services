@@ -1,21 +1,18 @@
 import argparse
 from concurrent import futures
-import itertools
 import json
-import pickle
 
 import grpc
 
-from protos import agent_pb2
 from protos import agent_pb2_grpc
 from protos import engine_pb2
 from protos import engine_pb2_grpc
-from protos import gateway_pb2
-from protos import gateway_pb2_grpc
+from protos import bff_pb2
+from protos import bff_pb2_grpc
 from protos import types_pb2
 
 
-class GatewayServicer(gateway_pb2_grpc.GatewayServicer):
+class BFFServicer(bff_pb2_grpc.BFFServicer):
 
     def __init__(self, engine):
         self.__reset_all()
@@ -25,13 +22,77 @@ class GatewayServicer(gateway_pb2_grpc.GatewayServicer):
     def __reset_all(self):
         self.agents = {}
 
-        self.param_configs = None
-        self.route_configs = None
+        self.proxy_configs = None
         self.sim_configs = None
 
         self.sdfunc = None
 
-        self.srv_state = gateway_pb2.SimStatus.ServerState.STOPPED
+        self.srv_state = bff_pb2.SimStatus.ServerState.STOPPED
+        self.exp_repeated_time = 0  # TODO
+
+    def GetProxyConfig(self, request, context):
+        return self.proxy_configs or bff_pb2.ProxyConfig()
+
+    def SetProxyConfig(self, request, context):
+        self.proxy_configs = request
+        return types_pb2.CommonResponse()
+
+    def ProxyChat(self, request_iterator, context):
+        for request in request_iterator:
+            result = {'states': json.loads(request.states), 'done': False}
+            exec(self.sdfunc, result)
+            done = result['done']
+            if done:
+                self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.STOP_CURRENT_SAMPLE))
+                return bff_pb2.JsonString(json.dumps(None))
+            else:
+                yield types_pb2.JsonString(json=json.dumps({'done': done}))
+
+    def Control(self, request, context):
+        if request.cmd == bff_pb2.ControlCommand.Type.START:
+            sample = engine_pb2.InitInfo.MultiSample(exp_design_id=self.sim_configs.exp_design_id)
+            self.engine.Init(engine_pb2.InitInfo(multi_sample_config=sample))
+            self.engine.Control(engine_pb2.ControlCmd(sim_start_time=self.sim_configs.sim_start_time))
+            self.engine.Control(engine_pb2.ControlCmd(sim_duration=self.sim_configs.sim_duration))
+            self.engine.Control(engine_pb2.ControlCmd(time_step=self.sim_configs.time_step))
+            self.engine.Control(engine_pb2.ControlCmd(speed_ratio=self.sim_configs.speed_ratio))
+            self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.START))
+            self.srv_state = bff_pb2.SimStatus.ServerState.RUNNING
+        elif request.cmd == bff_pb2.ControlCommand.Type.SUSPEND:
+            self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.SUSPEND))
+            self.srv_state = bff_pb2.SimStatus.ServerState.SUSPENDED
+        elif request.cmd == bff_pb2.ControlCommand.Type.CONTINUE:
+            self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.CONTINUE))
+            self.srv_state = bff_pb2.SimStatus.ServerState.RUNNING
+        else:
+            self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.STOP))
+            self.__reset_all()
+        return types_pb2.CommonResponse()
+
+    def GetSimConfig(self, request, context):
+        return self.sim_configs or bff_pb2.SimConfig()
+
+    def SetSimConfig(self, request, context):
+        self.sim_configs = request
+
+        sdfunc_src = request.sample_done_func + '\ndone = func(states)'
+        self.sdfunc = compile(source=sdfunc_src, model='exec')
+
+        return types_pb2.CommonResponse()
+
+    def GetSimStatus(self, request, context):
+        for info in self.engine.GetSysInfo(types_pb2.CommonRequest()):
+            status = bff_pb2.SimStatus(
+                srv_state=self.srv_state,
+                sim_cur_time=info.sim_current_time.seconds,
+                sim_duration=info.sim_duration.seconds,
+                real_duration=info.real_duration.seconds,
+                real_speed_ratio=info.real_speed_ratio,
+                cur_sample_id=info.current_sample_id,
+                exp_repeated_time=self.exp_repeated_time,
+            )
+            yield status
+        return bff_pb2.SimStatus()
 
     def RegisterAgent(self, request, context):
         self.agents[request.addr] = agent_pb2_grpc.AgentStub(channel=grpc.insecure_channel(request.addr))
@@ -42,52 +103,8 @@ class GatewayServicer(gateway_pb2_grpc.GatewayServicer):
         return types_pb2.CommonResponse()
 
     def GetAgentsInfo(self, request, context):
-        infos = [gateway_pb2.AgentInfo(addr=addr) for addr in list(self.agents.keys())]
-        return gateway_pb2.AgentsInfo(infos=infos)
-
-    def GetParamConfig(self, request, context):
-        return self.param_configs or gateway_pb2.ParamConfig()
-
-    def SetParamConfig(self, request, context):
-        self.param_configs = request
-        return types_pb2.CommonResponse()
-
-    def GetRouteConfig(self, request, context):
-        return self.route_configs or gateway_pb2.RouteConfig()
-
-    def SetRouteConfig(self, request, context):
-        self.route_configs = request
-        return types_pb2.CommonResponse()
-
-    def GetSimConfig(self, request, context):
-        return self.sim_configs or gateway_pb2.SimConfig()
-
-    def SetSimConfig(self, request, context):
-        self.sim_configs = request
-
-        sdfunc_src = request.sample_done_func + '\ndone = func(states)'
-        self.sdfunc = compile(source=sdfunc_src, model='exec')
-
-        return types_pb2.CommonResponse()
-
-    def Control(self, request, context):
-        # TODO: control the simulation
-        return types_pb2.CommonResponse()
-
-    def GetSimStatus(self, request, context):
-        for info in self.engine.GetSysInfo(types_pb2.CommonRequest()):
-            status = gateway_pb2.SimStatus(
-                srv_state=self.srv_state,
-                sim_cur_time=info.sim_current_time.seconds,
-                sim_duration=info.sim_duration.seconds,
-                real_duration=info.real_duration.seconds,
-                real_speed_ratio=info.real_speed_ratio,
-                cur_sample_id=info.current_sample_id,
-                exp_repeated_time=1,  # TODO
-                sim_steps_remainder=0,  # TODO
-            )
-            yield status
-        return gateway_pb2.SimStatus()
+        infos = [bff_pb2.AgentsInfo.Info(addr=addr) for addr in self.agents.keys()]
+        return bff_pb2.AgentsInfo(infos=infos)
 
     def GetAgentsConfig(self, request, context):
         addrs = request.addrs if len(request.addrs) > 0 else list(self.agents.keys())
@@ -95,7 +112,7 @@ class GatewayServicer(gateway_pb2_grpc.GatewayServicer):
         for addr in addrs:
             stub = self.agents[addr]
             configs[addr] = stub.GetAgentConfig(types_pb2.CommonRequest())
-        return gateway_pb2.AgentsConfig(configs=configs)
+        return bff_pb2.AgentsConfig(configs=configs)
 
     def SetAgentsConfig(self, request, context):
         configs = request.configs
@@ -116,7 +133,7 @@ class GatewayServicer(gateway_pb2_grpc.GatewayServicer):
         for addr in addrs:
             stub = self.agents[addr]
             modes[addr] = stub.GetAgentMode(types_pb2.CommonRequest())
-        return gateway_pb2.AgentsMode(modes=modes)
+        return bff_pb2.AgentsMode(modes=modes)
 
     def SetAgentsMode(self, request, context):
         modes = request.modes
@@ -131,7 +148,7 @@ class GatewayServicer(gateway_pb2_grpc.GatewayServicer):
         for addr in addrs:
             stub = self.agents[addr]
             weights[addr] = stub.GetAgentWeight(types_pb2.CommonRequest())
-        return gateway_pb2.AgentsWeight(weights=weights)
+        return bff_pb2.AgentsWeight(weights=weights)
 
     def SetAgentsWeight(self, request, context):
         weights = request.weights
@@ -146,7 +163,7 @@ class GatewayServicer(gateway_pb2_grpc.GatewayServicer):
         for addr in addrs:
             stub = self.agents[addr]
             buffers[addr] = stub.GetAgentBuffer(types_pb2.CommonRequest())
-        return gateway_pb2.AgentsBuffer(buffers=buffers)
+        return bff_pb2.AgentsBuffer(buffers=buffers)
 
     def SetAgentsBuffer(self, request, context):
         buffers = request.buffers
@@ -161,7 +178,7 @@ class GatewayServicer(gateway_pb2_grpc.GatewayServicer):
         for addr in addrs:
             stub = self.agents[addr]
             status[addr] = stub.GetAgentStatus(types_pb2.CommonRequest())
-        return gateway_pb2.AgentsStatus(status=status)
+        return bff_pb2.AgentsStatus(status=status)
 
     def SetAgentsStatus(self, request, context):
         status = request.status
@@ -170,33 +187,10 @@ class GatewayServicer(gateway_pb2_grpc.GatewayServicer):
             stub.SetAgentStatus(status[addr])
         return types_pb2.CommonResponse()
 
-    def GetAction(self, request_iterator, context):
 
-        def source_generator():
-            for request in request_iterator:
-                result = {'states': json.loads(request.states), 'done': False}
-                exec(self.sdfunc, result)
-                # TODO: Route states to agents
-                yield agent_pb2.PickleBytes(pkl=pickle.dumps(result))
-
-        src_its = itertools.tee(source_generator(), len(self.agents))
-        tgt_its = [self.agents[addr].GetAction(src_its[index]) for index, addr in enumerate(self.agents)]
-
-        while True:
-            try:
-                actions = {}
-                for it in tgt_its:
-                    val = next(it)
-                    result = pickle.loads(val.pkl)
-                    actions.update(result['actions'])
-                yield gateway_pb2.JsonString(json=json.dumps(actions))
-            except StopIteration:
-                return gateway_pb2.JsonString()
-
-
-def gateway_server(engine, ip, port, max_workers):
+def bff_server(engine, ip, port, max_workers):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=max_workers))
-    gateway_pb2_grpc.add_GatewayServicer_to_server(GatewayServicer(engine=engine), server)
+    bff_pb2_grpc.add_BFFServicer_to_server(BFFServicer(engine=engine), server)
     server.add_insecure_port(f'{ip}:{port}')
     server.start()
     try:
@@ -206,10 +200,10 @@ def gateway_server(engine, ip, port, max_workers):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Run an gateway service.')
+    parser = argparse.ArgumentParser(description='Run an bff service.')
     parser.add_argument('-e', '--engine', type=str, default='localhost:50041', help='Engine address')
-    parser.add_argument('-i', '--ip', type=str, default='0.0.0.0', type=str, help='IP address to listen on.')
-    parser.add_argument('-p', '--port', default=0, type=int, help='Port to listen on.')
-    parser.add_argument('-w', '--work', default=10, type=int, help='Max workers.')
+    parser.add_argument('-i', '--ip', type=str, default='0.0.0.0', help='IP address to listen on.')
+    parser.add_argument('-p', '--port', type=int, default=0, help='Port to listen on.')
+    parser.add_argument('-w', '--work', type=int, default=10, help='Max workers.')
     args = parser.parse_args()
-    gateway_server(args.engine, args.ip, args.port, args.work)
+    bff_server(args.engine, args.ip, args.port, args.work)

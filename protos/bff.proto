@@ -1,38 +1,36 @@
 syntax = "proto3";
 
-package game.gateway;
+package game.bff;
 
 import "protos/types.proto";
 import "protos/agent.proto";
 
-service Gateway {
-  // 注册智能体
-  rpc RegisterAgent(AgentInfo) returns (types.CommonResponse);
-  // 卸载智能体
-  rpc UnRegisterAgent(AgentInfo) returns (types.CommonResponse);
-  // 获取智能体信息
-  rpc GetAgentsInfo(types.CommonRequest) returns (AgentsInfo);
+service BFF {
+  // 获取代理配置
+  rpc GetProxyConfig(types.CommonRequest) returns (ProxyConfig);
+  // 设置代理配置
+  rpc SetProxyConfig(ProxyConfig) returns (types.CommonResponse);
 
-  // 获取参数配置
-  rpc GetParamConfig(types.CommonRequest) returns (ParamConfig);
-  // 设置参数配置
-  rpc SetParamConfig(ParamConfig) returns (types.CommonResponse);
+  // 与代理通信
+  rpc ProxyChat(stream types.JsonString) returns (stream types.JsonString);
 
-  // 获取路由配置
-  rpc GetRouteConfig(types.CommonRequest) returns (RouteConfig);
-  // 设置路由配置
-  rpc SetRouteConfig(RouteConfig) returns (types.CommonResponse);
+  // 仿真+训练流程控制
+  rpc Control(ControlCommand) returns (types.CommonResponse);
 
   // 获取仿真配置
   rpc GetSimConfig(types.CommonRequest) returns (SimConfig);
   // 设置仿真配置
   rpc SetSimConfig(SimConfig) returns (types.CommonResponse);
 
-  // 仿真+训练流程控制
-  rpc Control(ControlCommand) returns (types.CommonResponse);
-
   // 获取仿真状态
   rpc GetSimStatus(types.CommonRequest) returns (stream SimStatus);
+
+  // 注册智能体
+  rpc RegisterAgent(AgentsInfo.Info) returns (types.CommonResponse);
+  // 卸载智能体
+  rpc UnRegisterAgent(AgentsInfo.Info) returns (types.CommonResponse);
+  // 获取智能体信息
+  rpc GetAgentsInfo(types.CommonRequest) returns (AgentsInfo);
 
   // 获取智能体配置
   rpc GetAgentsConfig(RequiredAgents) returns (AgentsConfig);
@@ -60,34 +58,34 @@ service Gateway {
   rpc GetAgentsStatus(RequiredAgents) returns (AgentsStatus);
   // 设置智能体状态
   rpc SetAgentsStatus(AgentsStatus) returns (types.CommonResponse);
-
-  // 获取决策动作
-  rpc GetAction(stream JsonString) returns (stream JsonString);
 }
 
-message AgentInfo {
-  string addr = 1;  // Agent地址，格式：ip:port
-}
-message AgentsInfo {
-  repeated AgentInfo infos = 1;  // Agent信息
-}
-
-message ParamConfig {
-  message Parameter {
+message ProxyConfig {
+  message Param {
     string name = 1;   // 参数名称
     string type = 2;   // 参数类型
     string value = 3;  // 参数初始值
   }
-  message Config {
-    string model_type = 1;                 // 模型类型
-    repeated Parameter input_params = 2;   // 输入参数
-    repeated Parameter output_params = 3;  // 输出参数
+  message Model {
+    string name = 1;                       // 模型名称
+    map<string, Param> input_params = 2;   // <参数类型,输入参数>
+    map<string, Param> output_params = 3;  // <参数类型,输出参数>
   }
-  repeated Config configs = 1;  // 参数配置列表
+  message Configs {
+    map<string, Model> models = 1;  // <模型类型,模型配置>
+  }
+  map<string, Configs> configs = 1;  // <Agent地址,Agent数据>
+  uint32 sim_steps_ratio = 2;        // 仿真步数比
 }
 
-message RouteConfig {
-  repeated string configs = 1;  // Agent地址列表
+message ControlCommand {
+  enum Type {
+    START = 0;     // 开始
+    SUSPEND = 1;   // 暂停
+    CONTINUE = 2;  // 继续
+    STOP = 3;      // 结束
+  }
+  Type cmd = 1;  // 命令
 }
 
 message SimConfig {
@@ -97,18 +95,7 @@ message SimConfig {
   uint32 sim_start_time = 4;    // 仿真开始时间戳，单位：秒
   uint32 sim_duration = 5;      // 仿真持续时长，单位：秒
   uint32 exp_repeat_times = 6;  // 试验设计重复次数
-  uint32 sim_steps_ratio = 7;   // 仿真步数比
-  string sample_done_func = 8;  // 样本结束判断函数
-}
-
-message ControlCommand {
-  enum CommandType {
-    START = 0;     // 开始
-    SUSPEND = 1;   // 暂停
-    CONTINUE = 2;  // 继续
-    STOP = 3;      // 结束
-  }
-  CommandType cmd = 1;  // 命令
+  string sample_done_func = 7;  // 样本结束判断函数
 }
 
 message SimStatus {
@@ -117,14 +104,20 @@ message SimStatus {
     RUNNING = 1;    // 运行
     SUSPENDED = 2;  // 暂停
   }
-  ServerState srv_state = 1;       // 服务状态
-  uint32 sim_cur_time = 2;         // 当前仿真时间
-  uint32 sim_duration = 3;         // 仿真时钟运行时长
-  uint32 real_duration = 4;        // 墙上时钟运行时长
-  double real_speed_ratio = 5;     // 真实倍速
-  uint32 cur_sample_id = 6;        // 当前试验设计样本ID
-  uint32 exp_repeated_time = 7;    // 试验设计已重复次数
-  uint32 sim_steps_remainder = 8;  // 仿真步数余数
+  ServerState srv_state = 1;     // 服务状态
+  uint32 sim_cur_time = 2;       // 当前仿真时间
+  uint32 sim_duration = 3;       // 仿真时钟运行时长
+  uint32 real_duration = 4;      // 墙上时钟运行时长
+  double real_speed_ratio = 5;   // 真实倍速
+  uint32 cur_sample_id = 6;      // 当前试验设计样本ID
+  uint32 exp_repeated_time = 7;  // 试验设计已重复次数
+}
+
+message AgentsInfo {
+  message Info {
+    string addr = 1;  // Agent地址，格式：ip:port
+  }
+  repeated Info infos = 1;  // Agent信息
 }
 
 message RequiredAgents {
@@ -149,8 +142,4 @@ message AgentsBuffer {
 
 message AgentsStatus {
   map<string, agent.AgentStatus> status = 1;  // <Agent地址,Agent状态>
-}
-
-message JsonString {
-  string json = 1;  // JSON字符串
 }

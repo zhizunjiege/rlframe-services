@@ -13,3 +13,7 @@ message CommonResponse {
   StatusCode code = 1;  // 消息代码
   string msg = 2;       // 消息内容
 }
+
+message JsonString {
+  string json = 1;  // JSON字符串
+}
