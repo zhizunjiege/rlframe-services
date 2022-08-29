@@ -29,8 +29,9 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         self.__reset_args()
 
     def __reset_args(self):
-        self.sifunc_args = {'states': None, 'inputs': None}
-        self.oafunc_args = {'outputs': None, 'actions': None}
+        self.func_cache = {}
+        self.sifunc_args = {'states': None, 'inputs': None, 'cache': self.func_cache}
+        self.oafunc_args = {'outputs': None, 'actions': None, 'cache': self.func_cache}
         self.rfunc_args = {
             'states': None,
             'inputs': None,
@@ -38,8 +39,9 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             'outputs': None,
             'next_states': None,
             'next_inputs': None,
-            'done': False,
             'reward': 0,
+            'done': False,
+            'cache': self.func_cache,
         }
 
     def PingPong(self, request, context):
@@ -57,7 +59,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         oafunc_src = request.outputs_actions_func + '\nactions = func(outputs)'
         self.oafunc = compile(oafunc_src, '', 'exec')
         if self.configs.training:
-            rfunc_src = request.reward_func + '\nreward = func(states, actions, next_states, done)'
+            rfunc_src = request.reward_func + '\nreward = func(states, actions, next_states)'
             self.rfunc = compile(rfunc_src, '', 'exec')
 
         if request.builder:
