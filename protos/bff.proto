@@ -71,10 +71,10 @@ message ProxyConfig {
     map<string, Param> input_params = 2;   // <参数类型,输入参数>
     map<string, Param> output_params = 3;  // <参数类型,输出参数>
   }
-  message Configs {
+  message Config {
     map<string, Model> models = 1;  // <模型类型,模型配置>
   }
-  map<string, Configs> configs = 1;  // <Agent地址,Agent数据>
+  map<string, Config> configs = 1;  // <Agent地址,Agent数据>
   uint32 sim_steps_ratio = 2;        // 仿真步数比
 }
 

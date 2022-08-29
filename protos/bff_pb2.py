@@ -15,7 +15,7 @@ from protos import types_pb2 as protos_dot_types__pb2
 from protos import agent_pb2 as protos_dot_agent__pb2
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x10protos/bff.proto\x12\x08game.bff\x1a\x12protos/types.proto\x1a\x12protos/agent.proto\"\xb6\x05\n\x0bProxyConfig\x12\x33\n\x07\x63onfigs\x18\x01 \x03(\x0b\x32\".game.bff.ProxyConfig.ConfigsEntry\x12\x17\n\x0fsim_steps_ratio\x18\x02 \x01(\r\x1a\x32\n\x05Param\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\x1a\xc2\x02\n\x05Model\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x42\n\x0cinput_params\x18\x02 \x03(\x0b\x32,.game.bff.ProxyConfig.Model.InputParamsEntry\x12\x44\n\routput_params\x18\x03 \x03(\x0b\x32-.game.bff.ProxyConfig.Model.OutputParamsEntry\x1aO\n\x10InputParamsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12*\n\x05value\x18\x02 \x01(\x0b\x32\x1b.game.bff.ProxyConfig.Param:\x02\x38\x01\x1aP\n\x11OutputParamsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12*\n\x05value\x18\x02 \x01(\x0b\x32\x1b.game.bff.ProxyConfig.Param:\x02\x38\x01\x1a\x90\x01\n\x07\x43onfigs\x12\x39\n\x06models\x18\x01 \x03(\x0b\x32).game.bff.ProxyConfig.Configs.ModelsEntry\x1aJ\n\x0bModelsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12*\n\x05value\x18\x02 \x01(\x0b\x32\x1b.game.bff.ProxyConfig.Model:\x02\x38\x01\x1aM\n\x0c\x43onfigsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12,\n\x05value\x18\x02 \x01(\x0b\x32\x1d.game.bff.ProxyConfig.Configs:\x02\x38\x01\"t\n\x0e\x43ontrolCommand\x12*\n\x03\x63md\x18\x01 \x01(\x0e\x32\x1d.game.bff.ControlCommand.Type\"6\n\x04Type\x12\t\n\x05START\x10\x00\x12\x0b\n\x07SUSPEND\x10\x01\x12\x0c\n\x08\x43ONTINUE\x10\x02\x12\x08\n\x04STOP\x10\x03\"\xac\x01\n\tSimConfig\x12\x15\n\rexp_design_id\x18\x01 \x01(\x04\x12\x11\n\ttime_step\x18\x02 \x01(\x01\x12\x13\n\x0bspeed_ratio\x18\x03 \x01(\x01\x12\x16\n\x0esim_start_time\x18\x04 \x01(\r\x12\x14\n\x0csim_duration\x18\x05 \x01(\r\x12\x18\n\x10\x65xp_repeat_times\x18\x06 \x01(\r\x12\x18\n\x10sample_done_func\x18\x07 \x01(\t\"\x86\x02\n\tSimStatus\x12\x32\n\tsrv_state\x18\x01 \x01(\x0e\x32\x1f.game.bff.SimStatus.ServerState\x12\x14\n\x0csim_cur_time\x18\x02 \x01(\r\x12\x14\n\x0csim_duration\x18\x03 \x01(\r\x12\x15\n\rreal_duration\x18\x04 \x01(\r\x12\x18\n\x10real_speed_ratio\x18\x05 \x01(\x01\x12\x15\n\rcur_sample_id\x18\x06 \x01(\r\x12\x19\n\x11\x65xp_repeated_time\x18\x07 \x01(\r\"6\n\x0bServerState\x12\x0b\n\x07STOPPED\x10\x00\x12\x0b\n\x07RUNNING\x10\x01\x12\r\n\tSUSPENDED\x10\x02\"L\n\nAgentsInfo\x12(\n\x05infos\x18\x01 \x03(\x0b\x32\x19.game.bff.AgentsInfo.Info\x1a\x14\n\x04Info\x12\x0c\n\x04\x61\x64\x64r\x18\x01 \x01(\t\"\x1f\n\x0eRequiredAgents\x12\r\n\x05\x61\x64\x64rs\x18\x01 \x03(\t\"\x8d\x01\n\x0c\x41gentsConfig\x12\x34\n\x07\x63onfigs\x18\x01 \x03(\x0b\x32#.game.bff.AgentsConfig.ConfigsEntry\x1aG\n\x0c\x43onfigsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12&\n\x05value\x18\x02 \x01(\x0b\x32\x17.game.agent.AgentConfig:\x02\x38\x01\"\x81\x01\n\nAgentsMode\x12.\n\x05modes\x18\x01 \x03(\x0b\x32\x1f.game.bff.AgentsMode.ModesEntry\x1a\x43\n\nModesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12$\n\x05value\x18\x02 \x01(\x0b\x32\x15.game.agent.AgentMode:\x02\x38\x01\"\x8d\x01\n\x0c\x41gentsWeight\x12\x34\n\x07weights\x18\x01 \x03(\x0b\x32#.game.bff.AgentsWeight.WeightsEntry\x1aG\n\x0cWeightsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12&\n\x05value\x18\x02 \x01(\x0b\x32\x17.game.agent.AgentWeight:\x02\x38\x01\"\x8d\x01\n\x0c\x41gentsBuffer\x12\x34\n\x07\x62uffers\x18\x01 \x03(\x0b\x32#.game.bff.AgentsBuffer.BuffersEntry\x1aG\n\x0c\x42uffersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12&\n\x05value\x18\x02 \x01(\x0b\x32\x17.game.agent.AgentBuffer:\x02\x38\x01\"\x8a\x01\n\x0c\x41gentsStatus\x12\x32\n\x06status\x18\x01 \x03(\x0b\x32\".game.bff.AgentsStatus.StatusEntry\x1a\x46\n\x0bStatusEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12&\n\x05value\x18\x02 \x01(\x0b\x32\x17.game.agent.AgentStatus:\x02\x38\x01\x32\xa5\x0b\n\x03\x42\x46\x46\x12\x42\n\x0eGetProxyConfig\x12\x19.game.types.CommonRequest\x1a\x15.game.bff.ProxyConfig\x12\x43\n\x0eSetProxyConfig\x12\x15.game.bff.ProxyConfig\x1a\x1a.game.types.CommonResponse\x12?\n\tProxyChat\x12\x16.game.types.JsonString\x1a\x16.game.types.JsonString(\x01\x30\x01\x12?\n\x07\x43ontrol\x12\x18.game.bff.ControlCommand\x1a\x1a.game.types.CommonResponse\x12>\n\x0cGetSimConfig\x12\x19.game.types.CommonRequest\x1a\x13.game.bff.SimConfig\x12?\n\x0cSetSimConfig\x12\x13.game.bff.SimConfig\x1a\x1a.game.types.CommonResponse\x12@\n\x0cGetSimStatus\x12\x19.game.types.CommonRequest\x1a\x13.game.bff.SimStatus0\x01\x12\x46\n\rRegisterAgent\x12\x19.game.bff.AgentsInfo.Info\x1a\x1a.game.types.CommonResponse\x12H\n\x0fUnRegisterAgent\x12\x19.game.bff.AgentsInfo.Info\x1a\x1a.game.types.CommonResponse\x12@\n\rGetAgentsInfo\x12\x19.game.types.CommonRequest\x1a\x14.game.bff.AgentsInfo\x12\x43\n\x0fGetAgentsConfig\x12\x18.game.bff.RequiredAgents\x1a\x16.game.bff.AgentsConfig\x12\x45\n\x0fSetAgentsConfig\x12\x16.game.bff.AgentsConfig\x1a\x1a.game.types.CommonResponse\x12H\n\x0fRstAgentsConfig\x12\x19.game.types.CommonRequest\x1a\x1a.game.types.CommonResponse\x12?\n\rGetAgentsMode\x12\x18.game.bff.RequiredAgents\x1a\x14.game.bff.AgentsMode\x12\x41\n\rSetAgentsMode\x12\x14.game.bff.AgentsMode\x1a\x1a.game.types.CommonResponse\x12\x43\n\x0fGetAgentsWeight\x12\x18.game.bff.RequiredAgents\x1a\x16.game.bff.AgentsWeight\x12\x45\n\x0fSetAgentsWeight\x12\x16.game.bff.AgentsWeight\x1a\x1a.game.types.CommonResponse\x12\x43\n\x0fGetAgentsBuffer\x12\x18.game.bff.RequiredAgents\x1a\x16.game.bff.AgentsBuffer\x12\x45\n\x0fSetAgentsBuffer\x12\x16.game.bff.AgentsBuffer\x1a\x1a.game.types.CommonResponse\x12\x43\n\x0fGetAgentsStatus\x12\x18.game.bff.RequiredAgents\x1a\x16.game.bff.AgentsStatus\x12\x45\n\x0fSetAgentsStatus\x12\x16.game.bff.AgentsStatus\x1a\x1a.game.types.CommonResponseb\x06proto3'
+    b'\n\x10protos/bff.proto\x12\x08game.bff\x1a\x12protos/types.proto\x1a\x12protos/agent.proto\"\xb3\x05\n\x0bProxyConfig\x12\x33\n\x07\x63onfigs\x18\x01 \x03(\x0b\x32\".game.bff.ProxyConfig.ConfigsEntry\x12\x17\n\x0fsim_steps_ratio\x18\x02 \x01(\r\x1a\x32\n\x05Param\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\x1a\xc2\x02\n\x05Model\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x42\n\x0cinput_params\x18\x02 \x03(\x0b\x32,.game.bff.ProxyConfig.Model.InputParamsEntry\x12\x44\n\routput_params\x18\x03 \x03(\x0b\x32-.game.bff.ProxyConfig.Model.OutputParamsEntry\x1aO\n\x10InputParamsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12*\n\x05value\x18\x02 \x01(\x0b\x32\x1b.game.bff.ProxyConfig.Param:\x02\x38\x01\x1aP\n\x11OutputParamsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12*\n\x05value\x18\x02 \x01(\x0b\x32\x1b.game.bff.ProxyConfig.Param:\x02\x38\x01\x1a\x8e\x01\n\x06\x43onfig\x12\x38\n\x06models\x18\x01 \x03(\x0b\x32(.game.bff.ProxyConfig.Config.ModelsEntry\x1aJ\n\x0bModelsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12*\n\x05value\x18\x02 \x01(\x0b\x32\x1b.game.bff.ProxyConfig.Model:\x02\x38\x01\x1aL\n\x0c\x43onfigsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12+\n\x05value\x18\x02 \x01(\x0b\x32\x1c.game.bff.ProxyConfig.Config:\x02\x38\x01\"t\n\x0e\x43ontrolCommand\x12*\n\x03\x63md\x18\x01 \x01(\x0e\x32\x1d.game.bff.ControlCommand.Type\"6\n\x04Type\x12\t\n\x05START\x10\x00\x12\x0b\n\x07SUSPEND\x10\x01\x12\x0c\n\x08\x43ONTINUE\x10\x02\x12\x08\n\x04STOP\x10\x03\"\xac\x01\n\tSimConfig\x12\x15\n\rexp_design_id\x18\x01 \x01(\x04\x12\x11\n\ttime_step\x18\x02 \x01(\x01\x12\x13\n\x0bspeed_ratio\x18\x03 \x01(\x01\x12\x16\n\x0esim_start_time\x18\x04 \x01(\r\x12\x14\n\x0csim_duration\x18\x05 \x01(\r\x12\x18\n\x10\x65xp_repeat_times\x18\x06 \x01(\r\x12\x18\n\x10sample_done_func\x18\x07 \x01(\t\"\x86\x02\n\tSimStatus\x12\x32\n\tsrv_state\x18\x01 \x01(\x0e\x32\x1f.game.bff.SimStatus.ServerState\x12\x14\n\x0csim_cur_time\x18\x02 \x01(\r\x12\x14\n\x0csim_duration\x18\x03 \x01(\r\x12\x15\n\rreal_duration\x18\x04 \x01(\r\x12\x18\n\x10real_speed_ratio\x18\x05 \x01(\x01\x12\x15\n\rcur_sample_id\x18\x06 \x01(\r\x12\x19\n\x11\x65xp_repeated_time\x18\x07 \x01(\r\"6\n\x0bServerState\x12\x0b\n\x07STOPPED\x10\x00\x12\x0b\n\x07RUNNING\x10\x01\x12\r\n\tSUSPENDED\x10\x02\"L\n\nAgentsInfo\x12(\n\x05infos\x18\x01 \x03(\x0b\x32\x19.game.bff.AgentsInfo.Info\x1a\x14\n\x04Info\x12\x0c\n\x04\x61\x64\x64r\x18\x01 \x01(\t\"\x1f\n\x0eRequiredAgents\x12\r\n\x05\x61\x64\x64rs\x18\x01 \x03(\t\"\x8d\x01\n\x0c\x41gentsConfig\x12\x34\n\x07\x63onfigs\x18\x01 \x03(\x0b\x32#.game.bff.AgentsConfig.ConfigsEntry\x1aG\n\x0c\x43onfigsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12&\n\x05value\x18\x02 \x01(\x0b\x32\x17.game.agent.AgentConfig:\x02\x38\x01\"\x81\x01\n\nAgentsMode\x12.\n\x05modes\x18\x01 \x03(\x0b\x32\x1f.game.bff.AgentsMode.ModesEntry\x1a\x43\n\nModesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12$\n\x05value\x18\x02 \x01(\x0b\x32\x15.game.agent.AgentMode:\x02\x38\x01\"\x8d\x01\n\x0c\x41gentsWeight\x12\x34\n\x07weights\x18\x01 \x03(\x0b\x32#.game.bff.AgentsWeight.WeightsEntry\x1aG\n\x0cWeightsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12&\n\x05value\x18\x02 \x01(\x0b\x32\x17.game.agent.AgentWeight:\x02\x38\x01\"\x8d\x01\n\x0c\x41gentsBuffer\x12\x34\n\x07\x62uffers\x18\x01 \x03(\x0b\x32#.game.bff.AgentsBuffer.BuffersEntry\x1aG\n\x0c\x42uffersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12&\n\x05value\x18\x02 \x01(\x0b\x32\x17.game.agent.AgentBuffer:\x02\x38\x01\"\x8a\x01\n\x0c\x41gentsStatus\x12\x32\n\x06status\x18\x01 \x03(\x0b\x32\".game.bff.AgentsStatus.StatusEntry\x1a\x46\n\x0bStatusEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12&\n\x05value\x18\x02 \x01(\x0b\x32\x17.game.agent.AgentStatus:\x02\x38\x01\x32\xa5\x0b\n\x03\x42\x46\x46\x12\x42\n\x0eGetProxyConfig\x12\x19.game.types.CommonRequest\x1a\x15.game.bff.ProxyConfig\x12\x43\n\x0eSetProxyConfig\x12\x15.game.bff.ProxyConfig\x1a\x1a.game.types.CommonResponse\x12?\n\tProxyChat\x12\x16.game.types.JsonString\x1a\x16.game.types.JsonString(\x01\x30\x01\x12?\n\x07\x43ontrol\x12\x18.game.bff.ControlCommand\x1a\x1a.game.types.CommonResponse\x12>\n\x0cGetSimConfig\x12\x19.game.types.CommonRequest\x1a\x13.game.bff.SimConfig\x12?\n\x0cSetSimConfig\x12\x13.game.bff.SimConfig\x1a\x1a.game.types.CommonResponse\x12@\n\x0cGetSimStatus\x12\x19.game.types.CommonRequest\x1a\x13.game.bff.SimStatus0\x01\x12\x46\n\rRegisterAgent\x12\x19.game.bff.AgentsInfo.Info\x1a\x1a.game.types.CommonResponse\x12H\n\x0fUnRegisterAgent\x12\x19.game.bff.AgentsInfo.Info\x1a\x1a.game.types.CommonResponse\x12@\n\rGetAgentsInfo\x12\x19.game.types.CommonRequest\x1a\x14.game.bff.AgentsInfo\x12\x43\n\x0fGetAgentsConfig\x12\x18.game.bff.RequiredAgents\x1a\x16.game.bff.AgentsConfig\x12\x45\n\x0fSetAgentsConfig\x12\x16.game.bff.AgentsConfig\x1a\x1a.game.types.CommonResponse\x12H\n\x0fRstAgentsConfig\x12\x19.game.types.CommonRequest\x1a\x1a.game.types.CommonResponse\x12?\n\rGetAgentsMode\x12\x18.game.bff.RequiredAgents\x1a\x14.game.bff.AgentsMode\x12\x41\n\rSetAgentsMode\x12\x14.game.bff.AgentsMode\x1a\x1a.game.types.CommonResponse\x12\x43\n\x0fGetAgentsWeight\x12\x18.game.bff.RequiredAgents\x1a\x16.game.bff.AgentsWeight\x12\x45\n\x0fSetAgentsWeight\x12\x16.game.bff.AgentsWeight\x1a\x1a.game.types.CommonResponse\x12\x43\n\x0fGetAgentsBuffer\x12\x18.game.bff.RequiredAgents\x1a\x16.game.bff.AgentsBuffer\x12\x45\n\x0fSetAgentsBuffer\x12\x16.game.bff.AgentsBuffer\x1a\x1a.game.types.CommonResponse\x12\x43\n\x0fGetAgentsStatus\x12\x18.game.bff.RequiredAgents\x1a\x16.game.bff.AgentsStatus\x12\x45\n\x0fSetAgentsStatus\x12\x16.game.bff.AgentsStatus\x1a\x1a.game.types.CommonResponseb\x06proto3'
 )
 
 _PROXYCONFIG = DESCRIPTOR.message_types_by_name['ProxyConfig']
@@ -23,8 +23,8 @@ _PROXYCONFIG_PARAM = _PROXYCONFIG.nested_types_by_name['Param']
 _PROXYCONFIG_MODEL = _PROXYCONFIG.nested_types_by_name['Model']
 _PROXYCONFIG_MODEL_INPUTPARAMSENTRY = _PROXYCONFIG_MODEL.nested_types_by_name['InputParamsEntry']
 _PROXYCONFIG_MODEL_OUTPUTPARAMSENTRY = _PROXYCONFIG_MODEL.nested_types_by_name['OutputParamsEntry']
-_PROXYCONFIG_CONFIGS = _PROXYCONFIG.nested_types_by_name['Configs']
-_PROXYCONFIG_CONFIGS_MODELSENTRY = _PROXYCONFIG_CONFIGS.nested_types_by_name['ModelsEntry']
+_PROXYCONFIG_CONFIG = _PROXYCONFIG.nested_types_by_name['Config']
+_PROXYCONFIG_CONFIG_MODELSENTRY = _PROXYCONFIG_CONFIG.nested_types_by_name['ModelsEntry']
 _PROXYCONFIG_CONFIGSENTRY = _PROXYCONFIG.nested_types_by_name['ConfigsEntry']
 _CONTROLCOMMAND = DESCRIPTOR.message_types_by_name['ControlCommand']
 _SIMCONFIG = DESCRIPTOR.message_types_by_name['SimConfig']
@@ -86,9 +86,9 @@ ProxyConfig = _reflection.GeneratedProtocolMessageType(
                         'protos.bff_pb2'
                     # @@protoc_insertion_point(class_scope:game.bff.ProxyConfig.Model)
                 }),
-        'Configs':
+        'Config':
             _reflection.GeneratedProtocolMessageType(
-                'Configs',
+                'Config',
                 (_message.Message,),
                 {
                     'ModelsEntry':
@@ -96,15 +96,15 @@ ProxyConfig = _reflection.GeneratedProtocolMessageType(
                             'ModelsEntry',
                             (_message.Message,),
                             {
-                                'DESCRIPTOR': _PROXYCONFIG_CONFIGS_MODELSENTRY,
+                                'DESCRIPTOR': _PROXYCONFIG_CONFIG_MODELSENTRY,
                                 '__module__': 'protos.bff_pb2'
-                                # @@protoc_insertion_point(class_scope:game.bff.ProxyConfig.Configs.ModelsEntry)
+                                # @@protoc_insertion_point(class_scope:game.bff.ProxyConfig.Config.ModelsEntry)
                             }),
                     'DESCRIPTOR':
-                        _PROXYCONFIG_CONFIGS,
+                        _PROXYCONFIG_CONFIG,
                     '__module__':
                         'protos.bff_pb2'
-                    # @@protoc_insertion_point(class_scope:game.bff.ProxyConfig.Configs)
+                    # @@protoc_insertion_point(class_scope:game.bff.ProxyConfig.Config)
                 }),
         'ConfigsEntry':
             _reflection.GeneratedProtocolMessageType(
@@ -126,8 +126,8 @@ _sym_db.RegisterMessage(ProxyConfig.Param)
 _sym_db.RegisterMessage(ProxyConfig.Model)
 _sym_db.RegisterMessage(ProxyConfig.Model.InputParamsEntry)
 _sym_db.RegisterMessage(ProxyConfig.Model.OutputParamsEntry)
-_sym_db.RegisterMessage(ProxyConfig.Configs)
-_sym_db.RegisterMessage(ProxyConfig.Configs.ModelsEntry)
+_sym_db.RegisterMessage(ProxyConfig.Config)
+_sym_db.RegisterMessage(ProxyConfig.Config.ModelsEntry)
 _sym_db.RegisterMessage(ProxyConfig.ConfigsEntry)
 
 ControlCommand = _reflection.GeneratedProtocolMessageType(
@@ -310,8 +310,8 @@ if _descriptor._USE_C_DESCRIPTORS == False:
     _PROXYCONFIG_MODEL_INPUTPARAMSENTRY._serialized_options = b'8\001'
     _PROXYCONFIG_MODEL_OUTPUTPARAMSENTRY._options = None
     _PROXYCONFIG_MODEL_OUTPUTPARAMSENTRY._serialized_options = b'8\001'
-    _PROXYCONFIG_CONFIGS_MODELSENTRY._options = None
-    _PROXYCONFIG_CONFIGS_MODELSENTRY._serialized_options = b'8\001'
+    _PROXYCONFIG_CONFIG_MODELSENTRY._options = None
+    _PROXYCONFIG_CONFIG_MODELSENTRY._serialized_options = b'8\001'
     _PROXYCONFIG_CONFIGSENTRY._options = None
     _PROXYCONFIG_CONFIGSENTRY._serialized_options = b'8\001'
     _AGENTSCONFIG_CONFIGSENTRY._options = None
@@ -325,7 +325,7 @@ if _descriptor._USE_C_DESCRIPTORS == False:
     _AGENTSSTATUS_STATUSENTRY._options = None
     _AGENTSSTATUS_STATUSENTRY._serialized_options = b'8\001'
     _PROXYCONFIG._serialized_start = 71
-    _PROXYCONFIG._serialized_end = 765
+    _PROXYCONFIG._serialized_end = 762
     _PROXYCONFIG_PARAM._serialized_start = 164
     _PROXYCONFIG_PARAM._serialized_end = 214
     _PROXYCONFIG_MODEL._serialized_start = 217
@@ -334,48 +334,48 @@ if _descriptor._USE_C_DESCRIPTORS == False:
     _PROXYCONFIG_MODEL_INPUTPARAMSENTRY._serialized_end = 457
     _PROXYCONFIG_MODEL_OUTPUTPARAMSENTRY._serialized_start = 459
     _PROXYCONFIG_MODEL_OUTPUTPARAMSENTRY._serialized_end = 539
-    _PROXYCONFIG_CONFIGS._serialized_start = 542
-    _PROXYCONFIG_CONFIGS._serialized_end = 686
-    _PROXYCONFIG_CONFIGS_MODELSENTRY._serialized_start = 612
-    _PROXYCONFIG_CONFIGS_MODELSENTRY._serialized_end = 686
-    _PROXYCONFIG_CONFIGSENTRY._serialized_start = 688
-    _PROXYCONFIG_CONFIGSENTRY._serialized_end = 765
-    _CONTROLCOMMAND._serialized_start = 767
-    _CONTROLCOMMAND._serialized_end = 883
-    _CONTROLCOMMAND_TYPE._serialized_start = 829
-    _CONTROLCOMMAND_TYPE._serialized_end = 883
-    _SIMCONFIG._serialized_start = 886
-    _SIMCONFIG._serialized_end = 1058
-    _SIMSTATUS._serialized_start = 1061
-    _SIMSTATUS._serialized_end = 1323
-    _SIMSTATUS_SERVERSTATE._serialized_start = 1269
-    _SIMSTATUS_SERVERSTATE._serialized_end = 1323
-    _AGENTSINFO._serialized_start = 1325
-    _AGENTSINFO._serialized_end = 1401
-    _AGENTSINFO_INFO._serialized_start = 1381
-    _AGENTSINFO_INFO._serialized_end = 1401
-    _REQUIREDAGENTS._serialized_start = 1403
-    _REQUIREDAGENTS._serialized_end = 1434
-    _AGENTSCONFIG._serialized_start = 1437
-    _AGENTSCONFIG._serialized_end = 1578
-    _AGENTSCONFIG_CONFIGSENTRY._serialized_start = 1507
-    _AGENTSCONFIG_CONFIGSENTRY._serialized_end = 1578
-    _AGENTSMODE._serialized_start = 1581
-    _AGENTSMODE._serialized_end = 1710
-    _AGENTSMODE_MODESENTRY._serialized_start = 1643
-    _AGENTSMODE_MODESENTRY._serialized_end = 1710
-    _AGENTSWEIGHT._serialized_start = 1713
-    _AGENTSWEIGHT._serialized_end = 1854
-    _AGENTSWEIGHT_WEIGHTSENTRY._serialized_start = 1783
-    _AGENTSWEIGHT_WEIGHTSENTRY._serialized_end = 1854
-    _AGENTSBUFFER._serialized_start = 1857
-    _AGENTSBUFFER._serialized_end = 1998
-    _AGENTSBUFFER_BUFFERSENTRY._serialized_start = 1927
-    _AGENTSBUFFER_BUFFERSENTRY._serialized_end = 1998
-    _AGENTSSTATUS._serialized_start = 2001
-    _AGENTSSTATUS._serialized_end = 2139
-    _AGENTSSTATUS_STATUSENTRY._serialized_start = 2069
-    _AGENTSSTATUS_STATUSENTRY._serialized_end = 2139
-    _BFF._serialized_start = 2142
-    _BFF._serialized_end = 3587
+    _PROXYCONFIG_CONFIG._serialized_start = 542
+    _PROXYCONFIG_CONFIG._serialized_end = 684
+    _PROXYCONFIG_CONFIG_MODELSENTRY._serialized_start = 610
+    _PROXYCONFIG_CONFIG_MODELSENTRY._serialized_end = 684
+    _PROXYCONFIG_CONFIGSENTRY._serialized_start = 686
+    _PROXYCONFIG_CONFIGSENTRY._serialized_end = 762
+    _CONTROLCOMMAND._serialized_start = 764
+    _CONTROLCOMMAND._serialized_end = 880
+    _CONTROLCOMMAND_TYPE._serialized_start = 826
+    _CONTROLCOMMAND_TYPE._serialized_end = 880
+    _SIMCONFIG._serialized_start = 883
+    _SIMCONFIG._serialized_end = 1055
+    _SIMSTATUS._serialized_start = 1058
+    _SIMSTATUS._serialized_end = 1320
+    _SIMSTATUS_SERVERSTATE._serialized_start = 1266
+    _SIMSTATUS_SERVERSTATE._serialized_end = 1320
+    _AGENTSINFO._serialized_start = 1322
+    _AGENTSINFO._serialized_end = 1398
+    _AGENTSINFO_INFO._serialized_start = 1378
+    _AGENTSINFO_INFO._serialized_end = 1398
+    _REQUIREDAGENTS._serialized_start = 1400
+    _REQUIREDAGENTS._serialized_end = 1431
+    _AGENTSCONFIG._serialized_start = 1434
+    _AGENTSCONFIG._serialized_end = 1575
+    _AGENTSCONFIG_CONFIGSENTRY._serialized_start = 1504
+    _AGENTSCONFIG_CONFIGSENTRY._serialized_end = 1575
+    _AGENTSMODE._serialized_start = 1578
+    _AGENTSMODE._serialized_end = 1707
+    _AGENTSMODE_MODESENTRY._serialized_start = 1640
+    _AGENTSMODE_MODESENTRY._serialized_end = 1707
+    _AGENTSWEIGHT._serialized_start = 1710
+    _AGENTSWEIGHT._serialized_end = 1851
+    _AGENTSWEIGHT_WEIGHTSENTRY._serialized_start = 1780
+    _AGENTSWEIGHT_WEIGHTSENTRY._serialized_end = 1851
+    _AGENTSBUFFER._serialized_start = 1854
+    _AGENTSBUFFER._serialized_end = 1995
+    _AGENTSBUFFER_BUFFERSENTRY._serialized_start = 1924
+    _AGENTSBUFFER_BUFFERSENTRY._serialized_end = 1995
+    _AGENTSSTATUS._serialized_start = 1998
+    _AGENTSSTATUS._serialized_end = 2136
+    _AGENTSSTATUS_STATUSENTRY._serialized_start = 2066
+    _AGENTSSTATUS_STATUSENTRY._serialized_end = 2136
+    _BFF._serialized_start = 2139
+    _BFF._serialized_end = 3584
 # @@protoc_insertion_point(module_scope)

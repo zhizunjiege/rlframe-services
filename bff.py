@@ -39,9 +39,9 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
 
     def ProxyChat(self, request_iterator, context):
         for request in request_iterator:
-            result = {'states': json.loads(request.states), 'done': False}
-            exec(self.sdfunc, result)
-            done = result['done']
+            info = json.loads(request.json)
+            exec(self.sdfunc, info)
+            done = info['done']
             response = types_pb2.JsonString(json=json.dumps({'done': done}))
             if done:
                 self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.STOP_CURRENT_SAMPLE))

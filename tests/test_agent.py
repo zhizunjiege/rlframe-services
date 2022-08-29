@@ -1,14 +1,11 @@
 import json
+import time
 import unittest
 
 import grpc
 
 from protos import agent_pb2
 from protos import agent_pb2_grpc
-from protos import engine_pb2
-from protos import engine_pb2_grpc
-from protos import bff_pb2
-from protos import bff_pb2_grpc
 from protos import types_pb2
 
 
@@ -28,29 +25,22 @@ class AgentServicerTestCase(unittest.TestCase):
         self.assertEqual(res.msg, '')
 
     def test_01_agentconfig(self):
+        req = agent_pb2.AgentConfig()
         with open('examples/states_inputs_func.py', 'r') as f1, \
              open('examples/outputs_actions_func.py', 'r') as f2, \
              open('examples/reward_func.py', 'r') as f3, \
              open('examples/hypers.json', 'r') as f4, \
              open('examples/builder.py', 'r') as f5, \
              open('examples/structures.json', 'r') as f6:
-            states_inputs_func = f1.read()
-            outputs_actions_func = f2.read()
-            reward_func = f3.read()
-            hypers = f4.read()
-            builder = f5.read()
-            structures = f6.read()
+            req.training = False
+            req.states_inputs_func = f1.read()
+            req.outputs_actions_func = f2.read()
+            req.reward_func = f3.read()
+            req.type = 'DQN'
+            req.hypers = f4.read()
+            req.builder = f5.read()
+            req.structures = f6.read()
 
-        req = agent_pb2.AgentConfig(
-            training=False,
-            states_inputs_func=states_inputs_func,
-            outputs_actions_func=outputs_actions_func,
-            reward_func=reward_func,
-            type='DQN',
-            hypers=hypers,
-            builder=builder,
-            structures='',
-        )
         res = self.stub.SetAgentConfig(req)
         self.assertEqual(res.code, 0)
 
@@ -60,16 +50,8 @@ class AgentServicerTestCase(unittest.TestCase):
         res = self.stub.RstAgentConfig(types_pb2.CommonRequest())
         self.assertEqual(res.code, 0)
 
-        req = agent_pb2.AgentConfig(
-            training=True,
-            states_inputs_func=states_inputs_func,
-            outputs_actions_func=outputs_actions_func,
-            reward_func=reward_func,
-            type='DQN',
-            hypers=hypers,
-            builder='',
-            structures=structures,
-        )
+        req.training = True
+        req.builder = ''
         res = self.stub.SetAgentConfig(req)
         self.assertEqual(res.code, 0)
 
@@ -107,11 +89,15 @@ class AgentServicerTestCase(unittest.TestCase):
         def generator():
             info = {'states': {'example': [1, 2, 3, 4]}, 'done': False}
             req = types_pb2.JsonString(json=json.dumps(info))
-            for _ in range(10):
+            for _ in range(100):
                 yield req
             info['done'] = True
             yield types_pb2.JsonString(json=json.dumps(info))
 
+        t1 = time.time()
         for res in self.stub.GetAction(generator()):
             info = json.loads(res.json)
             self.assertEqual(type(info['actions']['example']), int)
+        t2 = time.time()
+        print()
+        print(f'Time cost: {t2 - t1} s, FPS: {100 / (t2 - t1)}')
