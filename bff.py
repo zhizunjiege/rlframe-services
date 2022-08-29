@@ -42,11 +42,12 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
             result = {'states': json.loads(request.states), 'done': False}
             exec(self.sdfunc, result)
             done = result['done']
+            response = types_pb2.JsonString(json=json.dumps({'done': done}))
             if done:
                 self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.STOP_CURRENT_SAMPLE))
-                return bff_pb2.JsonString(json.dumps(None))
+                return response
             else:
-                yield types_pb2.JsonString(json=json.dumps({'done': done}))
+                yield response
 
     def Control(self, request, context):
         if request.cmd == bff_pb2.ControlCommand.Type.START:
@@ -193,6 +194,7 @@ def bff_server(engine, ip, port, max_workers):
     bff_pb2_grpc.add_BFFServicer_to_server(BFFServicer(engine=engine), server)
     server.add_insecure_port(f'{ip}:{port}')
     server.start()
+    print(f'BFF server started at {ip}:{port}')
     try:
         server.wait_for_termination()
     except KeyboardInterrupt:

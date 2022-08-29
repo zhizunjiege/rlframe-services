@@ -93,7 +93,7 @@ class RLModelBase(ABC):
         """
         status = {}
         for key in self.__dict__:
-            if key[0] == '_' and key[1] != '_':
+            if key[0] == '_' and key.find('__') == -1:
                 name = key[1:]
                 status[name] = self.__dict__[key]
         return status

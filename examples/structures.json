@@ -1,34 +1,40 @@
-{
-  "online": {
-    "layers": [
-      {
-        "type": "input",
-        "params": {
-          "shape": 4
+[
+  {
+    "name": "online",
+    "struct": {
+      "layers": [
+        {
+          "type": "input",
+          "params": {
+            "shape": 4
+          }
+        },
+        {
+          "type": "dense",
+          "params": {
+            "units": 16,
+            "activation": "relu"
+          }
+        },
+        {
+          "type": "dense",
+          "params": {
+            "units": 16,
+            "activation": "relu"
+          }
+        },
+        {
+          "type": "dense",
+          "params": {
+            "units": 2,
+            "activation": "linear"
+          }
         }
-      },
-      {
-        "type": "dense",
-        "params": {
-          "units": 16,
-          "activation": "relu"
-        }
-      },
-      {
-        "type": "dense",
-        "params": {
-          "units": 16,
-          "activation": "relu"
-        }
-      },
-      {
-        "type": "dense",
-        "params": {
-          "units": 2,
-          "activation": "linear"
-        }
-      }
-    ]
+      ]
+    }
   },
-  "target": "online"
-}
+  {
+    "name": "target",
+    "struct": "online"
+  }
+]

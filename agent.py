@@ -114,7 +114,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
 
     def SetAgentStatus(self, request, context):
         if self.model is not None:
-            self.model.set_status(json.loads(request.status))
+            self.model.set_status(**json.loads(request.status))
         return types_pb2.CommonResponse()
 
     def GetAction(self, request_iterator, context):
@@ -154,7 +154,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
                         self.rfunc_args['outputs'] = outputs
                 yield types_pb2.JsonString(json=json.dumps({'actions': actions}))
         self.__reset_args()
-        return types_pb2.JsonString(json=json.dumps(None))
+        return types_pb2.JsonString(json='')
 
 
 def agent_server(ip, port, max_workers):
@@ -162,6 +162,7 @@ def agent_server(ip, port, max_workers):
     agent_pb2_grpc.add_AgentServicer_to_server(AgentServicer(), server)
     server.add_insecure_port(f'{ip}:{port}')
     server.start()
+    print(f'Agent server started at {ip}:{port}')
     try:
         server.wait_for_termination()
     except KeyboardInterrupt:

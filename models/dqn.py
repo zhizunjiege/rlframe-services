@@ -205,7 +205,7 @@ class DQN(RLModelBase):
 
             done: Indicating whether terminated or not.
         """
-        self.__replay_buffer.store(states, actions, next_states, reward, done)
+        self.__replay_buffer.store(states, actions, reward, next_states, done)
 
     def train(self) -> None:
         """Train model."""

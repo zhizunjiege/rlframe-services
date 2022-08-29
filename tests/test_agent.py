@@ -41,26 +41,24 @@ class AgentServicerTestCase(unittest.TestCase):
             builder = f5.read()
             structures = f6.read()
 
-        # req = agent_pb2.AgentConfig(
-        #     training=True,
-        #     states_inputs_func=states_inputs_func,
-        #     outputs_actions_func=outputs_actions_func,
-        #     reward_func=reward_func,
-        #     type='DQN',
-        #     hypers=hypers,
-        #     builder=builder,
-        #     structures='',
-        # )
-        # res = self.stub.SetAgentConfig(req)
-        # self.assertEqual(res.code, 0)
-        # self.assertEqual(res.msg, '')
+        req = agent_pb2.AgentConfig(
+            training=False,
+            states_inputs_func=states_inputs_func,
+            outputs_actions_func=outputs_actions_func,
+            reward_func=reward_func,
+            type='DQN',
+            hypers=hypers,
+            builder=builder,
+            structures='',
+        )
+        res = self.stub.SetAgentConfig(req)
+        self.assertEqual(res.code, 0)
 
-        # res = self.stub.GetAgentConfig(types_pb2.CommonRequest())
-        # self.assertEqual(res.type, 'DQN')
+        res = self.stub.GetAgentConfig(types_pb2.CommonRequest())
+        self.assertEqual(res.type, 'DQN')
 
-        # res = self.stub.RstAgentConfig(types_pb2.CommonRequest())
-        # self.assertEqual(res.code, 0)
-        # self.assertEqual(res.msg, '')
+        res = self.stub.RstAgentConfig(types_pb2.CommonRequest())
+        self.assertEqual(res.code, 0)
 
         req = agent_pb2.AgentConfig(
             training=True,
@@ -74,4 +72,46 @@ class AgentServicerTestCase(unittest.TestCase):
         )
         res = self.stub.SetAgentConfig(req)
         self.assertEqual(res.code, 0)
-        self.assertEqual(res.msg, '')
+
+    def test_02_agentmode(self):
+        res = self.stub.SetAgentMode(agent_pb2.AgentMode(training=True))
+        self.assertEqual(res.code, 0)
+
+        res = self.stub.GetAgentMode(types_pb2.CommonRequest())
+        self.assertTrue(res.training)
+
+    def test_03_agentweight(self):
+        res = self.stub.GetAgentWeight(types_pb2.CommonRequest())
+        self.assertTrue(len(res.weights) > 0)
+
+        res = self.stub.SetAgentWeight(agent_pb2.AgentWeight(weights=res.weights))
+        self.assertEqual(res.code, 0)
+
+    def test_04_agentbuffer(self):
+        res = self.stub.GetAgentBuffer(types_pb2.CommonRequest())
+        self.assertTrue(len(res.buffer) > 0)
+
+        res = self.stub.SetAgentBuffer(agent_pb2.AgentBuffer(buffer=res.buffer))
+        self.assertEqual(res.code, 0)
+
+    def test_05_agentstatus(self):
+        res = self.stub.GetAgentStatus(types_pb2.CommonRequest())
+        status = json.loads(res.status)
+        self.assertEqual(status['train_steps'], 0)
+
+        res = self.stub.SetAgentStatus(agent_pb2.AgentStatus(status=res.status))
+        self.assertEqual(res.code, 0)
+
+    def test_06_getaction(self):
+
+        def generator():
+            info = {'states': {'example': [1, 2, 3, 4]}, 'done': False}
+            req = types_pb2.JsonString(json=json.dumps(info))
+            for _ in range(10):
+                yield req
+            info['done'] = True
+            yield types_pb2.JsonString(json=json.dumps(info))
+
+        for res in self.stub.GetAction(generator()):
+            info = json.loads(res.json)
+            self.assertEqual(type(info['actions']['example']), int)
