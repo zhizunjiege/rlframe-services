@@ -97,6 +97,8 @@ class DQN(RLModelBase):
         Args:
             training: Whether the model is in training mode.
 
+            networks: Networks of model.
+
             lr: Learning rate.
 
             gamma: Discount factor.
@@ -144,28 +146,28 @@ class DQN(RLModelBase):
             tf.random.set_seed(seed)
             np.random.seed(seed)
 
-            self.__online_net = networks['online']
-            self.__target_net = networks['target']
-            self.__update_target()
+            self.online_net = networks['online']
+            self.target_net = networks['target']
+            self.update_target()
 
             self._epsilon = epsilon_max
             self._react_steps = 0
             self._train_steps = 0
-            self._states_dim = self.__online_net.layers[0].input_shape[0][1]
-            self._actions_num = self.__online_net.layers[-1].output_shape[1]
+            self._states_dim = self.online_net.layers[0].input_shape[0][1]
+            self._actions_num = self.online_net.layers[-1].output_shape[1]
 
-            self.__optimizer = tf.keras.optimizers.Adam(lr)
-            self.__replay_buffer = ReplayBuffer(self._states_dim, 1, replay_size)
+            self.optimizer = tf.keras.optimizers.Adam(lr)
+            self.replay_buffer = ReplayBuffer(self._states_dim, 1, replay_size)
 
-            log_dir = f'logs/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
-            self.__summary_writer = tf.summary.create_file_writer(log_dir)
-            tf.summary.trace_on(graph=True, profiler=True)
-            with self.__summary_writer.as_default():
-                tf.summary.graph(tf.Graph())
+            self.log_dir = f'logs/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
+            self.summary_writer = tf.summary.create_file_writer(self.log_dir)
+            # tf.summary.trace_on(graph=True, profiler=True)
+            # with self.summary_writer.as_default():
+            #     tf.summary.graph(tf.Graph())
         else:
-            self.__online_net = networks['online']
-            self.__target_net = None
-            self.__replay_buffer = None
+            self.online_net = networks['online']
+            self.target_net = None
+            self.replay_buffer = None
 
     def react(self, states: np.ndarray) -> int:
         """Get action.
@@ -181,13 +183,13 @@ class DQN(RLModelBase):
                 action = np.random.randint(0, self._actions_num)
             else:
                 states = states[np.newaxis, :]
-                logits = self.__online_net(states, training=False)
+                logits = self.online_net(states, training=False)
                 action = np.argmax(logits[0])
             self._epsilon = max(self.epsilon_min, self._epsilon * self.epsilon_decay)
             self._react_steps += 1
         else:
             states = states[np.newaxis, :]
-            logits = self.__online_net(states, training=False)
+            logits = self.online_net(states, training=False)
             action = np.argmax(logits[0])
         return int(action)
 
@@ -205,33 +207,46 @@ class DQN(RLModelBase):
 
             done: Indicating whether terminated or not.
         """
-        self.__replay_buffer.store(states, actions, reward, next_states, done)
+        self.replay_buffer.store(states, actions, reward, next_states, done)
 
     def train(self) -> None:
         """Train model."""
-        if self.__replay_buffer.size >= self.update_after and self._react_steps % self.update_online_every == 0:
-            with self.__summary_writer.as_default():
-                for _ in range(self.update_online_every):
-                    batch = self.__replay_buffer.sample(self.batch_size)
-                    with tf.GradientTape() as tape:
-                        logits = self.__online_net(batch['obs1'], training=True)
-                        q_values = tf.reduce_sum(logits * tf.one_hot(batch['acts'].squeeze(axis=1), self._actions_num), axis=1)
-                        next_logits = self.__target_net(batch['obs2'], training=True)
-                        next_q_values = tf.reduce_max(next_logits, axis=1)
-                        target_q_values = batch['rews'] + self.gamma * (1 - batch['done']) * next_q_values
-                        td_errors = tf.stop_gradient(target_q_values) - q_values
-                        loss = tf.reduce_mean(tf.math.square(td_errors))
-                    grads = tape.gradient(loss, self.__online_net.trainable_variables)
-                    self.__optimizer.apply_gradients(zip(grads, self.__online_net.trainable_variables))
-                    self._train_steps += 1
-                    if self._train_steps % self.update_target_every == 0:
-                        self.__update_target()
+        if self.replay_buffer.size >= self.update_after and self._react_steps % self.update_online_every == 0:
+            for _ in tf.range(self.update_online_every):
+                batch = self.replay_buffer.sample(self.batch_size)
 
-                    tf.summary.scalar('loss', loss, step=self._train_steps)
-                    tf.summary.scalar('td_error', tf.reduce_mean(tf.abs(td_errors)), step=self._train_steps)
+                grads = self.calc_grads(
+                    tf.constant(batch['obs1'], dtype=tf.float32),
+                    tf.squeeze(tf.constant(batch['acts'], dtype=tf.int32), axis=1),
+                    tf.constant(batch['obs2'], dtype=tf.float32),
+                    tf.constant(batch['rews'], dtype=tf.float32),
+                    tf.constant(batch['done'], dtype=tf.float32),
+                    step=tf.constant(self._train_steps, dtype=tf.int64),
+                )
 
-    def __update_target(self):
-        self.__target_net.set_weights(self.__online_net.get_weights())
+                self.optimizer.apply_gradients(zip(grads, self.online_net.trainable_variables))
+                self._train_steps += 1
+                if self._train_steps % self.update_target_every == 0:
+                    self.update_target()
+
+    @tf.function
+    def calc_grads(self, states, actions, next_states, rewards, done, step):
+        with tf.GradientTape() as tape:
+            logits = self.online_net(states, training=True)
+            q_values = tf.reduce_sum(tf.multiply(logits, tf.one_hot(actions, self._actions_num)), axis=1)
+            next_logits = self.target_net(next_states, training=True)
+            next_q_values = tf.reduce_max(next_logits, axis=1)
+            target_q_values = tf.add(rewards, tf.multiply(self.gamma, tf.multiply(tf.subtract(1.0, done), next_q_values)))
+            td_errors = tf.subtract(tf.stop_gradient(target_q_values), q_values)
+            loss = tf.reduce_mean(tf.math.square(td_errors))
+        grads = tape.gradient(loss, self.online_net.trainable_variables)
+        with self.summary_writer.as_default():
+            tf.summary.scalar('loss', loss, step=step)
+            tf.summary.scalar('td_error', tf.reduce_mean(tf.abs(td_errors)), step=step)
+        return grads
+
+    def update_target(self):
+        self.target_net.set_weights(self.online_net.get_weights())
 
     def get_weights(self) -> Dict[str, np.ndarray]:
         """Get weights of neural networks.
@@ -240,10 +255,10 @@ class DQN(RLModelBase):
             Weights of `online network` and `target network`(if exists).
         """
         weights = {
-            'online': self.__online_net.get_weights(),
+            'online': self.online_net.get_weights(),
         }
-        if self.training and self.__target_net is not None:
-            weights['target'] = self.__target_net.get_weights()
+        if self.training and self.target_net is not None:
+            weights['target'] = self.target_net.get_weights()
         return weights
 
     def set_weights(self, weights: Dict[str, np.ndarray]) -> None:
@@ -252,9 +267,9 @@ class DQN(RLModelBase):
         Args:
             weights: Weights of `online network` and `target network`(if exists).
         """
-        self.__online_net.set_weights(weights['online'])
+        self.online_net.set_weights(weights['online'])
         if self.training and 'target' in weights:
-            self.__target_net.set_weights(weights['target'])
+            self.target_net.set_weights(weights['target'])
 
     def get_buffer(self) -> ReplayBuffer:
         """Get replay buffer of model.
@@ -262,7 +277,7 @@ class DQN(RLModelBase):
         Returns:
             Replay buffer.
         """
-        return self.__replay_buffer
+        return self.replay_buffer
 
     def set_buffer(self, buffer: ReplayBuffer) -> None:
         """Set replay buffer of model.
@@ -270,4 +285,4 @@ class DQN(RLModelBase):
         Args:
             buffer: Replay buffer.
         """
-        self.__replay_buffer = buffer
+        self.replay_buffer = buffer

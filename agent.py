@@ -9,7 +9,8 @@ from protos import agent_pb2
 from protos import agent_pb2_grpc
 from protos import types_pb2
 
-from models import default_builder, RLModels
+from models import RLModels
+from models.utils import default_builder
 
 
 class AgentServicer(agent_pb2_grpc.AgentServicer):
@@ -62,6 +63,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             rfunc_src = request.reward_func + '\nreward = func(states, actions, next_states)'
             self.rfunc = compile(rfunc_src, '', 'exec')
 
+        hypers = json.loads(request.hypers)
         if request.builder:
             result = {}
             builder_src = request.builder + '\nnetworks = func()'
@@ -70,7 +72,6 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         else:
             structures = json.loads(request.structures)
             networks = default_builder(structures)
-        hypers = json.loads(request.hypers)
         self.model = RLModels[request.type](
             training=request.training,
             networks=networks,
@@ -120,6 +121,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         return types_pb2.CommonResponse()
 
     def GetAction(self, request_iterator, context):
+        response = types_pb2.JsonString()
         if self.model is not None:
             for request in request_iterator:
                 info = json.loads(request.json)
@@ -154,9 +156,11 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
                         self.rfunc_args['inputs'] = self.rfunc_args['next_inputs']
                         self.rfunc_args['actions'] = actions
                         self.rfunc_args['outputs'] = outputs
-                yield types_pb2.JsonString(json=json.dumps({'actions': actions}))
+                response.json = json.dumps({'actions': actions})
+                yield response
         self.__reset_args()
-        return types_pb2.JsonString(json='')
+        response.json = ''
+        return response
 
 
 def agent_server(ip, port, max_workers):
