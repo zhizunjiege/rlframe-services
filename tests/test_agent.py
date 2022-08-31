@@ -89,7 +89,7 @@ class AgentServicerTestCase(unittest.TestCase):
         def generator():
             info = {'states': {'example': [1, 2, 3, 4]}, 'done': False}
             req = types_pb2.JsonString(json=json.dumps(info))
-            for _ in range(100):
+            for _ in range(10000):
                 yield req
             info['done'] = True
             yield types_pb2.JsonString(json=json.dumps(info))
@@ -100,4 +100,4 @@ class AgentServicerTestCase(unittest.TestCase):
             self.assertEqual(type(info['actions']['example']), int)
         t2 = time.time()
         print()
-        print(f'Time cost: {t2 - t1} s, FPS: {100 / (t2 - t1)}')
+        print(f'Time cost: {t2 - t1} s, FPS: {10000 / (t2 - t1)}')

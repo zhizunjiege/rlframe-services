@@ -189,7 +189,7 @@ class DQN(RLModelBase):
             states = states[np.newaxis, :]
             logits = self.__online_net(states, training=False)
             action = np.argmax(logits[0])
-        return action
+        return int(action)
 
     def store(self, states: np.ndarray, actions: int, next_states: np.ndarray, reward: float, done: bool) -> None:
         """Store experience repplay data.

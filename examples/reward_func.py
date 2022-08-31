@@ -1,4 +1,5 @@
-def func(states, actions, next_states, done):
+def func(states, actions, next_states):
+    global done
     if done:
         return 1.0
     else:
