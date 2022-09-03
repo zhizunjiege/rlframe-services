@@ -4,16 +4,31 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Compile Protos",
+      "label": "Compile Protos (Python)",
       "type": "shell",
       "command": "conda activate game; python -m grpc_tools.protoc --proto_path=. --python_out=. --grpc_python_out=. ./protos/*.proto; yapf protos -i -p -r",
-      "group": "build"
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Compile Protos (C++)",
+      "type": "shell",
+      "command": "protoc -I . --grpc_out=. --plugin=protoc-gen-grpc=\"D:\\Programs\\grpc\\bin\\grpc_cpp_plugin.exe\" ./protos/*.proto; protoc -I . --cpp_out=. ./protos/*.proto",
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
     },
     {
       "label": "Run UnitTest",
       "type": "shell",
       "command": "conda activate game; python -m unittest discover -s tests",
-      "group": "test"
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
     }
   ]
 }
