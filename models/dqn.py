@@ -1,74 +1,11 @@
 from datetime import datetime
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 
 import numpy as np
 import tensorflow as tf
 
 from .base import RLModelBase
-
-
-class ReplayBuffer:
-    """A simple experience replay buffer.
-
-    It inherited codes from spinningup project: https://github.com/openai/spinningup.
-    """
-
-    def __init__(self, obs_dim: int, act_dim: int, max_size: int) -> None:
-        """Init a replay buffer.
-
-        Args:
-            obs_dim: Dimension of observation space.
-
-            act_dim: Dimension of action space.
-
-            max_size: Maximum size of buffer.
-        """
-        self.obs1_buf = np.zeros([max_size, obs_dim])
-        self.obs2_buf = np.zeros([max_size, obs_dim])
-        self.acts_buf = np.zeros([max_size, act_dim])
-        self.rews_buf = np.zeros(max_size)
-        self.done_buf = np.zeros(max_size)
-        self.ptr, self.size, self.max_size = 0, 0, max_size
-
-    def store(self, obs: np.ndarray, act: Union[int, np.ndarray], rew: float, next_obs: np.ndarray, done: bool) -> None:
-        """Store experience data.
-
-        Args:
-            obs: Observation.
-
-            act: Action.
-
-            rew: Reward.
-
-            next_obs: Next observation.
-
-            done: Indicate whether terminated or not.
-        """
-        self.obs1_buf[self.ptr] = obs
-        self.obs2_buf[self.ptr] = next_obs
-        self.acts_buf[self.ptr] = act
-        self.rews_buf[self.ptr] = rew
-        self.done_buf[self.ptr] = done
-        self.ptr = (self.ptr + 1) % self.max_size
-        self.size = min(self.size + 1, self.max_size)
-
-    def sample(self, batch_size: int) -> Dict[str, np.ndarray]:
-        """Randomly sample a batch of data from buffer.
-
-        Args:
-            batch_size: Size of batch.
-
-        Returns:
-            Sampled data.
-        """
-        idxs = np.random.randint(0, self.size, size=batch_size)
-        return dict(
-            obs1=self.obs1_buf[idxs],
-            obs2=self.obs2_buf[idxs],
-            acts=self.acts_buf[idxs],
-            rews=self.rews_buf[idxs],
-            done=self.done_buf[idxs],
-        )
+from .replay.simple_replay import SimpleReplay
 
 
 class DQN(RLModelBase):
@@ -157,7 +94,7 @@ class DQN(RLModelBase):
             self._actions_num = self.online_net.layers[-1].output_shape[1]
 
             self.optimizer = tf.keras.optimizers.Adam(lr)
-            self.replay_buffer = ReplayBuffer(self._states_dim, 1, replay_size)
+            self.replay_buffer = SimpleReplay(self._states_dim, 1, replay_size, dtype=np.float32)
 
             self.log_dir = f'logs/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
             self.summary_writer = tf.summary.create_file_writer(self.log_dir)
@@ -212,16 +149,15 @@ class DQN(RLModelBase):
     def train(self) -> None:
         """Train model."""
         if self.replay_buffer.size >= self.update_after and self._react_steps % self.update_online_every == 0:
-            for _ in tf.range(self.update_online_every):
+            for _ in range(self.update_online_every):
                 batch = self.replay_buffer.sample(self.batch_size)
 
                 grads = self.calc_grads(
-                    tf.constant(batch['obs1'], dtype=tf.float32),
-                    tf.squeeze(tf.constant(batch['acts'], dtype=tf.int32), axis=1),
-                    tf.constant(batch['obs2'], dtype=tf.float32),
-                    tf.constant(batch['rews'], dtype=tf.float32),
-                    tf.constant(batch['done'], dtype=tf.float32),
-                    step=tf.constant(self._train_steps, dtype=tf.int64),
+                    batch['obs1'],
+                    batch['acts'].astype(np.int32).squeeze(axis=1),
+                    batch['obs2'],
+                    batch['rews'],
+                    batch['done'],
                 )
 
                 self.optimizer.apply_gradients(zip(grads, self.online_net.trainable_variables))
@@ -230,19 +166,19 @@ class DQN(RLModelBase):
                     self.update_target()
 
     @tf.function
-    def calc_grads(self, states, actions, next_states, rewards, done, step):
+    def calc_grads(self, states, actions, next_states, rewards, done):
         with tf.GradientTape() as tape:
             logits = self.online_net(states, training=True)
-            q_values = tf.reduce_sum(tf.multiply(logits, tf.one_hot(actions, self._actions_num)), axis=1)
+            q_values = tf.math.reduce_sum(logits * tf.one_hot(actions, self._actions_num), axis=1)
             next_logits = self.target_net(next_states, training=True)
-            next_q_values = tf.reduce_max(next_logits, axis=1)
-            target_q_values = tf.add(rewards, tf.multiply(self.gamma, tf.multiply(tf.subtract(1.0, done), next_q_values)))
-            td_errors = tf.subtract(tf.stop_gradient(target_q_values), q_values)
-            loss = tf.reduce_mean(tf.math.square(td_errors))
+            next_q_values = tf.math.reduce_max(next_logits, axis=1)
+            target_q_values = rewards + self.gamma * (1 - done) * next_q_values
+            td_errors = tf.stop_gradient(target_q_values) - q_values
+            loss = tf.math.reduce_mean(tf.math.square(td_errors))
         grads = tape.gradient(loss, self.online_net.trainable_variables)
         with self.summary_writer.as_default():
-            tf.summary.scalar('loss', loss, step=step)
-            tf.summary.scalar('td_error', tf.reduce_mean(tf.abs(td_errors)), step=step)
+            tf.summary.scalar('loss', loss, step=self._train_steps)
+            tf.summary.scalar('td_error', tf.math.reduce_mean(tf.math.abs(td_errors)), step=self._train_steps)
         return grads
 
     def update_target(self):
@@ -271,7 +207,7 @@ class DQN(RLModelBase):
         if self.training and 'target' in weights:
             self.target_net.set_weights(weights['target'])
 
-    def get_buffer(self) -> ReplayBuffer:
+    def get_buffer(self) -> SimpleReplay:
         """Get replay buffer of model.
 
         Returns:
@@ -279,7 +215,7 @@ class DQN(RLModelBase):
         """
         return self.replay_buffer
 
-    def set_buffer(self, buffer: ReplayBuffer) -> None:
+    def set_buffer(self, buffer: SimpleReplay) -> None:
         """Set replay buffer of model.
 
         Args:
