@@ -120,11 +120,10 @@ class BFFServicerTestCase(unittest.TestCase):
     def test_07_proxychat(self):
 
         def generator():
-            info = {'states': {'example': [1, 2, 3, 4], 'done': False}}
+            info = {'states': {'example': [1, 2, 3, 4]}}
             req = types_pb2.JsonString(json=json.dumps(info))
             for _ in range(10000):
                 yield req
-            info['states']['done'] = True
             yield types_pb2.JsonString(json=json.dumps(info))
 
         t1 = time.time()
