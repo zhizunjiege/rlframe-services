@@ -45,7 +45,8 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             'cache': self.func_cache,
         }
 
-    def PingPong(self, request, context):
+    def ResetServer(self, request, context):
+        self.__reset_all()
         return types_pb2.CommonResponse()
 
     def GetAgentConfig(self, request, context):
@@ -78,10 +79,6 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             **hypers,
         )
 
-        return types_pb2.CommonResponse()
-
-    def RstAgentConfig(self, request, context):
-        self.__reset_all()
         return types_pb2.CommonResponse()
 
     def GetAgentMode(self, request, context):
@@ -120,53 +117,58 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             self.model.set_status(**json.loads(request.status))
         return types_pb2.CommonResponse()
 
-    def GetAction(self, request_iterator, context):
+    def GetAction(self, request, context):
         response = types_pb2.JsonString()
         if self.model is not None:
-            for request in request_iterator:
-                info = json.loads(request.json)
-                states, done = info['states'], info['done']
-                self.sifunc_args['states'] = states
-                exec(self.sifunc, self.sifunc_args)
-                inputs = self.sifunc_args['inputs']
+            info = json.loads(request.json)
+            states, done = info['states'], info['done']
+            self.sifunc_args['states'] = states
+            exec(self.sifunc, self.sifunc_args)
+            inputs = self.sifunc_args['inputs']
+            if not done:
                 outputs = self.model.react(inputs)
                 self.oafunc_args['outputs'] = outputs
                 exec(self.oafunc, self.oafunc_args)
                 actions = self.oafunc_args['actions']
-                if self.model.training:
-                    if self.rfunc_args['states'] is None:
-                        self.rfunc_args['states'] = states
-                        self.rfunc_args['inputs'] = inputs
-                        self.rfunc_args['actions'] = actions
-                        self.rfunc_args['outputs'] = outputs
-                    else:
-                        self.rfunc_args['next_states'] = states
-                        self.rfunc_args['next_inputs'] = inputs
-                        self.rfunc_args['done'] = done
-                        exec(self.rfunc, self.rfunc_args)
-                        self.model.store(
-                            states=self.rfunc_args['inputs'],
-                            actions=self.rfunc_args['outputs'],
-                            next_states=self.rfunc_args['next_inputs'],
-                            reward=self.rfunc_args['reward'],
-                            done=done,
-                        )
-                        self.model.train()
-                        self.rfunc_args['states'] = self.rfunc_args['next_states']
-                        self.rfunc_args['inputs'] = self.rfunc_args['next_inputs']
-                        self.rfunc_args['actions'] = actions
-                        self.rfunc_args['outputs'] = outputs
                 response.json = json.dumps({'actions': actions})
-                yield response
-        self.__reset_args()
-        response.json = ''
+            if self.model.training:
+                if self.rfunc_args['states'] is None:
+                    self.rfunc_args['states'] = states
+                    self.rfunc_args['inputs'] = inputs
+                    self.rfunc_args['actions'] = actions
+                    self.rfunc_args['outputs'] = outputs
+                else:
+                    self.rfunc_args['next_states'] = states
+                    self.rfunc_args['next_inputs'] = inputs
+                    self.rfunc_args['done'] = done
+                    exec(self.rfunc, self.rfunc_args)
+                    self.model.store(
+                        states=self.rfunc_args['inputs'],
+                        actions=self.rfunc_args['outputs'],
+                        next_states=self.rfunc_args['next_inputs'],
+                        reward=self.rfunc_args['reward'],
+                        done=self.rfunc_args['done'],
+                    )
+                    self.rfunc_args['states'] = self.rfunc_args['next_states']
+                    self.rfunc_args['inputs'] = self.rfunc_args['next_inputs']
+                    self.rfunc_args['actions'] = actions
+                    self.rfunc_args['outputs'] = outputs
+                    self.model.train()
+            if done:
+                self.__reset_args()
         return response
 
 
 def agent_server(ip, port, max_workers):
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=max_workers))
+    server = grpc.server(
+        futures.ThreadPoolExecutor(max_workers=max_workers),
+        options=[
+            ('grpc.max_send_message_length', 256 * 1024 * 1024),
+            ('grpc.max_receive_message_length', 256 * 1024 * 1024),
+        ],
+    )
     agent_pb2_grpc.add_AgentServicer_to_server(AgentServicer(), server)
-    server.add_insecure_port(f'{ip}:{port}')
+    port = server.add_insecure_port(f'{ip}:{port}')
     server.start()
     print(f'Agent server started at {ip}:{port}')
     try:
@@ -178,7 +180,7 @@ def agent_server(ip, port, max_workers):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run an agent service.')
     parser.add_argument('-i', '--ip', type=str, default='0.0.0.0', help='IP address to listen on.')
-    parser.add_argument('-p', '--port', type=int, default=50051, help='Port to listen on.')
+    parser.add_argument('-p', '--port', type=int, default=0, help='Port to listen on.')
     parser.add_argument('-w', '--work', type=int, default=10, help='Max workers.')
     args = parser.parse_args()
     agent_server(args.ip, args.port, args.work)

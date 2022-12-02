@@ -5,15 +5,13 @@ package game.agent;
 import "protos/types.proto";
 
 service Agent {
-  // 检测服务是否在线
-  rpc PingPong(types.CommonRequest) returns (types.CommonResponse);
+  // 重置Agent服务
+  rpc ResetServer(types.CommonRequest) returns (types.CommonResponse);
 
   // 获取智能体配置
   rpc GetAgentConfig(types.CommonRequest) returns (AgentConfig);
   // 设置智能体配置
   rpc SetAgentConfig(AgentConfig) returns (types.CommonResponse);
-  // 清除智能体配置
-  rpc RstAgentConfig(types.CommonRequest) returns (types.CommonResponse);
 
   // 获取智能体模式
   rpc GetAgentMode(types.CommonRequest) returns (AgentMode);
@@ -36,7 +34,7 @@ service Agent {
   rpc SetAgentStatus(AgentStatus) returns (types.CommonResponse);
 
   // 获取决策动作
-  rpc GetAction(stream types.JsonString) returns (stream types.JsonString);
+  rpc GetAction(types.JsonString) returns (types.JsonString);
 }
 
 message AgentConfig {

@@ -15,8 +15,8 @@ class AgentStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.PingPong = channel.unary_unary(
-            '/game.agent.Agent/PingPong',
+        self.ResetServer = channel.unary_unary(
+            '/game.agent.Agent/ResetServer',
             request_serializer=protos_dot_types__pb2.CommonRequest.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
         )
@@ -28,11 +28,6 @@ class AgentStub(object):
         self.SetAgentConfig = channel.unary_unary(
             '/game.agent.Agent/SetAgentConfig',
             request_serializer=protos_dot_agent__pb2.AgentConfig.SerializeToString,
-            response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
-        )
-        self.RstAgentConfig = channel.unary_unary(
-            '/game.agent.Agent/RstAgentConfig',
-            request_serializer=protos_dot_types__pb2.CommonRequest.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
         )
         self.GetAgentMode = channel.unary_unary(
@@ -75,7 +70,7 @@ class AgentStub(object):
             request_serializer=protos_dot_agent__pb2.AgentStatus.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
         )
-        self.GetAction = channel.stream_stream(
+        self.GetAction = channel.unary_unary(
             '/game.agent.Agent/GetAction',
             request_serializer=protos_dot_types__pb2.JsonString.SerializeToString,
             response_deserializer=protos_dot_types__pb2.JsonString.FromString,
@@ -85,8 +80,8 @@ class AgentStub(object):
 class AgentServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def PingPong(self, request, context):
-        """检测服务是否在线
+    def ResetServer(self, request, context):
+        """重置Agent服务
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -101,13 +96,6 @@ class AgentServicer(object):
 
     def SetAgentConfig(self, request, context):
         """设置智能体配置
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def RstAgentConfig(self, request, context):
-        """清除智能体配置
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -169,7 +157,7 @@ class AgentServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetAction(self, request_iterator, context):
+    def GetAction(self, request, context):
         """获取决策动作
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -179,9 +167,9 @@ class AgentServicer(object):
 
 def add_AgentServicer_to_server(servicer, server):
     rpc_method_handlers = {
-        'PingPong':
+        'ResetServer':
             grpc.unary_unary_rpc_method_handler(
-                servicer.PingPong,
+                servicer.ResetServer,
                 request_deserializer=protos_dot_types__pb2.CommonRequest.FromString,
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
             ),
@@ -195,12 +183,6 @@ def add_AgentServicer_to_server(servicer, server):
             grpc.unary_unary_rpc_method_handler(
                 servicer.SetAgentConfig,
                 request_deserializer=protos_dot_agent__pb2.AgentConfig.FromString,
-                response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
-            ),
-        'RstAgentConfig':
-            grpc.unary_unary_rpc_method_handler(
-                servicer.RstAgentConfig,
-                request_deserializer=protos_dot_types__pb2.CommonRequest.FromString,
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
             ),
         'GetAgentMode':
@@ -252,7 +234,7 @@ def add_AgentServicer_to_server(servicer, server):
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
             ),
         'GetAction':
-            grpc.stream_stream_rpc_method_handler(
+            grpc.unary_unary_rpc_method_handler(
                 servicer.GetAction,
                 request_deserializer=protos_dot_types__pb2.JsonString.FromString,
                 response_serializer=protos_dot_types__pb2.JsonString.SerializeToString,
@@ -267,17 +249,17 @@ class Agent(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def PingPong(request,
-                 target,
-                 options=(),
-                 channel_credentials=None,
-                 call_credentials=None,
-                 insecure=False,
-                 compression=None,
-                 wait_for_ready=None,
-                 timeout=None,
-                 metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/PingPong',
+    def ResetServer(request,
+                    target,
+                    options=(),
+                    channel_credentials=None,
+                    call_credentials=None,
+                    insecure=False,
+                    compression=None,
+                    wait_for_ready=None,
+                    timeout=None,
+                    metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/ResetServer',
                                              protos_dot_types__pb2.CommonRequest.SerializeToString,
                                              protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -311,22 +293,6 @@ class Agent(object):
                        metadata=None):
         return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/SetAgentConfig',
                                              protos_dot_agent__pb2.AgentConfig.SerializeToString,
-                                             protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def RstAgentConfig(request,
-                       target,
-                       options=(),
-                       channel_credentials=None,
-                       call_credentials=None,
-                       insecure=False,
-                       compression=None,
-                       wait_for_ready=None,
-                       timeout=None,
-                       metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/RstAgentConfig',
-                                             protos_dot_types__pb2.CommonRequest.SerializeToString,
                                              protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -459,7 +425,7 @@ class Agent(object):
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def GetAction(request_iterator,
+    def GetAction(request,
                   target,
                   options=(),
                   channel_credentials=None,
@@ -469,7 +435,7 @@ class Agent(object):
                   wait_for_ready=None,
                   timeout=None,
                   metadata=None):
-        return grpc.experimental.stream_stream(request_iterator, target, '/game.agent.Agent/GetAction',
-                                               protos_dot_types__pb2.JsonString.SerializeToString,
-                                               protos_dot_types__pb2.JsonString.FromString, options, channel_credentials,
-                                               insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/GetAction',
+                                             protos_dot_types__pb2.JsonString.SerializeToString,
+                                             protos_dot_types__pb2.JsonString.FromString, options, channel_credentials,
+                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
