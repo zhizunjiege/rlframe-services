@@ -109,9 +109,8 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
                     for model in route.configs[id_].models:
                         states_[model] = states[model]
                     result = self.agents[id_].GetAction({'states': states_, 'done': done})
-                    if not done:
-                        actions_ = json.loads(result.json)['actions']
-                        actions.update(actions_)
+                    actions_ = json.loads(result.json)['actions']
+                    actions.update(actions_)
                 response.json = json.dumps({'actions': actions})
                 if done:
                     self.simenvs[id].control('done', {})

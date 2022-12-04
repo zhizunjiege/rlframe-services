@@ -125,12 +125,11 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             self.sifunc_args['states'] = states
             exec(self.sifunc, self.sifunc_args)
             inputs = self.sifunc_args['inputs']
-            if not done:
-                outputs = self.model.react(inputs)
-                self.oafunc_args['outputs'] = outputs
-                exec(self.oafunc, self.oafunc_args)
-                actions = self.oafunc_args['actions']
-                response.json = json.dumps({'actions': actions})
+            outputs = self.model.react(inputs)
+            self.oafunc_args['outputs'] = outputs
+            exec(self.oafunc, self.oafunc_args)
+            actions = self.oafunc_args['actions']
+            response.json = json.dumps({'actions': actions})
             if self.model.training:
                 if self.rfunc_args['states'] is None:
                     self.rfunc_args['states'] = states
