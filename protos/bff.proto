@@ -117,12 +117,14 @@ message RouteConfig {
 
 message SimCmd {
   enum Type {
-    START = 0;   // 开始
-    PAUSE = 1;   // 暂停
-    STEP = 2;    // 步进
-    RESUME = 3;  // 继续
-    STOP = 4;    // 结束
-    PARAM = 5;   // 参数
+    INIT = 0;    // 初始化
+    START = 1;   // 开始
+    PAUSE = 2;   // 暂停
+    STEP = 3;    // 步进
+    RESUME = 4;  // 继续
+    STOP = 5;    // 停止
+    DONE = 6;    // 单局结束
+    PARAM = 7;   // 设置参数
   }
   Type cmd = 1;                              // 仿真命令
   map<string, types.JsonString> params = 2;  // <仿真服务id,仿真服务参数>
@@ -130,9 +132,10 @@ message SimCmd {
 
 message SimInfo {
   enum State {
-    STOPPED = 0;    // 停止
-    RUNNING = 1;    // 运行
-    SUSPENDED = 2;  // 挂起
+    UNINITED = 0;   // 未初始化
+    STOPPED = 1;    // 已停止
+    RUNNING = 2;    // 正在运行
+    SUSPENDED = 3;  // 已挂起
   }
   State state = 1;                         // 仿真状态
   map<string, types.JsonString> data = 2;  // <仿真服务id,仿真服务数据>

@@ -27,7 +27,7 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
         self.sim_done_func = None
         self.sim_steps = 0  # TODO
 
-        self.state = bff_pb2.SimInfo.State.STOPPED
+        self.state = bff_pb2.SimInfo.State.UNINITED
 
         self.simenvs = {}
         self.agents = {}
@@ -132,7 +132,10 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
         return types_pb2.CommonResponse()
 
     def SimControl(self, request, context):
-        if request.cmd == bff_pb2.SimCmd.Type.START:
+        if request.cmd == bff_pb2.SimCmd.Type.INIT:
+            cmd = 'init'
+            self.state = bff_pb2.SimInfo.State.STOPPED
+        elif request.cmd == bff_pb2.SimCmd.Type.START:
             cmd = 'start'
             self.state = bff_pb2.SimInfo.State.RUNNING
         elif request.cmd == bff_pb2.SimCmd.Type.PAUSE:
@@ -147,6 +150,9 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
         elif request.cmd == bff_pb2.SimCmd.Type.STOP:
             cmd = 'stop'
             self.state = bff_pb2.SimInfo.State.STOPPED
+        elif request.cmd == bff_pb2.SimCmd.Type.DONE:
+            cmd = 'done'
+            self.state = bff_pb2.SimInfo.State.RUNNING
         else:
             cmd = 'param'
         for id in self.simenvs:

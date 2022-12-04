@@ -19,7 +19,7 @@ class SimEnvBase(ABC):
     @abstractmethod
     def control(
         self,
-        cmd: Literal['start', 'pause', 'step', 'resume', 'stop', 'done', 'param'],
+        cmd: Literal['init', 'start', 'pause', 'step', 'resume', 'stop', 'done', 'param'],
         params: Dict[str, Any],
     ) -> bool:
         """Control env.
