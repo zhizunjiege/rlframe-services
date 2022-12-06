@@ -27,10 +27,10 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
         self.sim_done_func = None
         self.sim_steps = 0  # TODO
 
-        self.state = bff_pb2.SimInfo.State.UNINITED
-
-        self.simenvs = {}
         self.agents = {}
+        self.simenvs = {}
+
+        self.state = bff_pb2.SimInfo.State.UNINITED
 
     def ResetServer(self, request, context):
         self.__reset_all()
@@ -39,18 +39,18 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
     def RegisterService(self, request, context):
         ids = []
         for service in request.services:
-            key = f'{service.type}-{service.subtype}-{service.name} {service.ip}:{service.port}'
+            key = f'{service.name}-{service.type}-{service.subtype} {service.ip}:{service.port}'
             sha256 = hashlib.sha256()
             sha256.update(key.encode('utf-8'))
             id = sha256.hexdigest()
             self.services[id] = service
             ids.append(id)
-            if service.type == bff_pb2.ServiceType.SIMENV:
-                params = json.loads(service.params) if service.params else {}
-                self.simenvs[id] = SimEnvs[service.subtype](id=id, **params)
-            else:
+            if service.type == bff_pb2.ServiceType.AGENT:
                 channel = grpc.insecure_channel(f'{service.ip}:{service.port}')
                 self.agents[id] = agent_pb2_grpc.AgentStub(channel)
+            else:
+                params = json.loads(service.params) if service.params else {}
+                self.simenvs[id] = SimEnvs[service.subtype](id=id, **params)
         return bff_pb2.ServiceIdList(ids=ids)
 
     def UnRegisterService(self, request, context):
@@ -130,45 +130,6 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
         self.sim_done_func = compile(sdfunc_src, '', 'exec')
         return types_pb2.CommonResponse()
 
-    def SimControl(self, request, context):
-        if request.cmd == bff_pb2.SimCmd.Type.INIT:
-            cmd = 'init'
-            self.state = bff_pb2.SimInfo.State.STOPPED
-        elif request.cmd == bff_pb2.SimCmd.Type.START:
-            cmd = 'start'
-            self.state = bff_pb2.SimInfo.State.RUNNING
-        elif request.cmd == bff_pb2.SimCmd.Type.PAUSE:
-            cmd = 'pause'
-            self.state = bff_pb2.SimInfo.State.SUSPENDED
-        elif request.cmd == bff_pb2.SimCmd.Type.STEP:
-            cmd = 'step'
-            self.state = bff_pb2.SimInfo.State.SUSPENDED
-        elif request.cmd == bff_pb2.SimCmd.Type.RESUME:
-            cmd = 'resume'
-            self.state = bff_pb2.SimInfo.State.RUNNING
-        elif request.cmd == bff_pb2.SimCmd.Type.STOP:
-            cmd = 'stop'
-            self.state = bff_pb2.SimInfo.State.STOPPED
-        elif request.cmd == bff_pb2.SimCmd.Type.DONE:
-            cmd = 'done'
-            self.state = bff_pb2.SimInfo.State.RUNNING
-        else:
-            cmd = 'param'
-        for id in self.simenvs:
-            if id in request.params:
-                params = json.loads(request.params[id])
-            else:
-                params = {}
-            self.simenvs[id].control(cmd, params)
-        return types_pb2.CommonResponse()
-
-    def SimMonitor(self, request, context):
-        data, logs = {}, {}
-        for id in self.simenvs:
-            data_, logs_ = self.simenvs[id].monitor()
-            data[id], logs[id] = json.dumps(data_), json.dumps(logs_)
-        return bff_pb2.SimInfo(state=self.state, data=data, logs=logs)
-
     def GetAgentConfig(self, request, context):
         configs = {}
         ids = request.ids if len(request.ids) > 0 else list(self.agents.keys())
@@ -238,6 +199,45 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
             stub = self.agents[id]
             stub.SetAgentStatus(request.status[id])
         return types_pb2.CommonResponse()
+
+    def SimControl(self, request, context):
+        if request.cmd == bff_pb2.SimCmd.Type.INIT:
+            cmd = 'init'
+            self.state = bff_pb2.SimInfo.State.STOPPED
+        elif request.cmd == bff_pb2.SimCmd.Type.START:
+            cmd = 'start'
+            self.state = bff_pb2.SimInfo.State.RUNNING
+        elif request.cmd == bff_pb2.SimCmd.Type.PAUSE:
+            cmd = 'pause'
+            self.state = bff_pb2.SimInfo.State.SUSPENDED
+        elif request.cmd == bff_pb2.SimCmd.Type.STEP:
+            cmd = 'step'
+            self.state = bff_pb2.SimInfo.State.SUSPENDED
+        elif request.cmd == bff_pb2.SimCmd.Type.RESUME:
+            cmd = 'resume'
+            self.state = bff_pb2.SimInfo.State.RUNNING
+        elif request.cmd == bff_pb2.SimCmd.Type.STOP:
+            cmd = 'stop'
+            self.state = bff_pb2.SimInfo.State.STOPPED
+        elif request.cmd == bff_pb2.SimCmd.Type.DONE:
+            cmd = 'done'
+            self.state = bff_pb2.SimInfo.State.RUNNING
+        else:
+            cmd = 'param'
+        for id in self.simenvs:
+            if id in request.params:
+                params = json.loads(request.params[id])
+            else:
+                params = {}
+            self.simenvs[id].control(cmd, params)
+        return types_pb2.CommonResponse()
+
+    def SimMonitor(self, request, context):
+        data, logs = {}, {}
+        for id in self.simenvs:
+            data_, logs_ = self.simenvs[id].monitor()
+            data[id], logs[id] = json.dumps(data_), json.dumps(logs_)
+        return bff_pb2.SimInfo(state=self.state, data=data, logs=logs)
 
 
 def bff_server(ip, port, max_workers):

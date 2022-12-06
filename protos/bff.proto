@@ -32,12 +32,6 @@ service BFF {
   // 设置路由配置
   rpc SetRouteConfig(RouteConfig) returns (types.CommonResponse);
 
-  // 控制仿真流程
-  rpc SimControl(SimCmd) returns (types.CommonResponse);
-
-  // 获取仿真信息
-  rpc SimMonitor(types.CommonRequest) returns (SimInfo);
-
   // 获取智能体配置
   rpc GetAgentConfig(ServiceIdList) returns (AgentConfigMap);
   // 设置智能体配置
@@ -62,16 +56,22 @@ service BFF {
   rpc GetAgentStatus(ServiceIdList) returns (AgentStatusMap);
   // 设置智能体状态
   rpc SetAgentStatus(AgentStatusMap) returns (types.CommonResponse);
+
+  // 控制仿真流程
+  rpc SimControl(SimCmd) returns (types.CommonResponse);
+
+  // 获取仿真信息
+  rpc SimMonitor(types.CommonRequest) returns (SimInfo);
 }
 
 enum ServiceType {
-  SIMENV = 0;  // 仿真服务
-  AGENT = 1;   // 智能服务
+  AGENT = 0;   // 智能服务
+  SIMENV = 1;  // 仿真服务
 }
 message ServiceInfo {
-  ServiceType type = 1;  // 服务类型
-  string subtype = 2;    // 服务子类型
-  string name = 3;       // 服务名称
+  string name = 1;       // 服务名称
+  ServiceType type = 2;  // 服务类型
+  string subtype = 3;    // 服务子类型
   string ip = 4;         // 服务ip
   uint32 port = 5;       // 服务端口
   string desc = 6;       // 服务描述
@@ -115,6 +115,22 @@ message RouteConfig {
   uint32 sim_step_ratio = 3;      // 仿真步数比
 }
 
+message AgentConfigMap {
+  map<string, agent.AgentConfig> configs = 1;  // <智能服务id,智能服务配置>
+}
+message AgentModeMap {
+  map<string, agent.AgentMode> modes = 1;  // <智能服务id,智能服务模式>
+}
+message AgentWeightMap {
+  map<string, agent.AgentWeight> weights = 1;  // <智能服务id,智能服务权重>
+}
+message AgentBufferMap {
+  map<string, agent.AgentBuffer> buffers = 1;  // <智能服务id,智能服务经验>
+}
+message AgentStatusMap {
+  map<string, agent.AgentStatus> status = 1;  // <智能服务id,智能服务状态>
+}
+
 message SimCmd {
   enum Type {
     INIT = 0;    // 初始化
@@ -140,20 +156,4 @@ message SimInfo {
   State state = 1;                         // 仿真状态
   map<string, types.JsonString> data = 2;  // <仿真服务id,仿真服务数据>
   map<string, types.JsonString> logs = 3;  // <仿真服务id,仿真服务日志>
-}
-
-message AgentConfigMap {
-  map<string, agent.AgentConfig> configs = 1;  // <智能服务id,智能服务配置>
-}
-message AgentModeMap {
-  map<string, agent.AgentMode> modes = 1;  // <智能服务id,智能服务模式>
-}
-message AgentWeightMap {
-  map<string, agent.AgentWeight> weights = 1;  // <智能服务id,智能服务权重>
-}
-message AgentBufferMap {
-  map<string, agent.AgentBuffer> buffers = 1;  // <智能服务id,智能服务经验>
-}
-message AgentStatusMap {
-  map<string, agent.AgentStatus> status = 1;  // <智能服务id,智能服务状态>
 }

@@ -65,16 +65,6 @@ class BFFStub(object):
             request_serializer=protos_dot_bff__pb2.RouteConfig.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
         )
-        self.SimControl = channel.unary_unary(
-            '/game.bff.BFF/SimControl',
-            request_serializer=protos_dot_bff__pb2.SimCmd.SerializeToString,
-            response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
-        )
-        self.SimMonitor = channel.unary_unary(
-            '/game.bff.BFF/SimMonitor',
-            request_serializer=protos_dot_types__pb2.CommonRequest.SerializeToString,
-            response_deserializer=protos_dot_bff__pb2.SimInfo.FromString,
-        )
         self.GetAgentConfig = channel.unary_unary(
             '/game.bff.BFF/GetAgentConfig',
             request_serializer=protos_dot_bff__pb2.ServiceIdList.SerializeToString,
@@ -124,6 +114,16 @@ class BFFStub(object):
             '/game.bff.BFF/SetAgentStatus',
             request_serializer=protos_dot_bff__pb2.AgentStatusMap.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
+        )
+        self.SimControl = channel.unary_unary(
+            '/game.bff.BFF/SimControl',
+            request_serializer=protos_dot_bff__pb2.SimCmd.SerializeToString,
+            response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
+        )
+        self.SimMonitor = channel.unary_unary(
+            '/game.bff.BFF/SimMonitor',
+            request_serializer=protos_dot_types__pb2.CommonRequest.SerializeToString,
+            response_deserializer=protos_dot_bff__pb2.SimInfo.FromString,
         )
 
 
@@ -200,20 +200,6 @@ class BFFServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SimControl(self, request, context):
-        """控制仿真流程
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def SimMonitor(self, request, context):
-        """获取仿真信息
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
     def GetAgentConfig(self, request, context):
         """获取智能体配置
         """
@@ -284,6 +270,20 @@ class BFFServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SimControl(self, request, context):
+        """控制仿真流程
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SimMonitor(self, request, context):
+        """获取仿真信息
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_BFFServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -347,18 +347,6 @@ def add_BFFServicer_to_server(servicer, server):
                 request_deserializer=protos_dot_bff__pb2.RouteConfig.FromString,
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
             ),
-        'SimControl':
-            grpc.unary_unary_rpc_method_handler(
-                servicer.SimControl,
-                request_deserializer=protos_dot_bff__pb2.SimCmd.FromString,
-                response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
-            ),
-        'SimMonitor':
-            grpc.unary_unary_rpc_method_handler(
-                servicer.SimMonitor,
-                request_deserializer=protos_dot_types__pb2.CommonRequest.FromString,
-                response_serializer=protos_dot_bff__pb2.SimInfo.SerializeToString,
-            ),
         'GetAgentConfig':
             grpc.unary_unary_rpc_method_handler(
                 servicer.GetAgentConfig,
@@ -418,6 +406,18 @@ def add_BFFServicer_to_server(servicer, server):
                 servicer.SetAgentStatus,
                 request_deserializer=protos_dot_bff__pb2.AgentStatusMap.FromString,
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
+            ),
+        'SimControl':
+            grpc.unary_unary_rpc_method_handler(
+                servicer.SimControl,
+                request_deserializer=protos_dot_bff__pb2.SimCmd.FromString,
+                response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
+            ),
+        'SimMonitor':
+            grpc.unary_unary_rpc_method_handler(
+                servicer.SimMonitor,
+                request_deserializer=protos_dot_types__pb2.CommonRequest.FromString,
+                response_serializer=protos_dot_bff__pb2.SimInfo.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler('game.bff.BFF', rpc_method_handlers)
@@ -589,38 +589,6 @@ class BFF(object):
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def SimControl(request,
-                   target,
-                   options=(),
-                   channel_credentials=None,
-                   call_credentials=None,
-                   insecure=False,
-                   compression=None,
-                   wait_for_ready=None,
-                   timeout=None,
-                   metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/SimControl',
-                                             protos_dot_bff__pb2.SimCmd.SerializeToString,
-                                             protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def SimMonitor(request,
-                   target,
-                   options=(),
-                   channel_credentials=None,
-                   call_credentials=None,
-                   insecure=False,
-                   compression=None,
-                   wait_for_ready=None,
-                   timeout=None,
-                   metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/SimMonitor',
-                                             protos_dot_types__pb2.CommonRequest.SerializeToString,
-                                             protos_dot_bff__pb2.SimInfo.FromString, options, channel_credentials, insecure,
-                                             call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
     def GetAgentConfig(request,
                        target,
                        options=(),
@@ -779,3 +747,35 @@ class BFF(object):
                                              protos_dot_bff__pb2.AgentStatusMap.SerializeToString,
                                              protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def SimControl(request,
+                   target,
+                   options=(),
+                   channel_credentials=None,
+                   call_credentials=None,
+                   insecure=False,
+                   compression=None,
+                   wait_for_ready=None,
+                   timeout=None,
+                   metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/SimControl',
+                                             protos_dot_bff__pb2.SimCmd.SerializeToString,
+                                             protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
+                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def SimMonitor(request,
+                   target,
+                   options=(),
+                   channel_credentials=None,
+                   call_credentials=None,
+                   insecure=False,
+                   compression=None,
+                   wait_for_ready=None,
+                   timeout=None,
+                   metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/SimMonitor',
+                                             protos_dot_types__pb2.CommonRequest.SerializeToString,
+                                             protos_dot_bff__pb2.SimInfo.FromString, options, channel_credentials, insecure,
+                                             call_credentials, compression, wait_for_ready, timeout, metadata)
