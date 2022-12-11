@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from protos import engine_pb2 as protos_dot_engine__pb2
+from simenvs.cqsim import engine_pb2 as simenvs_dot_cqsim_dot_engine__pb2
 
 
 class SimControllerStub(object):
@@ -17,53 +17,53 @@ class SimControllerStub(object):
         """
         self.GetEntityList = channel.unary_unary(
             '/cqsim.control.SimController/GetEntityList',
-            request_serializer=protos_dot_engine__pb2.EntityListRequest.SerializeToString,
-            response_deserializer=protos_dot_engine__pb2.EntityListResponse.FromString,
+            request_serializer=simenvs_dot_cqsim_dot_engine__pb2.EntityListRequest.SerializeToString,
+            response_deserializer=simenvs_dot_cqsim_dot_engine__pb2.EntityListResponse.FromString,
         )
         self.Init = channel.unary_unary(
             '/cqsim.control.SimController/Init',
-            request_serializer=protos_dot_engine__pb2.InitInfo.SerializeToString,
-            response_deserializer=protos_dot_engine__pb2.CommonResponse.FromString,
+            request_serializer=simenvs_dot_cqsim_dot_engine__pb2.InitInfo.SerializeToString,
+            response_deserializer=simenvs_dot_cqsim_dot_engine__pb2.CommonResponse.FromString,
         )
         self.Control = channel.unary_unary(
             '/cqsim.control.SimController/Control',
-            request_serializer=protos_dot_engine__pb2.ControlCmd.SerializeToString,
-            response_deserializer=protos_dot_engine__pb2.CommonResponse.FromString,
+            request_serializer=simenvs_dot_cqsim_dot_engine__pb2.ControlCmd.SerializeToString,
+            response_deserializer=simenvs_dot_cqsim_dot_engine__pb2.CommonResponse.FromString,
         )
         self.GetSysInfo = channel.unary_stream(
             '/cqsim.control.SimController/GetSysInfo',
-            request_serializer=protos_dot_engine__pb2.CommonRequest.SerializeToString,
-            response_deserializer=protos_dot_engine__pb2.SysInfoResponse.FromString,
+            request_serializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
+            response_deserializer=simenvs_dot_cqsim_dot_engine__pb2.SysInfoResponse.FromString,
         )
         self.GetDataSysInfo = channel.unary_stream(
             '/cqsim.control.SimController/GetDataSysInfo',
-            request_serializer=protos_dot_engine__pb2.CommonRequest.SerializeToString,
-            response_deserializer=protos_dot_engine__pb2.DataSysInfoResponse.FromString,
+            request_serializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
+            response_deserializer=simenvs_dot_cqsim_dot_engine__pb2.DataSysInfoResponse.FromString,
         )
         self.GetAllNode = channel.unary_unary(
             '/cqsim.control.SimController/GetAllNode',
-            request_serializer=protos_dot_engine__pb2.CommonRequest.SerializeToString,
-            response_deserializer=protos_dot_engine__pb2.NodeResponse.FromString,
+            request_serializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
+            response_deserializer=simenvs_dot_cqsim_dot_engine__pb2.NodeResponse.FromString,
         )
         self.GetInitedPercent = channel.unary_stream(
             '/cqsim.control.SimController/GetInitedPercent',
-            request_serializer=protos_dot_engine__pb2.CommonRequest.SerializeToString,
-            response_deserializer=protos_dot_engine__pb2.InitedResponse.FromString,
+            request_serializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
+            response_deserializer=simenvs_dot_cqsim_dot_engine__pb2.InitedResponse.FromString,
         )
         self.GetErrorMsg = channel.unary_stream(
             '/cqsim.control.SimController/GetErrorMsg',
-            request_serializer=protos_dot_engine__pb2.CommonRequest.SerializeToString,
-            response_deserializer=protos_dot_engine__pb2.ErrMsgResponse.FromString,
+            request_serializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
+            response_deserializer=simenvs_dot_cqsim_dot_engine__pb2.ErrMsgResponse.FromString,
         )
         self.GetNodeJoinExit = channel.unary_stream(
             '/cqsim.control.SimController/GetNodeJoinExit',
-            request_serializer=protos_dot_engine__pb2.CommonRequest.SerializeToString,
-            response_deserializer=protos_dot_engine__pb2.NodeJoinExitResponse.FromString,
+            request_serializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
+            response_deserializer=simenvs_dot_cqsim_dot_engine__pb2.NodeJoinExitResponse.FromString,
         )
         self.SetLogLevel = channel.unary_unary(
             '/cqsim.control.SimController/SetLogLevel',
-            request_serializer=protos_dot_engine__pb2.LogLevelRequest.SerializeToString,
-            response_deserializer=protos_dot_engine__pb2.CommonResponse.FromString,
+            request_serializer=simenvs_dot_cqsim_dot_engine__pb2.LogLevelRequest.SerializeToString,
+            response_deserializer=simenvs_dot_cqsim_dot_engine__pb2.CommonResponse.FromString,
         )
 
 
@@ -147,62 +147,62 @@ def add_SimControllerServicer_to_server(servicer, server):
         'GetEntityList':
             grpc.unary_unary_rpc_method_handler(
                 servicer.GetEntityList,
-                request_deserializer=protos_dot_engine__pb2.EntityListRequest.FromString,
-                response_serializer=protos_dot_engine__pb2.EntityListResponse.SerializeToString,
+                request_deserializer=simenvs_dot_cqsim_dot_engine__pb2.EntityListRequest.FromString,
+                response_serializer=simenvs_dot_cqsim_dot_engine__pb2.EntityListResponse.SerializeToString,
             ),
         'Init':
             grpc.unary_unary_rpc_method_handler(
                 servicer.Init,
-                request_deserializer=protos_dot_engine__pb2.InitInfo.FromString,
-                response_serializer=protos_dot_engine__pb2.CommonResponse.SerializeToString,
+                request_deserializer=simenvs_dot_cqsim_dot_engine__pb2.InitInfo.FromString,
+                response_serializer=simenvs_dot_cqsim_dot_engine__pb2.CommonResponse.SerializeToString,
             ),
         'Control':
             grpc.unary_unary_rpc_method_handler(
                 servicer.Control,
-                request_deserializer=protos_dot_engine__pb2.ControlCmd.FromString,
-                response_serializer=protos_dot_engine__pb2.CommonResponse.SerializeToString,
+                request_deserializer=simenvs_dot_cqsim_dot_engine__pb2.ControlCmd.FromString,
+                response_serializer=simenvs_dot_cqsim_dot_engine__pb2.CommonResponse.SerializeToString,
             ),
         'GetSysInfo':
             grpc.unary_stream_rpc_method_handler(
                 servicer.GetSysInfo,
-                request_deserializer=protos_dot_engine__pb2.CommonRequest.FromString,
-                response_serializer=protos_dot_engine__pb2.SysInfoResponse.SerializeToString,
+                request_deserializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.FromString,
+                response_serializer=simenvs_dot_cqsim_dot_engine__pb2.SysInfoResponse.SerializeToString,
             ),
         'GetDataSysInfo':
             grpc.unary_stream_rpc_method_handler(
                 servicer.GetDataSysInfo,
-                request_deserializer=protos_dot_engine__pb2.CommonRequest.FromString,
-                response_serializer=protos_dot_engine__pb2.DataSysInfoResponse.SerializeToString,
+                request_deserializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.FromString,
+                response_serializer=simenvs_dot_cqsim_dot_engine__pb2.DataSysInfoResponse.SerializeToString,
             ),
         'GetAllNode':
             grpc.unary_unary_rpc_method_handler(
                 servicer.GetAllNode,
-                request_deserializer=protos_dot_engine__pb2.CommonRequest.FromString,
-                response_serializer=protos_dot_engine__pb2.NodeResponse.SerializeToString,
+                request_deserializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.FromString,
+                response_serializer=simenvs_dot_cqsim_dot_engine__pb2.NodeResponse.SerializeToString,
             ),
         'GetInitedPercent':
             grpc.unary_stream_rpc_method_handler(
                 servicer.GetInitedPercent,
-                request_deserializer=protos_dot_engine__pb2.CommonRequest.FromString,
-                response_serializer=protos_dot_engine__pb2.InitedResponse.SerializeToString,
+                request_deserializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.FromString,
+                response_serializer=simenvs_dot_cqsim_dot_engine__pb2.InitedResponse.SerializeToString,
             ),
         'GetErrorMsg':
             grpc.unary_stream_rpc_method_handler(
                 servicer.GetErrorMsg,
-                request_deserializer=protos_dot_engine__pb2.CommonRequest.FromString,
-                response_serializer=protos_dot_engine__pb2.ErrMsgResponse.SerializeToString,
+                request_deserializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.FromString,
+                response_serializer=simenvs_dot_cqsim_dot_engine__pb2.ErrMsgResponse.SerializeToString,
             ),
         'GetNodeJoinExit':
             grpc.unary_stream_rpc_method_handler(
                 servicer.GetNodeJoinExit,
-                request_deserializer=protos_dot_engine__pb2.CommonRequest.FromString,
-                response_serializer=protos_dot_engine__pb2.NodeJoinExitResponse.SerializeToString,
+                request_deserializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.FromString,
+                response_serializer=simenvs_dot_cqsim_dot_engine__pb2.NodeJoinExitResponse.SerializeToString,
             ),
         'SetLogLevel':
             grpc.unary_unary_rpc_method_handler(
                 servicer.SetLogLevel,
-                request_deserializer=protos_dot_engine__pb2.LogLevelRequest.FromString,
-                response_serializer=protos_dot_engine__pb2.CommonResponse.SerializeToString,
+                request_deserializer=simenvs_dot_cqsim_dot_engine__pb2.LogLevelRequest.FromString,
+                response_serializer=simenvs_dot_cqsim_dot_engine__pb2.CommonResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler('cqsim.control.SimController', rpc_method_handlers)
@@ -226,9 +226,10 @@ class SimController(object):
                       timeout=None,
                       metadata=None):
         return grpc.experimental.unary_unary(request, target, '/cqsim.control.SimController/GetEntityList',
-                                             protos_dot_engine__pb2.EntityListRequest.SerializeToString,
-                                             protos_dot_engine__pb2.EntityListResponse.FromString, options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+                                             simenvs_dot_cqsim_dot_engine__pb2.EntityListRequest.SerializeToString,
+                                             simenvs_dot_cqsim_dot_engine__pb2.EntityListResponse.FromString, options,
+                                             channel_credentials, insecure, call_credentials, compression, wait_for_ready,
+                                             timeout, metadata)
 
     @staticmethod
     def Init(request,
@@ -242,9 +243,10 @@ class SimController(object):
              timeout=None,
              metadata=None):
         return grpc.experimental.unary_unary(request, target, '/cqsim.control.SimController/Init',
-                                             protos_dot_engine__pb2.InitInfo.SerializeToString,
-                                             protos_dot_engine__pb2.CommonResponse.FromString, options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+                                             simenvs_dot_cqsim_dot_engine__pb2.InitInfo.SerializeToString,
+                                             simenvs_dot_cqsim_dot_engine__pb2.CommonResponse.FromString, options,
+                                             channel_credentials, insecure, call_credentials, compression, wait_for_ready,
+                                             timeout, metadata)
 
     @staticmethod
     def Control(request,
@@ -258,9 +260,10 @@ class SimController(object):
                 timeout=None,
                 metadata=None):
         return grpc.experimental.unary_unary(request, target, '/cqsim.control.SimController/Control',
-                                             protos_dot_engine__pb2.ControlCmd.SerializeToString,
-                                             protos_dot_engine__pb2.CommonResponse.FromString, options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+                                             simenvs_dot_cqsim_dot_engine__pb2.ControlCmd.SerializeToString,
+                                             simenvs_dot_cqsim_dot_engine__pb2.CommonResponse.FromString, options,
+                                             channel_credentials, insecure, call_credentials, compression, wait_for_ready,
+                                             timeout, metadata)
 
     @staticmethod
     def GetSysInfo(request,
@@ -274,9 +277,10 @@ class SimController(object):
                    timeout=None,
                    metadata=None):
         return grpc.experimental.unary_stream(request, target, '/cqsim.control.SimController/GetSysInfo',
-                                              protos_dot_engine__pb2.CommonRequest.SerializeToString,
-                                              protos_dot_engine__pb2.SysInfoResponse.FromString, options, channel_credentials,
-                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+                                              simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
+                                              simenvs_dot_cqsim_dot_engine__pb2.SysInfoResponse.FromString, options,
+                                              channel_credentials, insecure, call_credentials, compression, wait_for_ready,
+                                              timeout, metadata)
 
     @staticmethod
     def GetDataSysInfo(request,
@@ -290,8 +294,8 @@ class SimController(object):
                        timeout=None,
                        metadata=None):
         return grpc.experimental.unary_stream(request, target, '/cqsim.control.SimController/GetDataSysInfo',
-                                              protos_dot_engine__pb2.CommonRequest.SerializeToString,
-                                              protos_dot_engine__pb2.DataSysInfoResponse.FromString, options,
+                                              simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
+                                              simenvs_dot_cqsim_dot_engine__pb2.DataSysInfoResponse.FromString, options,
                                               channel_credentials, insecure, call_credentials, compression, wait_for_ready,
                                               timeout, metadata)
 
@@ -307,9 +311,10 @@ class SimController(object):
                    timeout=None,
                    metadata=None):
         return grpc.experimental.unary_unary(request, target, '/cqsim.control.SimController/GetAllNode',
-                                             protos_dot_engine__pb2.CommonRequest.SerializeToString,
-                                             protos_dot_engine__pb2.NodeResponse.FromString, options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+                                             simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
+                                             simenvs_dot_cqsim_dot_engine__pb2.NodeResponse.FromString, options,
+                                             channel_credentials, insecure, call_credentials, compression, wait_for_ready,
+                                             timeout, metadata)
 
     @staticmethod
     def GetInitedPercent(request,
@@ -323,9 +328,10 @@ class SimController(object):
                          timeout=None,
                          metadata=None):
         return grpc.experimental.unary_stream(request, target, '/cqsim.control.SimController/GetInitedPercent',
-                                              protos_dot_engine__pb2.CommonRequest.SerializeToString,
-                                              protos_dot_engine__pb2.InitedResponse.FromString, options, channel_credentials,
-                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+                                              simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
+                                              simenvs_dot_cqsim_dot_engine__pb2.InitedResponse.FromString, options,
+                                              channel_credentials, insecure, call_credentials, compression, wait_for_ready,
+                                              timeout, metadata)
 
     @staticmethod
     def GetErrorMsg(request,
@@ -339,9 +345,10 @@ class SimController(object):
                     timeout=None,
                     metadata=None):
         return grpc.experimental.unary_stream(request, target, '/cqsim.control.SimController/GetErrorMsg',
-                                              protos_dot_engine__pb2.CommonRequest.SerializeToString,
-                                              protos_dot_engine__pb2.ErrMsgResponse.FromString, options, channel_credentials,
-                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+                                              simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
+                                              simenvs_dot_cqsim_dot_engine__pb2.ErrMsgResponse.FromString, options,
+                                              channel_credentials, insecure, call_credentials, compression, wait_for_ready,
+                                              timeout, metadata)
 
     @staticmethod
     def GetNodeJoinExit(request,
@@ -355,8 +362,8 @@ class SimController(object):
                         timeout=None,
                         metadata=None):
         return grpc.experimental.unary_stream(request, target, '/cqsim.control.SimController/GetNodeJoinExit',
-                                              protos_dot_engine__pb2.CommonRequest.SerializeToString,
-                                              protos_dot_engine__pb2.NodeJoinExitResponse.FromString, options,
+                                              simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
+                                              simenvs_dot_cqsim_dot_engine__pb2.NodeJoinExitResponse.FromString, options,
                                               channel_credentials, insecure, call_credentials, compression, wait_for_ready,
                                               timeout, metadata)
 
@@ -372,6 +379,7 @@ class SimController(object):
                     timeout=None,
                     metadata=None):
         return grpc.experimental.unary_unary(request, target, '/cqsim.control.SimController/SetLogLevel',
-                                             protos_dot_engine__pb2.LogLevelRequest.SerializeToString,
-                                             protos_dot_engine__pb2.CommonResponse.FromString, options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+                                             simenvs_dot_cqsim_dot_engine__pb2.LogLevelRequest.SerializeToString,
+                                             simenvs_dot_cqsim_dot_engine__pb2.CommonResponse.FromString, options,
+                                             channel_credentials, insecure, call_credentials, compression, wait_for_ready,
+                                             timeout, metadata)

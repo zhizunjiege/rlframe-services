@@ -1,6 +1,6 @@
 from abc import ABC
 from abc import abstractmethod
-from typing import Any, Dict, Literal, Tuple
+from typing import Any, Dict, List, Literal, Tuple
 
 
 class SimEnvBase(ABC):
@@ -14,7 +14,7 @@ class SimEnvBase(ABC):
             id: Id of simulation enviroment.
             kargs: Any other parameters.
         """
-        ...
+        self.id = id
 
     @abstractmethod
     def control(
@@ -34,7 +34,7 @@ class SimEnvBase(ABC):
         ...
 
     @abstractmethod
-    def monitor(self) -> Tuple[Any, Any]:
+    def monitor(self) -> Tuple[List[Dict[str, Any]], List[str]]:
         """Monitor env.
 
         Returns:
