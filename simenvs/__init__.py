@@ -1,5 +1,5 @@
-from .cqsim import CQSimEnv
+from .cqsim import CQSim
 
 SimEnvs = {
-    'CQSim': CQSimEnv,
+    'CQSim': CQSim,
 }

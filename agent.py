@@ -61,7 +61,9 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         oafunc_src = request.outputs_actions_func + '\nactions = func(outputs)'
         self.oafunc = compile(oafunc_src, '', 'exec')
         if self.configs.training:
-            rfunc_src = request.reward_func + '\nreward = func(states, actions, next_states)'
+            rfunc_src = request.reward_func + '\nreward = func(states, inputs, actions, outputs,\
+                 next_states, next_inputs, done)'
+
             self.rfunc = compile(rfunc_src, '', 'exec')
 
         hypers = json.loads(request.hypers)
@@ -114,7 +116,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
 
     def SetAgentStatus(self, request, context):
         if self.model is not None:
-            self.model.set_status(**json.loads(request.status))
+            self.model.set_status(json.loads(request.status))
         return types_pb2.CommonResponse()
 
     def GetAction(self, request, context):
@@ -158,12 +160,12 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         return response
 
 
-def agent_server(ip, port, max_workers):
+def agent_server(ip, port, max_workers, max_msg_len):
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=max_workers),
         options=[
-            ('grpc.max_send_message_length', 256 * 1024 * 1024),
-            ('grpc.max_receive_message_length', 256 * 1024 * 1024),
+            ('grpc.max_send_message_length', max_msg_len * 1024 * 1024),
+            ('grpc.max_receive_message_length', max_msg_len * 1024 * 1024),
         ],
     )
     agent_pb2_grpc.add_AgentServicer_to_server(AgentServicer(), server)
@@ -180,6 +182,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run an agent service.')
     parser.add_argument('-i', '--ip', type=str, default='0.0.0.0', help='IP address to listen on.')
     parser.add_argument('-p', '--port', type=int, default=0, help='Port to listen on.')
-    parser.add_argument('-w', '--work', type=int, default=10, help='Max workers.')
+    parser.add_argument('-w', '--work', type=int, default=10, help='Max workers in thread pool.')
+    parser.add_argument('-m', '--msglen', type=int, default=256, help='Max message length in MB.')
     args = parser.parse_args()
-    agent_server(args.ip, args.port, args.work)
+    agent_server(args.ip, args.port, args.work, args.msglen)

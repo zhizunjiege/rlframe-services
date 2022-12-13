@@ -8,7 +8,7 @@ from .cqsim_pb import engine_pb2
 from .cqsim_pb import engine_pb2_grpc
 
 
-class CQSimEnv(SimEnvBase):
+class CQSim(SimEnvBase):
 
     def __init__(self, id: str, *, engine_url: str):
         """Init CQSim env.
@@ -63,7 +63,7 @@ class CQSimEnv(SimEnvBase):
             params: Control parameters.
 
         Returns:
-            supported: True if supported, False otherwise.
+            True if supported, False otherwise.
         """
         if cmd == 'init':
             sample = engine_pb2.InitInfo.MultiSample(exp_design_id=params['exp_design_id'])
@@ -110,8 +110,8 @@ class CQSimEnv(SimEnvBase):
         """Monitor CQSim env.
 
         Returns:
-            data: Data of simulation.
-            logs: Logs of simulation enviroment.
+            Data of simulation.
+            Logs of simulation enviroment.
         """
         with self.data_lock:
             data = self.data_cache
@@ -124,7 +124,7 @@ class CQSimEnv(SimEnvBase):
         """Close CQSim env.
 
         Returns:
-            success: True if success, False otherwise.
+            True if success, False otherwise.
         """
         self.channel.close()
         return True

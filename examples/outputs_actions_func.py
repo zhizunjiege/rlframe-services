@@ -1,4 +1,6 @@
 def func(outputs):
     return {
-        'example': outputs,
+        'model1': {
+            'output1': outputs,
+        },
     }

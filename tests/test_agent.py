@@ -1,8 +1,10 @@
 import json
+import pickle
 import time
 import unittest
 
 import grpc
+import numpy as np
 
 from protos import agent_pb2
 from protos import agent_pb2_grpc
@@ -13,16 +15,17 @@ class AgentServicerTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.stub = agent_pb2_grpc.AgentStub(grpc.insecure_channel("localhost:50051"))
+        cls.channel = grpc.insecure_channel("localhost:50051")
+        cls.stub = agent_pb2_grpc.AgentStub(cls.channel)
 
     @classmethod
     def tearDownClass(cls):
-        cls.stub = None
+        cls.stub.ResetServer(types_pb2.CommonRequest())
+        cls.channel.close()
 
-    def test_00_pingpong(self):
-        res = self.stub.PingPong(types_pb2.CommonRequest())
+    def test_00_resetserver(self):
+        res = self.stub.ResetServer(types_pb2.CommonRequest())
         self.assertEqual(res.code, 0)
-        self.assertEqual(res.msg, '')
 
     def test_01_agentconfig(self):
         req = agent_pb2.AgentConfig()
@@ -47,8 +50,7 @@ class AgentServicerTestCase(unittest.TestCase):
         res = self.stub.GetAgentConfig(types_pb2.CommonRequest())
         self.assertEqual(res.type, 'DQN')
 
-        res = self.stub.RstAgentConfig(types_pb2.CommonRequest())
-        self.assertEqual(res.code, 0)
+        self.stub.ResetServer(types_pb2.CommonRequest())
 
         req.training = True
         req.builder = ''
@@ -64,14 +66,18 @@ class AgentServicerTestCase(unittest.TestCase):
 
     def test_03_agentweight(self):
         res = self.stub.GetAgentWeight(types_pb2.CommonRequest())
-        self.assertTrue(len(res.weights) > 0)
+        weights = pickle.loads(res.weights)
+        self.assertTrue('online' in weights)
+        self.assertTrue('target' in weights)
 
         res = self.stub.SetAgentWeight(agent_pb2.AgentWeight(weights=res.weights))
         self.assertEqual(res.code, 0)
 
     def test_04_agentbuffer(self):
         res = self.stub.GetAgentBuffer(types_pb2.CommonRequest())
-        self.assertTrue(len(res.buffer) > 0)
+        buffer = pickle.loads(res.buffer)
+        self.assertEqual(buffer['size'], 0)
+        self.assertEqual(buffer['data']['acts_buf'].shape, (0, 1))
 
         res = self.stub.SetAgentBuffer(agent_pb2.AgentBuffer(buffer=res.buffer))
         self.assertEqual(res.code, 0)
@@ -79,25 +85,30 @@ class AgentServicerTestCase(unittest.TestCase):
     def test_05_agentstatus(self):
         res = self.stub.GetAgentStatus(types_pb2.CommonRequest())
         status = json.loads(res.status)
+        self.assertEqual(status['react_steps'], 0)
         self.assertEqual(status['train_steps'], 0)
+        self.assertEqual(status['states_dim'], 20)
+        self.assertEqual(status['actions_num'], 8)
 
         res = self.stub.SetAgentStatus(agent_pb2.AgentStatus(status=res.status))
         self.assertEqual(res.code, 0)
 
     def test_06_getaction(self):
-
-        def generator():
-            info = {'states': {'example': [1, 2, 3, 4]}, 'done': False}
-            req = types_pb2.JsonString(json=json.dumps(info))
-            for _ in range(10000):
-                yield req
-            info['done'] = True
-            yield types_pb2.JsonString(json=json.dumps(info))
+        info = {
+            'states': {
+                'model1': [{
+                    'input1': np.random.rand(20).tolist(),
+                }],
+            },
+            'done': False,
+        }
+        req = types_pb2.JsonString(json=json.dumps(info))
 
         t1 = time.time()
-        for res in self.stub.GetAction(generator()):
-            info = json.loads(res.json)
-            self.assertEqual(type(info['actions']['example']), int)
+        for _ in range(5000):
+            res = self.stub.GetAction(req)
+            action = json.loads(res.json)['actions']
         t2 = time.time()
         print()
-        print(f'Time cost: {t2 - t1} s, FPS: {10000 / (t2 - t1)}')
+        print(f'Time cost: {t2 - t1} s, FPS: {5000 / (t2 - t1)}')
+        self.assertEqual(type(action['model1']['output1']), int)

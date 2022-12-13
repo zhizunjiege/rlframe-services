@@ -240,12 +240,12 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
         return bff_pb2.SimInfo(state=self.state, data=data, logs=logs)
 
 
-def bff_server(ip, port, max_workers):
+def bff_server(ip, port, max_workers, max_msg_len):
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=max_workers),
         options=[
-            ('grpc.max_send_message_length', 256 * 1024 * 1024),
-            ('grpc.max_receive_message_length', 256 * 1024 * 1024),
+            ('grpc.max_send_message_length', max_msg_len * 1024 * 1024),
+            ('grpc.max_receive_message_length', max_msg_len * 1024 * 1024),
         ],
     )
     bff_pb2_grpc.add_BFFServicer_to_server(BFFServicer(), server)
@@ -262,6 +262,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run an bff service.')
     parser.add_argument('-i', '--ip', type=str, default='0.0.0.0', help='IP address to listen on.')
     parser.add_argument('-p', '--port', type=int, default=0, help='Port to listen on.')
-    parser.add_argument('-w', '--work', type=int, default=10, help='Max workers.')
+    parser.add_argument('-w', '--work', type=int, default=10, help='Max workers in thread pool.')
+    parser.add_argument('-m', '--msglen', type=int, default=256, help='Max message length in MB.')
     args = parser.parse_args()
-    bff_server(args.ip, args.port, args.work)
+    bff_server(args.ip, args.port, args.work, args.msglen)

@@ -6,27 +6,27 @@
         {
           "type": "input",
           "params": {
-            "shape": 4
+            "shape": 20
           }
         },
         {
           "type": "dense",
           "params": {
-            "units": 16,
+            "units": 256,
             "activation": "relu"
           }
         },
         {
           "type": "dense",
           "params": {
-            "units": 16,
+            "units": 256,
             "activation": "relu"
           }
         },
         {
           "type": "dense",
           "params": {
-            "units": 2,
+            "units": 8,
             "activation": "linear"
           }
         }

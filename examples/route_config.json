@@ -1,0 +1,13 @@
+{
+  "routes": {
+    "51389f3968b427dd7c9fc7d134e0a57b4034b37dfbc8a110b1fa06e953638ee4": {
+      "name": "route1",
+      "configs": {
+        "8582be9fd2627db66fdb1893368ef493b2e8726119667559053bc0a842df69e9": {
+          "name": "config1",
+          "models": ["UAV"]
+        }
+      }
+    }
+  }
+}

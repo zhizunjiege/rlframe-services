@@ -98,7 +98,7 @@ class RLModelBase(ABC):
                 status[name] = self.__dict__[key]
         return status
 
-    def set_status(self, **status: Any) -> None:
+    def set_status(self, status: Dict[str, Any]) -> None:
         """Set intermediate status of model.
 
         Args:

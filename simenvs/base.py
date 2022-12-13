@@ -29,7 +29,7 @@ class SimEnvBase(ABC):
             params: Control parameters.
 
         Returns:
-            supported: True if supported, False otherwise.
+            True if supported, False otherwise.
         """
         ...
 
@@ -38,8 +38,8 @@ class SimEnvBase(ABC):
         """Monitor env.
 
         Returns:
-            data: Data of simulation.
-            logs: Logs of simulation enviroment.
+            Data of simulation.
+            Logs of simulation enviroment.
         """
         ...
 
@@ -48,6 +48,6 @@ class SimEnvBase(ABC):
         """Close env.
 
         Returns:
-            success: True if success, False otherwise.
+            True if success, False otherwise.
         """
         ...

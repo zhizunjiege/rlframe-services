@@ -1,0 +1,56 @@
+{
+  "types": {
+    "Position": {
+      "lat": "float64",
+      "lon": "float64",
+      "h": "float64"
+    },
+    "Distribution": {
+      "ID": "uint64",
+      "target": "uint64"
+    }
+  },
+  "data": {
+    "model1": {
+      "name": "UAV",
+      "input_params": {
+        "input1": {
+          "name": "ID",
+          "type": "uint64",
+          "value": 0
+        },
+        "input2": {
+          "name": "position",
+          "type": "Position",
+          "value": 0
+        },
+        "input3": {
+          "name": "targets",
+          "type": "uint64[]",
+          "value": 0
+        }
+      },
+      "output_params": {
+        "output1": {
+          "name": "launch",
+          "type": "bool",
+          "value": true
+        },
+        "output2": {
+          "name": "distribution",
+          "type": "Distribution[]",
+          "value": [
+            {
+              "ID": 1005,
+              "target": 1008
+            },
+            {
+              "ID": 1006,
+              "target": 1009
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 import numpy as np
 import tensorflow as tf
@@ -98,9 +98,8 @@ class DQN(RLModelBase):
 
             self.log_dir = f'logs/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
             self.summary_writer = tf.summary.create_file_writer(self.log_dir)
-            # tf.summary.trace_on(graph=True, profiler=True)
-            # with self.summary_writer.as_default():
-            #     tf.summary.graph(tf.Graph())
+            self._graph_exported = False
+            tf.summary.trace_on(graph=True, profiler=False)
         else:
             self.online_net = networks['online']
             self.target_net = None
@@ -151,17 +150,21 @@ class DQN(RLModelBase):
         if self.replay_buffer.size >= self.update_after and self._react_steps % self.update_online_every == 0:
             for _ in range(self.update_online_every):
                 batch = self.replay_buffer.sample(self.batch_size)
-
-                grads = self.calc_grads(
+                grads, loss, td_errors = self.calc_grads(
                     batch['obs1'],
                     batch['acts'].astype(np.int32).squeeze(axis=1),
                     batch['obs2'],
                     batch['rews'],
                     batch['done'],
                 )
-
                 self.optimizer.apply_gradients(zip(grads, self.online_net.trainable_variables))
                 self._train_steps += 1
+                with self.summary_writer.as_default():
+                    tf.summary.scalar('loss', loss, step=self._train_steps)
+                    tf.summary.scalar('td_error', tf.math.reduce_mean(tf.math.abs(td_errors)), step=self._train_steps)
+                    if not self._graph_exported:
+                        tf.summary.trace_export(name='model', step=self._train_steps, profiler_outdir=self.log_dir)
+                        self._graph_exported = True
                 if self._train_steps % self.update_target_every == 0:
                     self.update_target()
 
@@ -176,10 +179,7 @@ class DQN(RLModelBase):
             td_errors = tf.stop_gradient(target_q_values) - q_values
             loss = tf.math.reduce_mean(tf.math.square(td_errors))
         grads = tape.gradient(loss, self.online_net.trainable_variables)
-        with self.summary_writer.as_default():
-            tf.summary.scalar('loss', loss, step=self._train_steps)
-            tf.summary.scalar('td_error', tf.math.reduce_mean(tf.math.abs(td_errors)), step=self._train_steps)
-        return grads
+        return grads, loss, td_errors
 
     def update_target(self):
         self.target_net.set_weights(self.online_net.get_weights())
@@ -207,18 +207,19 @@ class DQN(RLModelBase):
         if self.training and 'target' in weights:
             self.target_net.set_weights(weights['target'])
 
-    def get_buffer(self) -> SimpleReplay:
-        """Get replay buffer of model.
+    def get_buffer(self) -> Dict[str, Union[int, Dict[str, np.ndarray]]]:
+        """Get buffer of experience replay.
 
         Returns:
-            Replay buffer.
+            Internel state of the simple replay buffer.
         """
-        return self.replay_buffer
+        return self.replay_buffer.get()
 
-    def set_buffer(self, buffer: SimpleReplay) -> None:
-        """Set replay buffer of model.
+    def set_buffer(self, buffer: Dict[str, Union[int, Dict[str, np.ndarray]]]) -> None:
+        """Set buffer of experience replay.
 
         Args:
-            buffer: Replay buffer.
+            buffer: Internel state of the simple replay buffer.
         """
-        self.replay_buffer = buffer
+        self.replay_buffer.set(buffer)
+        self.replay_size = buffer['max_size']
