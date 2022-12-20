@@ -7,12 +7,11 @@ class SimEnvBase(ABC):
     """Abstract base class for all simulation enviroments."""
 
     @abstractmethod
-    def __init__(self, id: str, **kargs) -> None:
+    def __init__(self, id: str) -> None:
         """Init env.
 
         Args:
             id: Id of simulation enviroment.
-            kargs: Any other parameters.
         """
         self.id = id
 
