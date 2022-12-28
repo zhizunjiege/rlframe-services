@@ -12,18 +12,15 @@ class DQNModelTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with open('examples/hypers.json', 'r') as f1, \
-             open('examples/structures.json', 'r') as f2:
+        with open('examples/agent/hypers_dqn.json', 'r') as f1, \
+             open('examples/agent/structures_dqn.json', 'r') as f2:
             hypers = json.loads(f1.read())
             structures = json.loads(f2.read())
-        cls.model = DQN(
-            training=True,
-            networks=default_builder(structures),
-            **hypers,
-        )
+        cls.model = DQN(training=True, networks=default_builder(structures), **hypers)
 
     @classmethod
     def tearDownClass(cls):
+        cls.model.close()
         cls.model = None
 
     def test_00_init(self):
@@ -56,7 +53,7 @@ class DQNModelTestCase(unittest.TestCase):
         print(f'20x256x256x8 nn 5000 train time: {t2 - t1:.2f}s')
         self.assertEqual(self.model._train_steps, 5000)
 
-    def test_04_weight(self):
+    def test_04_weights(self):
         weights = self.model.get_weights()
         self.model.set_weights(weights)
         self.assertTrue('online' in weights)

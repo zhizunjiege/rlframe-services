@@ -6,17 +6,17 @@ import unittest
 import grpc
 import numpy as np
 
-from protos import agent_pb2
-from protos import agent_pb2_grpc
+from protos import simenv_pb2
+from protos import simenv_pb2_grpc
 from protos import types_pb2
 
 
-class AgentServiceTestCase(unittest.TestCase):
+class SimenvServiceTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.channel = grpc.insecure_channel("localhost:10001")
-        cls.stub = agent_pb2_grpc.AgentStub(channel=cls.channel)
+        cls.stub = simenv_pb2_grpc.SimenvStub(channel=cls.channel)
 
     @classmethod
     def tearDownClass(cls):
@@ -28,19 +28,19 @@ class AgentServiceTestCase(unittest.TestCase):
         res = self.stub.QueryService(types_pb2.CommonRequest())
         self.assertEqual(res.state, types_pb2.ServiceState.State.UNINITED)
 
-    def test_01_agentconfig(self):
+    def test_01_simenvconfig(self):
         try:
-            res = self.stub.GetAgentConfig(types_pb2.CommonRequest())
+            res = self.stub.GetSimenvConfig(types_pb2.CommonRequest())
         except grpc.RpcError as e:
             self.assertEqual(e.code(), grpc.StatusCode.FAILED_PRECONDITION)
 
-        req = agent_pb2.AgentConfig()
-        with open('examples/agent/states_inputs_func.py', 'r') as f1, \
-             open('examples/agent/outputs_actions_func.py', 'r') as f2, \
-             open('examples/agent/reward_func.py', 'r') as f3, \
-             open('examples/agent/hypers_dqn.json', 'r') as f4, \
-             open('examples/agent/builder_dqn.py', 'r') as f5, \
-             open('examples/agent/structures_dqn.json', 'r') as f6:
+        req = simenv_pb2.SimenvConfig()
+        with open('examples/simenv/states_inputs_func.py', 'r') as f1, \
+             open('examples/simenv/outputs_actions_func.py', 'r') as f2, \
+             open('examples/simenv/reward_func.py', 'r') as f3, \
+             open('examples/simenv/hypers_dqn.json', 'r') as f4, \
+             open('examples/simenv/builder_dqn.py', 'r') as f5, \
+             open('examples/simenv/structures_dqn.json', 'r') as f6:
             req.training = False
             req.states_inputs_func = f1.read()
             req.outputs_actions_func = f2.read()
@@ -50,27 +50,27 @@ class AgentServiceTestCase(unittest.TestCase):
             req.builder = f5.read()
             req.structures = f6.read()
 
-        res = self.stub.SetAgentConfig(req)
+        res = self.stub.SetSimenvConfig(req)
         self.assertEqual(res.code, 0)
 
         res = self.stub.QueryService(types_pb2.CommonRequest())
         self.assertEqual(res.state, types_pb2.ServiceState.State.INITED)
 
-        res = self.stub.GetAgentConfig(types_pb2.CommonRequest())
+        res = self.stub.GetSimenvConfig(types_pb2.CommonRequest())
         self.assertEqual(res.type, 'DQN')
 
         self.stub.ResetService(types_pb2.CommonRequest())
 
         req.training = True
         req.builder = ''
-        res = self.stub.SetAgentConfig(req)
+        res = self.stub.SetSimenvConfig(req)
         self.assertEqual(res.code, 0)
 
-    def test_02_agentmode(self):
-        res = self.stub.GetAgentMode(types_pb2.CommonRequest())
+    def test_02_simenvmode(self):
+        res = self.stub.GetSimenvMode(types_pb2.CommonRequest())
         self.assertTrue(res.training)
 
-        res = self.stub.SetAgentMode(agent_pb2.AgentMode(training=True))
+        res = self.stub.SetSimenvMode(simenv_pb2.SimenvMode(training=True))
         self.assertEqual(res.code, 0)
 
     def test_03_modelweights(self):
@@ -79,7 +79,7 @@ class AgentServiceTestCase(unittest.TestCase):
         self.assertTrue('online' in weights)
         self.assertTrue('target' in weights)
 
-        res = self.stub.SetModelWeights(agent_pb2.ModelWeights(weights=res.weights))
+        res = self.stub.SetModelWeights(simenv_pb2.ModelWeights(weights=res.weights))
         self.assertEqual(res.code, 0)
 
     def test_04_modelbuffer(self):
@@ -88,7 +88,7 @@ class AgentServiceTestCase(unittest.TestCase):
         self.assertEqual(buffer['size'], 0)
         self.assertEqual(buffer['data']['acts_buf'].shape, (0, 1))
 
-        res = self.stub.SetModelBuffer(agent_pb2.ModelBuffer(buffer=res.buffer))
+        res = self.stub.SetModelBuffer(simenv_pb2.ModelBuffer(buffer=res.buffer))
         self.assertEqual(res.code, 0)
 
     def test_05_modelstatus(self):
@@ -97,7 +97,7 @@ class AgentServiceTestCase(unittest.TestCase):
         self.assertEqual(status['react_steps'], 0)
         self.assertEqual(status['train_steps'], 0)
 
-        res = self.stub.SetModelStatus(agent_pb2.ModelStatus(status=res.status))
+        res = self.stub.SetModelStatus(simenv_pb2.ModelStatus(status=res.status))
         self.assertEqual(res.code, 0)
 
     def test_06_getaction(self):

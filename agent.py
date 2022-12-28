@@ -16,9 +16,11 @@ from models.utils import default_builder
 class AgentServicer(agent_pb2_grpc.AgentServicer):
 
     def __init__(self):
-        self.__reset_all()
+        self.reset_all()
 
-    def __reset_all(self):
+    def reset_all(self):
+        self.state = types_pb2.ServiceState.State.UNINITED
+
         self.configs = None
 
         self.model = None
@@ -27,9 +29,9 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         self.oafunc = None
         self.rfunc = None
 
-        self.__reset_args()
+        self.reset_args()
 
-    def __reset_args(self):
+    def reset_args(self):
         self.func_cache = {}
         self.sifunc_args = {'states': None, 'inputs': None, 'cache': self.func_cache}
         self.oafunc_args = {'outputs': None, 'actions': None, 'cache': self.func_cache}
@@ -45,22 +47,29 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             'cache': self.func_cache,
         }
 
-    def ResetServer(self, request, context):
-        self.__reset_all()
+    def check_state(self, context):
+        if self.state == types_pb2.ServiceState.State.UNINITED:
+            context.abort(grpc.StatusCode.FAILED_PRECONDITION, 'Service not inited')
+
+    def ResetService(self, request, context):
+        if self.model is not None:
+            self.model.close()
+        self.reset_all()
         return types_pb2.CommonResponse()
 
+    def QueryService(self, request, context):
+        return types_pb2.ServiceState(state=self.state)
+
     def GetAgentConfig(self, request, context):
-        configs = self.configs or agent_pb2.AgentConfig()
-        return configs
+        self.check_state(context)
+        return self.configs
 
     def SetAgentConfig(self, request, context):
-        self.configs = request
-
         sifunc_src = request.states_inputs_func + '\ninputs = func(states)'
         self.sifunc = compile(sifunc_src, '', 'exec')
         oafunc_src = request.outputs_actions_func + '\nactions = func(outputs)'
         self.oafunc = compile(oafunc_src, '', 'exec')
-        if self.configs.training:
+        if request.training:
             rfunc_src = request.reward_func + '\nreward = func(states, inputs, actions, outputs,\
                  next_states, next_inputs, done)'
 
@@ -75,89 +84,91 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         else:
             structures = json.loads(request.structures)
             networks = default_builder(structures)
-        self.model = RLModels[request.type](
-            training=request.training,
-            networks=networks,
-            **hypers,
-        )
+        self.model = RLModels[request.type](training=request.training, networks=networks, **hypers)
+
+        self.state = types_pb2.ServiceState.State.INITED
+        self.configs = request
 
         return types_pb2.CommonResponse()
 
     def GetAgentMode(self, request, context):
-        training = self.model.training if self.model is not None else False
-        return agent_pb2.AgentMode(training=training)
+        self.check_state(context)
+        return agent_pb2.AgentMode(training=self.model.training)
 
     def SetAgentMode(self, request, context):
-        if self.model is not None:
-            self.model.training = request.training
+        self.check_state(context)
+        self.model.training = request.training
         return types_pb2.CommonResponse()
 
-    def GetAgentWeight(self, request, context):
-        weights = pickle.dumps(self.model.get_weights()) if self.model is not None else bytes()
-        return agent_pb2.AgentWeight(weights=weights)
+    def GetModelWeights(self, request, context):
+        self.check_state(context)
+        weights = pickle.dumps(self.model.get_weights())
+        return agent_pb2.ModelWeights(weights=weights)
 
-    def SetAgentWeight(self, request, context):
-        if self.model is not None:
-            self.model.set_weights(pickle.loads(request.weights))
+    def SetModelWeights(self, request, context):
+        self.check_state(context)
+        self.model.set_weights(pickle.loads(request.weights))
         return types_pb2.CommonResponse()
 
-    def GetAgentBuffer(self, request, context):
-        buffer = pickle.dumps(self.model.get_buffer()) if self.model is not None else bytes()
-        return agent_pb2.AgentBuffer(buffer=buffer)
+    def GetModelBuffer(self, request, context):
+        self.check_state(context)
+        buffer = pickle.dumps(self.model.get_buffer())
+        return agent_pb2.ModelBuffer(buffer=buffer)
 
-    def SetAgentBuffer(self, request, context):
-        if self.model is not None:
-            self.model.set_buffer(pickle.loads(request.buffer))
+    def SetModelBuffer(self, request, context):
+        self.check_state(context)
+        self.model.set_buffer(pickle.loads(request.buffer))
         return types_pb2.CommonResponse()
 
-    def GetAgentStatus(self, request, context):
-        status = json.dumps(self.model.get_status()) if self.model is not None else ''
-        return agent_pb2.AgentStatus(status=status)
+    def GetModelStatus(self, request, context):
+        self.check_state(context)
+        status = json.dumps(self.model.get_status())
+        return agent_pb2.ModelStatus(status=status)
 
-    def SetAgentStatus(self, request, context):
-        if self.model is not None:
-            self.model.set_status(json.loads(request.status))
+    def SetModelStatus(self, request, context):
+        self.check_state(context)
+        self.model.set_status(json.loads(request.status))
         return types_pb2.CommonResponse()
 
     def GetAction(self, request, context):
-        response = types_pb2.JsonString()
-        if self.model is not None:
-            info = json.loads(request.json)
-            states, done = info['states'], info['done']
-            self.sifunc_args['states'] = states
-            exec(self.sifunc, self.sifunc_args)
-            inputs = self.sifunc_args['inputs']
-            outputs = self.model.react(inputs)
-            self.oafunc_args['outputs'] = outputs
-            exec(self.oafunc, self.oafunc_args)
-            actions = self.oafunc_args['actions']
-            response.json = json.dumps({'actions': actions})
-            if self.model.training:
-                if self.rfunc_args['states'] is None:
-                    self.rfunc_args['states'] = states
-                    self.rfunc_args['inputs'] = inputs
-                    self.rfunc_args['actions'] = actions
-                    self.rfunc_args['outputs'] = outputs
-                else:
-                    self.rfunc_args['next_states'] = states
-                    self.rfunc_args['next_inputs'] = inputs
-                    self.rfunc_args['done'] = done
-                    exec(self.rfunc, self.rfunc_args)
-                    self.model.store(
-                        states=self.rfunc_args['inputs'],
-                        actions=self.rfunc_args['outputs'],
-                        next_states=self.rfunc_args['next_inputs'],
-                        reward=self.rfunc_args['reward'],
-                        done=self.rfunc_args['done'],
-                    )
-                    self.rfunc_args['states'] = self.rfunc_args['next_states']
-                    self.rfunc_args['inputs'] = self.rfunc_args['next_inputs']
-                    self.rfunc_args['actions'] = actions
-                    self.rfunc_args['outputs'] = outputs
-                    self.model.train()
-            if done:
-                self.__reset_args()
-        return response
+        self.check_state(context)
+
+        info = json.loads(request.json)
+        states, done = info['states'], info['done']
+        self.sifunc_args['states'] = states
+        exec(self.sifunc, self.sifunc_args)
+        inputs = self.sifunc_args['inputs']
+        outputs = self.model.react(inputs)
+        self.oafunc_args['outputs'] = outputs
+        exec(self.oafunc, self.oafunc_args)
+        actions = self.oafunc_args['actions']
+        if self.model.training:
+            if self.rfunc_args['states'] is None:
+                self.rfunc_args['states'] = states
+                self.rfunc_args['inputs'] = inputs
+                self.rfunc_args['actions'] = actions
+                self.rfunc_args['outputs'] = outputs
+            else:
+                self.rfunc_args['next_states'] = states
+                self.rfunc_args['next_inputs'] = inputs
+                self.rfunc_args['done'] = done
+                exec(self.rfunc, self.rfunc_args)
+                self.model.store(
+                    states=self.rfunc_args['inputs'],
+                    actions=self.rfunc_args['outputs'],
+                    next_states=self.rfunc_args['next_inputs'],
+                    reward=self.rfunc_args['reward'],
+                    done=self.rfunc_args['done'],
+                )
+                self.rfunc_args['states'] = self.rfunc_args['next_states']
+                self.rfunc_args['inputs'] = self.rfunc_args['next_inputs']
+                self.rfunc_args['actions'] = actions
+                self.rfunc_args['outputs'] = outputs
+                self.model.train()
+        if done:
+            self.reset_args()
+
+        return types_pb2.JsonString(json=json.dumps({'actions': actions}))
 
 
 def agent_server(ip, port, max_workers, max_msg_len):

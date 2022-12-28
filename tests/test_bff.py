@@ -13,24 +13,54 @@ class BFFServicerTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.stub = bff_pb2_grpc.BFFStub(grpc.insecure_channel("localhost:50050"))
-        cls.addr = 'localhost:50051'
+        cls.channel = grpc.insecure_channel("localhost:10000")
+        cls.stub = bff_pb2_grpc.BFFStub(channel=cls.channel)
+        cls.agent_id, cls.simenv_id = '', ''
 
     @classmethod
     def tearDownClass(cls):
+        cls.stub.ResetServer(types_pb2.CommonRequest())
+        cls.channel.close()
         cls.stub = None
 
-    def test_00_registeragent(self):
-        res = self.stub.RegisterAgent(bff_pb2.AgentsInfo.Info(addr=self.addr))
+    def test_00_resetserver(self):
+        res = self.stub.ResetServer(types_pb2.CommonRequest())
         self.assertEqual(res.code, 0)
 
-        res = self.stub.UnRegisterAgent(bff_pb2.AgentsInfo.Info(addr=self.addr))
-        self.assertEqual(res.msg, '')
+    def test_01_registerservice(self):
+        agent_service = bff_pb2.ServiceInfo(
+            name='agent',
+            type=bff_pb2.ServiceType.AGENT,
+            subtype='DQN',
+            ip='localhost',
+            port=10001,
+            desc='agent service',
+            params='',
+        )
+        simenv_service = bff_pb2.ServiceInfo(
+            name='simenv',
+            type=bff_pb2.ServiceType.SIMENV,
+            subtype='CQSim',
+            ip='localhost',
+            port=50051,
+            desc='simenv service',
+            params=json.dumps({'engine_url': 'localhost:50051'}),
+        )
+        res = self.stub.RegisterService(bff_pb2.ServiceInfoList(services=[agent_service, simenv_service]))
+        self.assertEqual(len(res.ids), 2)
 
-    def test_01_getagentsinfo(self):
-        self.stub.RegisterAgent(bff_pb2.AgentsInfo.Info(addr=self.addr))
-        res = self.stub.GetAgentsInfo(types_pb2.CommonRequest())
-        self.assertEqual(res.infos[0].addr, self.addr)
+        res = self.stub.UnRegisterService(bff_pb2.ServiceIdList(ids=[]))
+        self.assertEqual(res.code, 0)
+
+        res = self.stub.RegisterService(bff_pb2.ServiceInfoList(services=[agent_service, simenv_service]))
+        self.agent_id, self.simenv_id = res.ids
+
+    def test_02_serviceinfo(self):
+        res = self.stub.GetServiceInfo(bff_pb2.ServiceIdList(ids=[self.agent_id]))
+        self.assertTrue(self.agent_id in res.services)
+
+        res = self.stub.SetServiceInfo(res)
+        self.assertEqual(res.code, 0)
 
     def test_02_agentsconfig(self):
         req = bff_pb2.AgentsConfig()
@@ -54,7 +84,13 @@ class BFFServicerTestCase(unittest.TestCase):
         res = self.stub.GetAgentsConfig(types_pb2.CommonRequest())
         self.assertEqual(len(res.configs), 1)
 
-    @unittest.skip('skip')
+    def test_03_dataconfig(self):
+        res = self.stub.SetAgentMode(agent_pb2.AgentMode(training=True))
+        self.assertEqual(res.code, 0)
+
+        res = self.stub.GetAgentMode(types_pb2.CommonRequest())
+        self.assertTrue(res.training)
+
     def test_03_simconfig(self):
         with open('examples/sample_done_func.py', 'r') as f:
             sample_done_func = f.read()

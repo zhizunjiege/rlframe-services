@@ -8,21 +8,19 @@ import grpc
 from protos import agent_pb2_grpc
 from protos import bff_pb2
 from protos import bff_pb2_grpc
+from protos import simenv_pb2_grpc
 from protos import types_pb2
-
-from simenvs import SimEnvs
 
 
 class BFFServicer(bff_pb2_grpc.BFFServicer):
 
     def __init__(self):
-        self.__reset_all()
+        self.reset()
 
-    def __reset_all(self):
+    def reset(self):
         self.services = {}
 
         self.data_config = None
-
         self.route_config = None
         self.sim_done_func = None
         self.sim_steps = 0  # TODO
@@ -30,16 +28,17 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
         self.agents = {}
         self.simenvs = {}
 
-        self.state = bff_pb2.SimInfo.State.UNINITED
+    def unknown_id(self, id, context):
+        context.abort(grpc.StatusCode.INVALID_ARGUMENT, f'Unknown service id: {id}')
 
     def ResetServer(self, request, context):
-        self.__reset_all()
+        self.reset()
         return types_pb2.CommonResponse()
 
     def RegisterService(self, request, context):
         ids = []
         for service in request.services:
-            key = f'{service.name}-{service.type}-{service.subtype} {service.ip}:{service.port}'
+            key = f'{service.type}-{service.name} {service.ip}:{service.port}'
             sha256 = hashlib.sha256()
             sha256.update(key.encode('utf-8'))
             id = sha256.hexdigest()
@@ -48,33 +47,39 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
             if service.type == bff_pb2.ServiceType.AGENT:
                 channel = grpc.insecure_channel(f'{service.ip}:{service.port}')
                 self.agents[id] = agent_pb2_grpc.AgentStub(channel)
+            elif service.type == bff_pb2.ServiceType.SIMENV:
+                channel = grpc.insecure_channel(f'{service.ip}:{service.port}')
+                self.simenvs[id] = simenv_pb2_grpc.SimenvStub(channel)
             else:
-                params = json.loads(service.params) if service.params else {}
-                self.simenvs[id] = SimEnvs[service.subtype](id=id, **params)
+                context.abort(grpc.StatusCode.INVALID_ARGUMENT, f'Unknown service type: {service.type}')
         return bff_pb2.ServiceIdList(ids=ids)
 
     def UnRegisterService(self, request, context):
         ids = request.ids if len(request.ids) > 0 else list(self.services.keys())
         for id in ids:
             del self.services[id]
-            if id in self.simenvs:
-                self.simenvs[id].close()
+            if id in self.agents:
+                self.agents[id].ResetService(types_pb2.CommonRequest())
+                del self.agents[id]
+            elif id in self.simenvs:
+                self.simenvs[id].ResetService(types_pb2.CommonRequest())
                 del self.simenvs[id]
             else:
-                self.agents[id].ResetServer(types_pb2.CommonRequest())
-                del self.agents[id]
+                self.unknown_id(id, context)
         return types_pb2.CommonResponse()
 
     def GetServiceInfo(self, request, context):
         services = {}
         ids = request.ids if len(request.ids) > 0 else list(self.services.keys())
         for id in ids:
-            services[id] = self.services[id]
+            if id in self.services:
+                services[id] = self.services[id]
         return bff_pb2.ServiceInfoMap(services=services)
 
     def SetServiceInfo(self, request, context):
         for id in request.services:
-            self.services[id] = request.services[id]
+            if id in self.services:
+                self.services[id] = request.services[id]
         return types_pb2.CommonResponse()
 
     def GetDataConfig(self, request, context):
@@ -84,20 +89,22 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
         self.data_config = request
         return types_pb2.CommonResponse()
 
+    def GetRouteConfig(self, request, context):
+        return self.route_config
+
+    def SetRouteConfig(self, request, context):
+        self.route_config = request
+        sdfunc_src = request.sim_done_func + '\ndone = func(states)'
+        self.sim_done_func = compile(sdfunc_src, '', 'exec')
+        return types_pb2.CommonResponse()
+
     def ProxyChat(self, request_iterator, context):
         metadata = context.invocation_metadata()
         if len(metadata) > 0 and metadata[0][0] == 'id':
             id = metadata[0][1]
         else:
-            ip = context.peer().split(':')[1:]
-            for id_ in self.simenvs:
-                if self.services[id_].ip == ip:
-                    id = id_
-                    break
-                else:
-                    id = ''
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'Missing id in metadata!')
 
-        response = types_pb2.JsonString()
         if id in self.simenvs:
             route = self.route_config[id]
             for request in request_iterator:
@@ -111,133 +118,163 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
                     result = self.agents[id_].GetAction({'states': states_, 'done': done})
                     actions_ = json.loads(result.json)['actions']
                     actions.update(actions_)
-                response.json = json.dumps({'actions': actions})
+                response = types_pb2.JsonString(json=json.dumps({'actions': actions}))
                 if done:
                     self.simenvs[id].control('done', {})
                     return response
                 else:
                     yield response
         else:
-            response.json = json.dumps({'error': 'Invalid id!'})
-            return response
+            self.unknown_id(id, context)
 
-    def GetRouteConfig(self, request, context):
-        return self.route_config
-
-    def SetRouteConfig(self, request, context):
-        self.route_config = request
-        sdfunc_src = request.sim_done_func + '\ndone = func(states)'
-        self.sim_done_func = compile(sdfunc_src, '', 'exec')
+    def ResetService(self, request, context):
+        ids = request.ids if len(request.ids) > 0 else list(self.services.keys())
+        for id in ids:
+            if id in self.agents:
+                self.agents[id].ResetService(types_pb2.CommonRequest())
+            elif id in self.simenvs:
+                self.simenvs[id].ResetService(types_pb2.CommonRequest())
+            else:
+                self.unknown_id(id, context)
         return types_pb2.CommonResponse()
+
+    def QueryService(self, request, context):
+        states = {}
+        ids = request.ids if len(request.ids) > 0 else list(self.services.keys())
+        for id in ids:
+            if id in self.agents:
+                states[id] = self.agents[id].QueryService(types_pb2.CommonRequest())
+            elif id in self.simenvs:
+                states[id] = self.simenvs[id].QueryService(types_pb2.CommonRequest())
+            else:
+                self.unknown_id(id, context)
+        return bff_pb2.ServiceStateMap(states=states)
 
     def GetAgentConfig(self, request, context):
         configs = {}
         ids = request.ids if len(request.ids) > 0 else list(self.agents.keys())
         for id in ids:
-            stub = self.agents[id]
-            configs[id] = stub.GetAgentConfig(types_pb2.CommonRequest())
+            if id in self.agents:
+                configs[id] = self.agents[id].GetAgentConfig(types_pb2.CommonRequest())
+            else:
+                self.unknown_id(id, context)
         return bff_pb2.AgentConfigMap(configs=configs)
 
     def SetAgentConfig(self, request, context):
         for id in request.configs:
-            stub = self.agents[id]
-            stub.SetAgentConfig(request.configs[id])
+            if id in self.agents:
+                self.agents[id].SetAgentConfig(request.configs[id])
+            else:
+                self.unknown_id(id, context)
         return types_pb2.CommonResponse()
 
     def GetAgentMode(self, request, context):
         modes = {}
         ids = request.ids if len(request.ids) > 0 else list(self.agents.keys())
         for id in ids:
-            stub = self.agents[id]
-            modes[id] = stub.GetAgentMode(types_pb2.CommonRequest())
+            if id in self.agents:
+                modes[id] = self.agents[id].GetAgentMode(types_pb2.CommonRequest())
+            else:
+                self.unknown_id(id, context)
         return bff_pb2.AgentModeMap(modes=modes)
 
     def SetAgentMode(self, request, context):
         for id in request.modes:
-            stub = self.agents[id]
-            stub.SetAgentMode(request.modes[id])
+            if id in self.agents:
+                self.agents[id].SetAgentMode(request.modes[id])
+            else:
+                self.unknown_id(id, context)
         return types_pb2.CommonResponse()
 
-    def GetAgentWeight(self, request, context):
+    def GetModelWeights(self, request, context):
         weights = {}
         ids = request.ids if len(request.ids) > 0 else list(self.agents.keys())
         for id in ids:
-            stub = self.agents[id]
-            weights[id] = stub.GetAgentWeight(types_pb2.CommonRequest())
-        return bff_pb2.AgentWeightMap(weights=weights)
+            if id in self.agents:
+                weights[id] = self.agents[id].GetModelWeights(types_pb2.CommonRequest())
+            else:
+                self.unknown_id(id, context)
+        return bff_pb2.ModelWeightsMap(weights=weights)
 
-    def SetAgentWeight(self, request, context):
+    def SetModelWeights(self, request, context):
         for id in request.weights:
-            stub = self.agents[id]
-            stub.SetAgentWeight(request.weights[id])
+            if id in self.agents:
+                self.agents[id].SetModelWeights(request.weights[id])
+            else:
+                self.unknown_id(id, context)
         return types_pb2.CommonResponse()
 
-    def GetAgentBuffer(self, request, context):
+    def GetModelBuffer(self, request, context):
         buffers = {}
         ids = request.ids if len(request.ids) > 0 else list(self.agents.keys())
         for id in ids:
-            stub = self.agents[id]
-            buffers[id] = stub.GetAgentBuffer(types_pb2.CommonRequest())
-        return bff_pb2.AgentBufferMap(buffers=buffers)
+            if id in self.agents:
+                buffers[id] = self.agents[id].GetModelBuffer(types_pb2.CommonRequest())
+            else:
+                self.unknown_id(id, context)
+        return bff_pb2.ModelBufferMap(buffers=buffers)
 
-    def SetAgentBuffer(self, request, context):
+    def SetModelBuffer(self, request, context):
         for id in request.buffers:
-            stub = self.agents[id]
-            stub.SetAgentBuffer(request.buffers[id])
+            if id in self.agents:
+                self.agents[id].SetModelBuffer(request.buffers[id])
+            else:
+                self.unknown_id(id, context)
         return types_pb2.CommonResponse()
 
-    def GetAgentStatus(self, request, context):
+    def GetModelStatus(self, request, context):
         status = {}
         ids = request.ids if len(request.ids) > 0 else list(self.agents.keys())
         for id in ids:
-            stub = self.agents[id]
-            status[id] = stub.GetAgentStatus(types_pb2.CommonRequest())
-        return bff_pb2.AgentStatusMap(status=status)
+            if id in self.agents:
+                status[id] = self.agents[id].GetModelStatus(types_pb2.CommonRequest())
+            else:
+                self.unknown_id(id, context)
+        return bff_pb2.ModelStatusMap(status=status)
 
-    def SetAgentStatus(self, request, context):
+    def SetModelStatus(self, request, context):
         for id in request.status:
-            stub = self.agents[id]
-            stub.SetAgentStatus(request.status[id])
+            if id in self.agents:
+                self.agents[id].SetModelStatus(request.status[id])
+            else:
+                self.unknown_id(id, context)
+        return types_pb2.CommonResponse()
+
+    def GetSimenvConfig(self, request, context):
+        configs = {}
+        ids = request.ids if len(request.ids) > 0 else list(self.simenvs.keys())
+        for id in ids:
+            if id in self.simenvs:
+                configs[id] = self.simenvs[id].GetSimenvConfig(types_pb2.CommonRequest())
+            else:
+                self.unknown_id(id, context)
+        return bff_pb2.SimenvConfigMap(configs=configs)
+
+    def SetSimenvConfig(self, request, context):
+        for id in request.configs:
+            if id in self.simenvs:
+                self.simenvs[id].SetSimenvConfig(request.configs[id])
+            else:
+                self.unknown_id(id, context)
         return types_pb2.CommonResponse()
 
     def SimControl(self, request, context):
-        if request.cmd == bff_pb2.SimCmd.Type.INIT:
-            cmd = 'init'
-            self.state = bff_pb2.SimInfo.State.STOPPED
-        elif request.cmd == bff_pb2.SimCmd.Type.START:
-            cmd = 'start'
-            self.state = bff_pb2.SimInfo.State.RUNNING
-        elif request.cmd == bff_pb2.SimCmd.Type.PAUSE:
-            cmd = 'pause'
-            self.state = bff_pb2.SimInfo.State.SUSPENDED
-        elif request.cmd == bff_pb2.SimCmd.Type.STEP:
-            cmd = 'step'
-            self.state = bff_pb2.SimInfo.State.SUSPENDED
-        elif request.cmd == bff_pb2.SimCmd.Type.RESUME:
-            cmd = 'resume'
-            self.state = bff_pb2.SimInfo.State.RUNNING
-        elif request.cmd == bff_pb2.SimCmd.Type.STOP:
-            cmd = 'stop'
-            self.state = bff_pb2.SimInfo.State.STOPPED
-        elif request.cmd == bff_pb2.SimCmd.Type.DONE:
-            cmd = 'done'
-            self.state = bff_pb2.SimInfo.State.RUNNING
-        else:
-            cmd = 'param'
-        for id in self.simenvs:
-            if id in request.params:
-                params = json.loads(request.params[id])
+        for id in request.cmds:
+            if id in self.simenvs:
+                self.simenvs[id].SimControl(request.cmds[id])
             else:
-                params = {}
-            self.simenvs[id].control(cmd, params)
+                self.unknown_id(id, context)
         return types_pb2.CommonResponse()
 
     def SimMonitor(self, request, context):
-        data, logs = {}, {}
-        for id in self.simenvs:
-            data_, logs_ = self.simenvs[id].monitor()
-            data[id], logs[id] = json.dumps(data_), json.dumps(logs_)
-        return bff_pb2.SimInfo(state=self.state, data=data, logs=logs)
+        infos = {}
+        ids = request.ids if len(request.ids) > 0 else list(self.simenvs.keys())
+        for id in ids:
+            if id in self.simenvs:
+                infos[id] = self.simenvs[id].SimMonitor(types_pb2.CommonRequest())
+            else:
+                self.unknown_id(id, context)
+        return bff_pb2.SimInfoMap(infos=infos)
 
 
 def bff_server(ip, port, max_workers, max_msg_len):

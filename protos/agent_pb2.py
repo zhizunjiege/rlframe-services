@@ -14,14 +14,14 @@ _sym_db = _symbol_database.Default()
 from protos import types_pb2 as protos_dot_types__pb2
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x12protos/agent.proto\x12\ngame.agent\x1a\x12protos/types.proto\"\xb1\x01\n\x0b\x41gentConfig\x12\x10\n\x08training\x18\x01 \x01(\x08\x12\x1a\n\x12states_inputs_func\x18\x02 \x01(\t\x12\x1c\n\x14outputs_actions_func\x18\x03 \x01(\t\x12\x13\n\x0breward_func\x18\x04 \x01(\t\x12\x0c\n\x04type\x18\x05 \x01(\t\x12\x0e\n\x06hypers\x18\x06 \x01(\t\x12\x0f\n\x07\x62uilder\x18\x07 \x01(\t\x12\x12\n\nstructures\x18\x08 \x01(\t\"\x1d\n\tAgentMode\x12\x10\n\x08training\x18\x01 \x01(\x08\"\x1e\n\x0b\x41gentWeight\x12\x0f\n\x07weights\x18\x01 \x01(\x0c\"\x1d\n\x0b\x41gentBuffer\x12\x0e\n\x06\x62uffer\x18\x01 \x01(\x0c\"\x1d\n\x0b\x41gentStatus\x12\x0e\n\x06status\x18\x01 \x01(\t2\xc3\x06\n\x05\x41gent\x12\x44\n\x0bResetServer\x12\x19.game.types.CommonRequest\x1a\x1a.game.types.CommonResponse\x12\x44\n\x0eGetAgentConfig\x12\x19.game.types.CommonRequest\x1a\x17.game.agent.AgentConfig\x12\x45\n\x0eSetAgentConfig\x12\x17.game.agent.AgentConfig\x1a\x1a.game.types.CommonResponse\x12@\n\x0cGetAgentMode\x12\x19.game.types.CommonRequest\x1a\x15.game.agent.AgentMode\x12\x41\n\x0cSetAgentMode\x12\x15.game.agent.AgentMode\x1a\x1a.game.types.CommonResponse\x12\x44\n\x0eGetAgentWeight\x12\x19.game.types.CommonRequest\x1a\x17.game.agent.AgentWeight\x12\x45\n\x0eSetAgentWeight\x12\x17.game.agent.AgentWeight\x1a\x1a.game.types.CommonResponse\x12\x44\n\x0eGetAgentBuffer\x12\x19.game.types.CommonRequest\x1a\x17.game.agent.AgentBuffer\x12\x45\n\x0eSetAgentBuffer\x12\x17.game.agent.AgentBuffer\x1a\x1a.game.types.CommonResponse\x12\x44\n\x0eGetAgentStatus\x12\x19.game.types.CommonRequest\x1a\x17.game.agent.AgentStatus\x12\x45\n\x0eSetAgentStatus\x12\x17.game.agent.AgentStatus\x1a\x1a.game.types.CommonResponse\x12;\n\tGetAction\x12\x16.game.types.JsonString\x1a\x16.game.types.JsonStringb\x06proto3'
+    b'\n\x12protos/agent.proto\x12\ngame.agent\x1a\x12protos/types.proto\"\xb1\x01\n\x0b\x41gentConfig\x12\x10\n\x08training\x18\x01 \x01(\x08\x12\x1a\n\x12states_inputs_func\x18\x02 \x01(\t\x12\x1c\n\x14outputs_actions_func\x18\x03 \x01(\t\x12\x13\n\x0breward_func\x18\x04 \x01(\t\x12\x0c\n\x04type\x18\x05 \x01(\t\x12\x0e\n\x06hypers\x18\x06 \x01(\t\x12\x0f\n\x07\x62uilder\x18\x07 \x01(\t\x12\x12\n\nstructures\x18\x08 \x01(\t\"\x1d\n\tAgentMode\x12\x10\n\x08training\x18\x01 \x01(\x08\"\x1f\n\x0cModelWeights\x12\x0f\n\x07weights\x18\x01 \x01(\x0c\"\x1d\n\x0bModelBuffer\x12\x0e\n\x06\x62uffer\x18\x01 \x01(\x0c\"\x1d\n\x0bModelStatus\x12\x0e\n\x06status\x18\x01 \x01(\t2\x8d\x07\n\x05\x41gent\x12\x45\n\x0cResetService\x12\x19.game.types.CommonRequest\x1a\x1a.game.types.CommonResponse\x12\x43\n\x0cQueryService\x12\x19.game.types.CommonRequest\x1a\x18.game.types.ServiceState\x12\x44\n\x0eGetAgentConfig\x12\x19.game.types.CommonRequest\x1a\x17.game.agent.AgentConfig\x12\x45\n\x0eSetAgentConfig\x12\x17.game.agent.AgentConfig\x1a\x1a.game.types.CommonResponse\x12@\n\x0cGetAgentMode\x12\x19.game.types.CommonRequest\x1a\x15.game.agent.AgentMode\x12\x41\n\x0cSetAgentMode\x12\x15.game.agent.AgentMode\x1a\x1a.game.types.CommonResponse\x12\x46\n\x0fGetModelWeights\x12\x19.game.types.CommonRequest\x1a\x18.game.agent.ModelWeights\x12G\n\x0fSetModelWeights\x12\x18.game.agent.ModelWeights\x1a\x1a.game.types.CommonResponse\x12\x44\n\x0eGetModelBuffer\x12\x19.game.types.CommonRequest\x1a\x17.game.agent.ModelBuffer\x12\x45\n\x0eSetModelBuffer\x12\x17.game.agent.ModelBuffer\x1a\x1a.game.types.CommonResponse\x12\x44\n\x0eGetModelStatus\x12\x19.game.types.CommonRequest\x1a\x17.game.agent.ModelStatus\x12\x45\n\x0eSetModelStatus\x12\x17.game.agent.ModelStatus\x1a\x1a.game.types.CommonResponse\x12;\n\tGetAction\x12\x16.game.types.JsonString\x1a\x16.game.types.JsonStringb\x06proto3'
 )
 
 _AGENTCONFIG = DESCRIPTOR.message_types_by_name['AgentConfig']
 _AGENTMODE = DESCRIPTOR.message_types_by_name['AgentMode']
-_AGENTWEIGHT = DESCRIPTOR.message_types_by_name['AgentWeight']
-_AGENTBUFFER = DESCRIPTOR.message_types_by_name['AgentBuffer']
-_AGENTSTATUS = DESCRIPTOR.message_types_by_name['AgentStatus']
+_MODELWEIGHTS = DESCRIPTOR.message_types_by_name['ModelWeights']
+_MODELBUFFER = DESCRIPTOR.message_types_by_name['ModelBuffer']
+_MODELSTATUS = DESCRIPTOR.message_types_by_name['ModelStatus']
 AgentConfig = _reflection.GeneratedProtocolMessageType(
     'AgentConfig',
     (_message.Message,),
@@ -42,35 +42,35 @@ AgentMode = _reflection.GeneratedProtocolMessageType(
     })
 _sym_db.RegisterMessage(AgentMode)
 
-AgentWeight = _reflection.GeneratedProtocolMessageType(
-    'AgentWeight',
+ModelWeights = _reflection.GeneratedProtocolMessageType(
+    'ModelWeights',
     (_message.Message,),
     {
-        'DESCRIPTOR': _AGENTWEIGHT,
+        'DESCRIPTOR': _MODELWEIGHTS,
         '__module__': 'protos.agent_pb2'
-        # @@protoc_insertion_point(class_scope:game.agent.AgentWeight)
+        # @@protoc_insertion_point(class_scope:game.agent.ModelWeights)
     })
-_sym_db.RegisterMessage(AgentWeight)
+_sym_db.RegisterMessage(ModelWeights)
 
-AgentBuffer = _reflection.GeneratedProtocolMessageType(
-    'AgentBuffer',
+ModelBuffer = _reflection.GeneratedProtocolMessageType(
+    'ModelBuffer',
     (_message.Message,),
     {
-        'DESCRIPTOR': _AGENTBUFFER,
+        'DESCRIPTOR': _MODELBUFFER,
         '__module__': 'protos.agent_pb2'
-        # @@protoc_insertion_point(class_scope:game.agent.AgentBuffer)
+        # @@protoc_insertion_point(class_scope:game.agent.ModelBuffer)
     })
-_sym_db.RegisterMessage(AgentBuffer)
+_sym_db.RegisterMessage(ModelBuffer)
 
-AgentStatus = _reflection.GeneratedProtocolMessageType(
-    'AgentStatus',
+ModelStatus = _reflection.GeneratedProtocolMessageType(
+    'ModelStatus',
     (_message.Message,),
     {
-        'DESCRIPTOR': _AGENTSTATUS,
+        'DESCRIPTOR': _MODELSTATUS,
         '__module__': 'protos.agent_pb2'
-        # @@protoc_insertion_point(class_scope:game.agent.AgentStatus)
+        # @@protoc_insertion_point(class_scope:game.agent.ModelStatus)
     })
-_sym_db.RegisterMessage(AgentStatus)
+_sym_db.RegisterMessage(ModelStatus)
 
 _AGENT = DESCRIPTOR.services_by_name['Agent']
 if _descriptor._USE_C_DESCRIPTORS == False:
@@ -80,12 +80,12 @@ if _descriptor._USE_C_DESCRIPTORS == False:
     _AGENTCONFIG._serialized_end = 232
     _AGENTMODE._serialized_start = 234
     _AGENTMODE._serialized_end = 263
-    _AGENTWEIGHT._serialized_start = 265
-    _AGENTWEIGHT._serialized_end = 295
-    _AGENTBUFFER._serialized_start = 297
-    _AGENTBUFFER._serialized_end = 326
-    _AGENTSTATUS._serialized_start = 328
-    _AGENTSTATUS._serialized_end = 357
-    _AGENT._serialized_start = 360
-    _AGENT._serialized_end = 1195
+    _MODELWEIGHTS._serialized_start = 265
+    _MODELWEIGHTS._serialized_end = 296
+    _MODELBUFFER._serialized_start = 298
+    _MODELBUFFER._serialized_end = 327
+    _MODELSTATUS._serialized_start = 329
+    _MODELSTATUS._serialized_end = 358
+    _AGENT._serialized_start = 361
+    _AGENT._serialized_end = 1270
 # @@protoc_insertion_point(module_scope)

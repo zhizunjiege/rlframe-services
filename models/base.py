@@ -13,7 +13,7 @@ class RLModelBase(ABC):
         Args:
             training: Whether the model is in training mode.
         """
-        self.__training = training
+        self._training = training
 
     @abstractmethod
     def react(self, states: Any) -> Any:
@@ -47,6 +47,15 @@ class RLModelBase(ABC):
     @abstractmethod
     def train(self) -> Any:
         """Train model."""
+        ...
+
+    @abstractmethod
+    def close(self) -> bool:
+        """Close model.
+
+        Returns:
+            True if success.
+        """
         ...
 
     @abstractmethod
@@ -117,9 +126,9 @@ class RLModelBase(ABC):
     @property
     def training(self) -> bool:
         """Getter of training."""
-        return self.__training
+        return self._training
 
     @training.setter
     def training(self, value: bool):
         """Setter of training."""
-        self.__training = value
+        self._training = value

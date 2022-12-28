@@ -184,6 +184,14 @@ class DQN(RLModelBase):
     def update_target(self):
         self.target_net.set_weights(self.online_net.get_weights())
 
+    def close(self) -> bool:
+        """Close model.
+
+        Returns:
+            True if success.
+        """
+        return super().close()
+
     def get_weights(self) -> Dict[str, np.ndarray]:
         """Get weights of neural networks.
 

@@ -15,10 +15,15 @@ class AgentStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.ResetServer = channel.unary_unary(
-            '/game.agent.Agent/ResetServer',
+        self.ResetService = channel.unary_unary(
+            '/game.agent.Agent/ResetService',
             request_serializer=protos_dot_types__pb2.CommonRequest.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
+        )
+        self.QueryService = channel.unary_unary(
+            '/game.agent.Agent/QueryService',
+            request_serializer=protos_dot_types__pb2.CommonRequest.SerializeToString,
+            response_deserializer=protos_dot_types__pb2.ServiceState.FromString,
         )
         self.GetAgentConfig = channel.unary_unary(
             '/game.agent.Agent/GetAgentConfig',
@@ -40,34 +45,34 @@ class AgentStub(object):
             request_serializer=protos_dot_agent__pb2.AgentMode.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
         )
-        self.GetAgentWeight = channel.unary_unary(
-            '/game.agent.Agent/GetAgentWeight',
+        self.GetModelWeights = channel.unary_unary(
+            '/game.agent.Agent/GetModelWeights',
             request_serializer=protos_dot_types__pb2.CommonRequest.SerializeToString,
-            response_deserializer=protos_dot_agent__pb2.AgentWeight.FromString,
+            response_deserializer=protos_dot_agent__pb2.ModelWeights.FromString,
         )
-        self.SetAgentWeight = channel.unary_unary(
-            '/game.agent.Agent/SetAgentWeight',
-            request_serializer=protos_dot_agent__pb2.AgentWeight.SerializeToString,
+        self.SetModelWeights = channel.unary_unary(
+            '/game.agent.Agent/SetModelWeights',
+            request_serializer=protos_dot_agent__pb2.ModelWeights.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
         )
-        self.GetAgentBuffer = channel.unary_unary(
-            '/game.agent.Agent/GetAgentBuffer',
+        self.GetModelBuffer = channel.unary_unary(
+            '/game.agent.Agent/GetModelBuffer',
             request_serializer=protos_dot_types__pb2.CommonRequest.SerializeToString,
-            response_deserializer=protos_dot_agent__pb2.AgentBuffer.FromString,
+            response_deserializer=protos_dot_agent__pb2.ModelBuffer.FromString,
         )
-        self.SetAgentBuffer = channel.unary_unary(
-            '/game.agent.Agent/SetAgentBuffer',
-            request_serializer=protos_dot_agent__pb2.AgentBuffer.SerializeToString,
+        self.SetModelBuffer = channel.unary_unary(
+            '/game.agent.Agent/SetModelBuffer',
+            request_serializer=protos_dot_agent__pb2.ModelBuffer.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
         )
-        self.GetAgentStatus = channel.unary_unary(
-            '/game.agent.Agent/GetAgentStatus',
+        self.GetModelStatus = channel.unary_unary(
+            '/game.agent.Agent/GetModelStatus',
             request_serializer=protos_dot_types__pb2.CommonRequest.SerializeToString,
-            response_deserializer=protos_dot_agent__pb2.AgentStatus.FromString,
+            response_deserializer=protos_dot_agent__pb2.ModelStatus.FromString,
         )
-        self.SetAgentStatus = channel.unary_unary(
-            '/game.agent.Agent/SetAgentStatus',
-            request_serializer=protos_dot_agent__pb2.AgentStatus.SerializeToString,
+        self.SetModelStatus = channel.unary_unary(
+            '/game.agent.Agent/SetModelStatus',
+            request_serializer=protos_dot_agent__pb2.ModelStatus.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
         )
         self.GetAction = channel.unary_unary(
@@ -80,8 +85,15 @@ class AgentStub(object):
 class AgentServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def ResetServer(self, request, context):
-        """重置Agent服务
+    def ResetService(self, request, context):
+        """重置智能服务
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def QueryService(self, request, context):
+        """查询智能服务
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -115,43 +127,43 @@ class AgentServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetAgentWeight(self, request, context):
-        """获取智能体权重
+    def GetModelWeights(self, request, context):
+        """获取模型权重
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SetAgentWeight(self, request, context):
-        """设置智能体权重
+    def SetModelWeights(self, request, context):
+        """设置模型权重
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetAgentBuffer(self, request, context):
-        """获取智能体经验池
+    def GetModelBuffer(self, request, context):
+        """获取模型经验
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SetAgentBuffer(self, request, context):
-        """设置智能体经验池
+    def SetModelBuffer(self, request, context):
+        """设置模型经验
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetAgentStatus(self, request, context):
-        """获取智能体状态
+    def GetModelStatus(self, request, context):
+        """获取模型状态
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SetAgentStatus(self, request, context):
-        """设置智能体状态
+    def SetModelStatus(self, request, context):
+        """设置模型状态
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -167,11 +179,17 @@ class AgentServicer(object):
 
 def add_AgentServicer_to_server(servicer, server):
     rpc_method_handlers = {
-        'ResetServer':
+        'ResetService':
             grpc.unary_unary_rpc_method_handler(
-                servicer.ResetServer,
+                servicer.ResetService,
                 request_deserializer=protos_dot_types__pb2.CommonRequest.FromString,
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
+            ),
+        'QueryService':
+            grpc.unary_unary_rpc_method_handler(
+                servicer.QueryService,
+                request_deserializer=protos_dot_types__pb2.CommonRequest.FromString,
+                response_serializer=protos_dot_types__pb2.ServiceState.SerializeToString,
             ),
         'GetAgentConfig':
             grpc.unary_unary_rpc_method_handler(
@@ -197,40 +215,40 @@ def add_AgentServicer_to_server(servicer, server):
                 request_deserializer=protos_dot_agent__pb2.AgentMode.FromString,
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
             ),
-        'GetAgentWeight':
+        'GetModelWeights':
             grpc.unary_unary_rpc_method_handler(
-                servicer.GetAgentWeight,
+                servicer.GetModelWeights,
                 request_deserializer=protos_dot_types__pb2.CommonRequest.FromString,
-                response_serializer=protos_dot_agent__pb2.AgentWeight.SerializeToString,
+                response_serializer=protos_dot_agent__pb2.ModelWeights.SerializeToString,
             ),
-        'SetAgentWeight':
+        'SetModelWeights':
             grpc.unary_unary_rpc_method_handler(
-                servicer.SetAgentWeight,
-                request_deserializer=protos_dot_agent__pb2.AgentWeight.FromString,
+                servicer.SetModelWeights,
+                request_deserializer=protos_dot_agent__pb2.ModelWeights.FromString,
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
             ),
-        'GetAgentBuffer':
+        'GetModelBuffer':
             grpc.unary_unary_rpc_method_handler(
-                servicer.GetAgentBuffer,
+                servicer.GetModelBuffer,
                 request_deserializer=protos_dot_types__pb2.CommonRequest.FromString,
-                response_serializer=protos_dot_agent__pb2.AgentBuffer.SerializeToString,
+                response_serializer=protos_dot_agent__pb2.ModelBuffer.SerializeToString,
             ),
-        'SetAgentBuffer':
+        'SetModelBuffer':
             grpc.unary_unary_rpc_method_handler(
-                servicer.SetAgentBuffer,
-                request_deserializer=protos_dot_agent__pb2.AgentBuffer.FromString,
+                servicer.SetModelBuffer,
+                request_deserializer=protos_dot_agent__pb2.ModelBuffer.FromString,
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
             ),
-        'GetAgentStatus':
+        'GetModelStatus':
             grpc.unary_unary_rpc_method_handler(
-                servicer.GetAgentStatus,
+                servicer.GetModelStatus,
                 request_deserializer=protos_dot_types__pb2.CommonRequest.FromString,
-                response_serializer=protos_dot_agent__pb2.AgentStatus.SerializeToString,
+                response_serializer=protos_dot_agent__pb2.ModelStatus.SerializeToString,
             ),
-        'SetAgentStatus':
+        'SetModelStatus':
             grpc.unary_unary_rpc_method_handler(
-                servicer.SetAgentStatus,
-                request_deserializer=protos_dot_agent__pb2.AgentStatus.FromString,
+                servicer.SetModelStatus,
+                request_deserializer=protos_dot_agent__pb2.ModelStatus.FromString,
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
             ),
         'GetAction':
@@ -249,19 +267,35 @@ class Agent(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def ResetServer(request,
-                    target,
-                    options=(),
-                    channel_credentials=None,
-                    call_credentials=None,
-                    insecure=False,
-                    compression=None,
-                    wait_for_ready=None,
-                    timeout=None,
-                    metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/ResetServer',
+    def ResetService(request,
+                     target,
+                     options=(),
+                     channel_credentials=None,
+                     call_credentials=None,
+                     insecure=False,
+                     compression=None,
+                     wait_for_ready=None,
+                     timeout=None,
+                     metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/ResetService',
                                              protos_dot_types__pb2.CommonRequest.SerializeToString,
                                              protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
+                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def QueryService(request,
+                     target,
+                     options=(),
+                     channel_credentials=None,
+                     call_credentials=None,
+                     insecure=False,
+                     compression=None,
+                     wait_for_ready=None,
+                     timeout=None,
+                     metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/QueryService',
+                                             protos_dot_types__pb2.CommonRequest.SerializeToString,
+                                             protos_dot_types__pb2.ServiceState.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
@@ -329,39 +363,39 @@ class Agent(object):
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def GetAgentWeight(request,
-                       target,
-                       options=(),
-                       channel_credentials=None,
-                       call_credentials=None,
-                       insecure=False,
-                       compression=None,
-                       wait_for_ready=None,
-                       timeout=None,
-                       metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/GetAgentWeight',
+    def GetModelWeights(request,
+                        target,
+                        options=(),
+                        channel_credentials=None,
+                        call_credentials=None,
+                        insecure=False,
+                        compression=None,
+                        wait_for_ready=None,
+                        timeout=None,
+                        metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/GetModelWeights',
                                              protos_dot_types__pb2.CommonRequest.SerializeToString,
-                                             protos_dot_agent__pb2.AgentWeight.FromString, options, channel_credentials,
+                                             protos_dot_agent__pb2.ModelWeights.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def SetAgentWeight(request,
-                       target,
-                       options=(),
-                       channel_credentials=None,
-                       call_credentials=None,
-                       insecure=False,
-                       compression=None,
-                       wait_for_ready=None,
-                       timeout=None,
-                       metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/SetAgentWeight',
-                                             protos_dot_agent__pb2.AgentWeight.SerializeToString,
+    def SetModelWeights(request,
+                        target,
+                        options=(),
+                        channel_credentials=None,
+                        call_credentials=None,
+                        insecure=False,
+                        compression=None,
+                        wait_for_ready=None,
+                        timeout=None,
+                        metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/SetModelWeights',
+                                             protos_dot_agent__pb2.ModelWeights.SerializeToString,
                                              protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def GetAgentBuffer(request,
+    def GetModelBuffer(request,
                        target,
                        options=(),
                        channel_credentials=None,
@@ -371,13 +405,13 @@ class Agent(object):
                        wait_for_ready=None,
                        timeout=None,
                        metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/GetAgentBuffer',
+        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/GetModelBuffer',
                                              protos_dot_types__pb2.CommonRequest.SerializeToString,
-                                             protos_dot_agent__pb2.AgentBuffer.FromString, options, channel_credentials,
+                                             protos_dot_agent__pb2.ModelBuffer.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def SetAgentBuffer(request,
+    def SetModelBuffer(request,
                        target,
                        options=(),
                        channel_credentials=None,
@@ -387,13 +421,13 @@ class Agent(object):
                        wait_for_ready=None,
                        timeout=None,
                        metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/SetAgentBuffer',
-                                             protos_dot_agent__pb2.AgentBuffer.SerializeToString,
+        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/SetModelBuffer',
+                                             protos_dot_agent__pb2.ModelBuffer.SerializeToString,
                                              protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def GetAgentStatus(request,
+    def GetModelStatus(request,
                        target,
                        options=(),
                        channel_credentials=None,
@@ -403,13 +437,13 @@ class Agent(object):
                        wait_for_ready=None,
                        timeout=None,
                        metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/GetAgentStatus',
+        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/GetModelStatus',
                                              protos_dot_types__pb2.CommonRequest.SerializeToString,
-                                             protos_dot_agent__pb2.AgentStatus.FromString, options, channel_credentials,
+                                             protos_dot_agent__pb2.ModelStatus.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def SetAgentStatus(request,
+    def SetModelStatus(request,
                        target,
                        options=(),
                        channel_credentials=None,
@@ -419,8 +453,8 @@ class Agent(object):
                        wait_for_ready=None,
                        timeout=None,
                        metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/SetAgentStatus',
-                                             protos_dot_agent__pb2.AgentStatus.SerializeToString,
+        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/SetModelStatus',
+                                             protos_dot_agent__pb2.ModelStatus.SerializeToString,
                                              protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 

@@ -5,8 +5,10 @@ package game.agent;
 import "protos/types.proto";
 
 service Agent {
-  // 重置Agent服务
-  rpc ResetServer(types.CommonRequest) returns (types.CommonResponse);
+  // 重置智能服务
+  rpc ResetService(types.CommonRequest) returns (types.CommonResponse);
+  // 查询智能服务
+  rpc QueryService(types.CommonRequest) returns (types.ServiceState);
 
   // 获取智能体配置
   rpc GetAgentConfig(types.CommonRequest) returns (AgentConfig);
@@ -18,27 +20,27 @@ service Agent {
   // 设置智能体模式
   rpc SetAgentMode(AgentMode) returns (types.CommonResponse);
 
-  // 获取智能体权重
-  rpc GetAgentWeight(types.CommonRequest) returns (AgentWeight);
-  // 设置智能体权重
-  rpc SetAgentWeight(AgentWeight) returns (types.CommonResponse);
+  // 获取模型权重
+  rpc GetModelWeights(types.CommonRequest) returns (ModelWeights);
+  // 设置模型权重
+  rpc SetModelWeights(ModelWeights) returns (types.CommonResponse);
 
-  // 获取智能体经验池
-  rpc GetAgentBuffer(types.CommonRequest) returns (AgentBuffer);
-  // 设置智能体经验池
-  rpc SetAgentBuffer(AgentBuffer) returns (types.CommonResponse);
+  // 获取模型经验
+  rpc GetModelBuffer(types.CommonRequest) returns (ModelBuffer);
+  // 设置模型经验
+  rpc SetModelBuffer(ModelBuffer) returns (types.CommonResponse);
 
-  // 获取智能体状态
-  rpc GetAgentStatus(types.CommonRequest) returns (AgentStatus);
-  // 设置智能体状态
-  rpc SetAgentStatus(AgentStatus) returns (types.CommonResponse);
+  // 获取模型状态
+  rpc GetModelStatus(types.CommonRequest) returns (ModelStatus);
+  // 设置模型状态
+  rpc SetModelStatus(ModelStatus) returns (types.CommonResponse);
 
   // 获取决策动作
   rpc GetAction(types.JsonString) returns (types.JsonString);
 }
 
 message AgentConfig {
-  bool training = 1;                // 是否训练模式
+  bool training = 1;                // 是否为训练模式
   string states_inputs_func = 2;    // 状态到输入预处理函数
   string outputs_actions_func = 3;  // 输出到动作后处理函数
   string reward_func = 4;           // 奖励函数
@@ -52,14 +54,14 @@ message AgentMode {
   bool training = 1;  // 是否为训练模式
 }
 
-message AgentWeight {
+message ModelWeights {
   bytes weights = 1;  // 模型权重，格式：Pickle字节流
 }
 
-message AgentBuffer {
-  bytes buffer = 1;  // 经验回放，格式：Pickle字节流
+message ModelBuffer {
+  bytes buffer = 1;  // 经验数据，格式：Pickle字节流
 }
 
-message AgentStatus {
+message ModelStatus {
   string status = 1;  // 模型状态，格式：Json字符串
 }

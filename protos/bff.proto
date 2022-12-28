@@ -4,9 +4,10 @@ package game.bff;
 
 import "protos/types.proto";
 import "protos/agent.proto";
+import "protos/simenv.proto";
 
 service BFF {
-  // 重置BFF服务
+  // 重置BFF服务器
   rpc ResetServer(types.CommonRequest) returns (types.CommonResponse);
 
   // 注册服务
@@ -24,13 +25,18 @@ service BFF {
   // 设置数据配置
   rpc SetDataConfig(DataConfig) returns (types.CommonResponse);
 
-  // 智能代理流式通信
-  rpc ProxyChat(stream types.JsonString) returns (stream types.JsonString);
-
   // 获取路由配置
   rpc GetRouteConfig(types.CommonRequest) returns (RouteConfig);
   // 设置路由配置
   rpc SetRouteConfig(RouteConfig) returns (types.CommonResponse);
+
+  // 智能代理流式通信
+  rpc ProxyChat(stream types.JsonString) returns (stream types.JsonString);
+
+  // 重置服务
+  rpc ResetService(ServiceIdList) returns (types.CommonResponse);
+  // 查询服务
+  rpc QueryService(ServiceIdList) returns (ServiceStateMap);
 
   // 获取智能体配置
   rpc GetAgentConfig(ServiceIdList) returns (AgentConfigMap);
@@ -42,40 +48,43 @@ service BFF {
   // 设置智能体模式
   rpc SetAgentMode(AgentModeMap) returns (types.CommonResponse);
 
-  // 获取智能体权重
-  rpc GetAgentWeight(ServiceIdList) returns (AgentWeightMap);
-  // 设置智能体权重
-  rpc SetAgentWeight(AgentWeightMap) returns (types.CommonResponse);
+  // 获取模型权重
+  rpc GetModelWeights(ServiceIdList) returns (ModelWeightsMap);
+  // 设置模型权重
+  rpc SetModelWeights(ModelWeightsMap) returns (types.CommonResponse);
 
-  // 获取智能体经验池
-  rpc GetAgentBuffer(ServiceIdList) returns (AgentBufferMap);
-  // 设置智能体经验池
-  rpc SetAgentBuffer(AgentBufferMap) returns (types.CommonResponse);
+  // 获取模型经验
+  rpc GetModelBuffer(ServiceIdList) returns (ModelBufferMap);
+  // 设置模型经验
+  rpc SetModelBuffer(ModelBufferMap) returns (types.CommonResponse);
 
-  // 获取智能体状态
-  rpc GetAgentStatus(ServiceIdList) returns (AgentStatusMap);
-  // 设置智能体状态
-  rpc SetAgentStatus(AgentStatusMap) returns (types.CommonResponse);
+  // 获取模型状态
+  rpc GetModelStatus(ServiceIdList) returns (ModelStatusMap);
+  // 设置模型状态
+  rpc SetModelStatus(ModelStatusMap) returns (types.CommonResponse);
+
+  // 获取仿真环境配置
+  rpc GetSimenvConfig(ServiceIdList) returns (SimenvConfigMap);
+  // 设置仿真环境配置
+  rpc SetSimenvConfig(SimenvConfigMap) returns (types.CommonResponse);
 
   // 控制仿真流程
-  rpc SimControl(SimCmd) returns (types.CommonResponse);
+  rpc SimControl(SimCmdMap) returns (types.CommonResponse);
 
   // 获取仿真信息
-  rpc SimMonitor(types.CommonRequest) returns (SimInfo);
+  rpc SimMonitor(ServiceIdList) returns (SimInfoMap);
 }
 
-enum ServiceType {
-  AGENT = 0;   // 智能服务
-  SIMENV = 1;  // 仿真服务
-}
 message ServiceInfo {
-  string name = 1;       // 服务名称
-  ServiceType type = 2;  // 服务类型
-  string subtype = 3;    // 服务子类型
-  string ip = 4;         // 服务ip
-  uint32 port = 5;       // 服务端口
-  string desc = 6;       // 服务描述
-  string params = 7;     // 服务参数，格式：Json字符串
+  enum Type {
+    AGENT = 0;   // 智能服务
+    SIMENV = 1;  // 仿真服务
+  }
+  Type type = 1;    // 服务类型
+  string name = 2;  // 服务名称
+  string ip = 3;    // 服务ip
+  uint32 port = 4;  // 服务端口
+  string desc = 5;  // 服务描述
 }
 message ServiceIdList {
   repeated string ids = 1;  // 服务id列表
@@ -115,45 +124,32 @@ message RouteConfig {
   uint32 sim_step_ratio = 3;      // 仿真步数比
 }
 
+message ServiceStateMap {
+  map<string, types.ServiceState> states = 1;  // <服务id,服务状态>
+}
+
 message AgentConfigMap {
   map<string, agent.AgentConfig> configs = 1;  // <智能服务id,智能服务配置>
 }
 message AgentModeMap {
   map<string, agent.AgentMode> modes = 1;  // <智能服务id,智能服务模式>
 }
-message AgentWeightMap {
-  map<string, agent.AgentWeight> weights = 1;  // <智能服务id,智能服务权重>
+message ModelWeightsMap {
+  map<string, agent.ModelWeights> weights = 1;  // <智能服务id,模型权重>
 }
-message AgentBufferMap {
-  map<string, agent.AgentBuffer> buffers = 1;  // <智能服务id,智能服务经验>
+message ModelBufferMap {
+  map<string, agent.ModelBuffer> buffers = 1;  // <智能服务id,模型经验>
 }
-message AgentStatusMap {
-  map<string, agent.AgentStatus> status = 1;  // <智能服务id,智能服务状态>
-}
-
-message SimCmd {
-  enum Type {
-    INIT = 0;    // 初始化
-    START = 1;   // 开始
-    PAUSE = 2;   // 暂停
-    STEP = 3;    // 步进
-    RESUME = 4;  // 继续
-    STOP = 5;    // 停止
-    DONE = 6;    // 单局结束
-    PARAM = 7;   // 设置参数
-  }
-  Type cmd = 1;                              // 仿真命令
-  map<string, types.JsonString> params = 2;  // <仿真服务id,仿真服务参数>
+message ModelStatusMap {
+  map<string, agent.ModelStatus> status = 1;  // <智能服务id,模型状态>
 }
 
-message SimInfo {
-  enum State {
-    UNINITED = 0;   // 未初始化
-    STOPPED = 1;    // 已停止
-    RUNNING = 2;    // 正在运行
-    SUSPENDED = 3;  // 已挂起
-  }
-  State state = 1;                         // 仿真状态
-  map<string, types.JsonString> data = 2;  // <仿真服务id,仿真服务数据>
-  map<string, types.JsonString> logs = 3;  // <仿真服务id,仿真服务日志>
+message SimenvConfigMap {
+  map<string, simenv.SimenvConfig> configs = 1;  // <仿真服务id,仿真服务配置>
+}
+message SimCmdMap {
+  map<string, simenv.SimCmd> cmds = 1;  // <仿真服务id,仿真命令>
+}
+message SimInfoMap {
+  map<string, simenv.SimInfo> infos = 1;  // <仿真服务id,仿真信息>
 }

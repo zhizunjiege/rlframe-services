@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package game.simenv;
+
+import "protos/types.proto";
+
+service Simenv {
+  // 重置仿真服务
+  rpc ResetService(types.CommonRequest) returns (types.CommonResponse);
+  // 查询仿真服务
+  rpc QueryService(types.CommonRequest) returns (types.ServiceState);
+
+  // 获取仿真环境配置
+  rpc GetSimenvConfig(types.CommonRequest) returns (SimenvConfig);
+  // 设置仿真环境配置
+  rpc SetSimenvConfig(SimenvConfig) returns (types.CommonResponse);
+
+  // 控制仿真流程
+  rpc SimControl(SimCmd) returns (types.CommonResponse);
+
+  // 获取仿真信息
+  rpc SimMonitor(types.CommonRequest) returns (SimInfo);
+}
+
+message SimenvConfig {
+  string type = 1;  // 仿真环境类型
+  string args = 2;  // 仿真环境参数，格式：Json字符串
+}
+
+message SimCmd {
+  enum Type {
+    INIT = 0;    // 初始化
+    START = 1;   // 开始
+    PAUSE = 2;   // 暂停
+    STEP = 3;    // 步进
+    RESUME = 4;  // 继续
+    STOP = 5;    // 停止
+    DONE = 6;    // 单局结束
+    PARAM = 7;   // 设置参数
+  }
+  Type cmd = 1;                 // 仿真命令
+  types.JsonString params = 2;  // 仿真参数
+}
+
+message SimInfo {
+  enum State {
+    UNINITED = 0;   // 未初始化
+    STOPPED = 1;    // 已停止
+    RUNNING = 2;    // 正在运行
+    SUSPENDED = 3;  // 已挂起
+  }
+  State state = 1;            // 仿真状态
+  types.JsonString data = 2;  // 仿真数据
+  types.JsonString logs = 3;  // 仿真日志
+}

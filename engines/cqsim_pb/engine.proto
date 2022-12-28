@@ -35,12 +35,25 @@ service SimController {
 
   // 设置日志等级
   rpc SetLogLevel(LogLevelRequest) returns (CommonResponse);
+
+  // http相关设置
+  rpc SetHttpInfo(HttpInfo) returns (CommonResponse);
+
+  // 获取当前运行的想定信息
+  rpc GetScenarioInfo(CommonRequest) returns (ScenarioInfo);
 }
 
 // 通用返回结果
 message CommonResponse {
   // 返回消息
   string msg = 1;
+  uint64 code = 2;
+  uint64 error_location = 3;
+}
+// 想定信息
+message ScenarioInfo {
+  // 返回消息
+  uint64 ID = 1;
 }
 // 日志等级枚举
 enum LogLevel {
@@ -84,7 +97,7 @@ message EntityListRequest {
 
 // 模型实体
 message Entity {
-  // ID
+  // 实体ID
   string id = 1;
   // 模型类型ID
   string model_id = 2;
@@ -94,16 +107,20 @@ message Entity {
 message EntityListResponse {
   // 实体列表信息
   message EntityInfo {
-    // ID
+    // 实体ID
     string id = 1;
-    // 名称
+    // 实体名称
     string name = 2;
-    // 模型名称
+    // 模型显示名称
     string model_name = 3;
+    // 模型类型ID
+    string model_id = 4;
     // 阵营名称
-    string camp_name = 4;
+    string camp_name = 5;
   }
   repeated EntityInfo entity_list = 1;
+  // 实体列表信息json(web端使用)
+  string entity_list_json = 2;
 }
 
 // 节点设计结果
@@ -139,6 +156,10 @@ message InitInfo {
     // (数据回放模式)仿真数据ID
     uint64 data_id = 3;
   }
+}
+
+message HttpInfo {
+  string token = 1;
 }
 
 // 仿真控制指令

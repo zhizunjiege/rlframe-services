@@ -3,17 +3,19 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Literal, Tuple
 
 
-class SimEnvBase(ABC):
-    """Abstract base class for all simulation enviroments."""
+class SimEngineBase(ABC):
+    """Abstract base class for all simulation engines."""
 
     @abstractmethod
     def __init__(self, id: str) -> None:
-        """Init env.
+        """Init engine.
 
         Args:
-            id: Id of simulation enviroment.
+            id: Id of simulation engine.
         """
         self.id = id
+
+        self._state = 'uninited'
 
     @abstractmethod
     def control(
@@ -21,32 +23,37 @@ class SimEnvBase(ABC):
         cmd: Literal['init', 'start', 'pause', 'step', 'resume', 'stop', 'done', 'param'],
         params: Dict[str, Any],
     ) -> bool:
-        """Control env.
+        """Control engine.
 
         Args:
             cmd: Control command. `done` means ending current episode, `param` means setting simulation parameters.
             params: Control parameters.
 
         Returns:
-            True if supported, False otherwise.
+            True if success.
         """
         ...
 
     @abstractmethod
     def monitor(self) -> Tuple[List[Dict[str, Any]], List[str]]:
-        """Monitor env.
+        """Monitor engine.
 
         Returns:
-            Data of simulation.
-            Logs of simulation enviroment.
+            Data of simulation process.
+            Logs of simulation engine.
         """
         ...
 
     @abstractmethod
     def close(self) -> bool:
-        """Close env.
+        """Close engine.
 
         Returns:
-            True if success, False otherwise.
+            True if success.
         """
         ...
+
+    @property
+    def state(self) -> Literal['uninited', 'stopped', 'running', 'suspended']:
+        """Getter of state."""
+        return self._state

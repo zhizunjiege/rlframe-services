@@ -12,13 +12,15 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x12protos/types.proto\x12\ngame.types\"\x0f\n\rCommonRequest\"\x91\x01\n\x0e\x43ommonResponse\x12\x33\n\x04\x63ode\x18\x01 \x01(\x0e\x32%.game.types.CommonResponse.StatusCode\x12\x0b\n\x03msg\x18\x02 \x01(\t\"=\n\nStatusCode\x12\x06\n\x02OK\x10\x00\x12\x0b\n\x07WARNING\x10\x01\x12\t\n\x05\x45RROR\x10\x02\x12\x0f\n\x0b\x46\x41TAL_ERROR\x10\x03\"\x1a\n\nJsonString\x12\x0c\n\x04json\x18\x01 \x01(\tb\x06proto3'
+    b'\n\x12protos/types.proto\x12\ngame.types\"\x0f\n\rCommonRequest\"\x89\x01\n\x0e\x43ommonResponse\x12/\n\x04\x63ode\x18\x01 \x01(\x0e\x32!.game.types.CommonResponse.Status\x12\x0b\n\x03msg\x18\x02 \x01(\t\"9\n\x06Status\x12\x06\n\x02OK\x10\x00\x12\x0b\n\x07WARNING\x10\x01\x12\t\n\x05\x45RROR\x10\x02\x12\x0f\n\x0b\x46\x41TAL_ERROR\x10\x03\"\x1a\n\nJsonString\x12\x0c\n\x04json\x18\x01 \x01(\t\"`\n\x0cServiceState\x12-\n\x05state\x18\x01 \x01(\x0e\x32\x1e.game.types.ServiceState.State\"!\n\x05State\x12\x0c\n\x08UNINITED\x10\x00\x12\n\n\x06INITED\x10\x01\x62\x06proto3'
 )
 
 _COMMONREQUEST = DESCRIPTOR.message_types_by_name['CommonRequest']
 _COMMONRESPONSE = DESCRIPTOR.message_types_by_name['CommonResponse']
 _JSONSTRING = DESCRIPTOR.message_types_by_name['JsonString']
-_COMMONRESPONSE_STATUSCODE = _COMMONRESPONSE.enum_types_by_name['StatusCode']
+_SERVICESTATE = DESCRIPTOR.message_types_by_name['ServiceState']
+_COMMONRESPONSE_STATUS = _COMMONRESPONSE.enum_types_by_name['Status']
+_SERVICESTATE_STATE = _SERVICESTATE.enum_types_by_name['State']
 CommonRequest = _reflection.GeneratedProtocolMessageType(
     'CommonRequest',
     (_message.Message,),
@@ -49,15 +51,29 @@ JsonString = _reflection.GeneratedProtocolMessageType(
     })
 _sym_db.RegisterMessage(JsonString)
 
+ServiceState = _reflection.GeneratedProtocolMessageType(
+    'ServiceState',
+    (_message.Message,),
+    {
+        'DESCRIPTOR': _SERVICESTATE,
+        '__module__': 'protos.types_pb2'
+        # @@protoc_insertion_point(class_scope:game.types.ServiceState)
+    })
+_sym_db.RegisterMessage(ServiceState)
+
 if _descriptor._USE_C_DESCRIPTORS == False:
 
     DESCRIPTOR._options = None
     _COMMONREQUEST._serialized_start = 34
     _COMMONREQUEST._serialized_end = 49
     _COMMONRESPONSE._serialized_start = 52
-    _COMMONRESPONSE._serialized_end = 197
-    _COMMONRESPONSE_STATUSCODE._serialized_start = 136
-    _COMMONRESPONSE_STATUSCODE._serialized_end = 197
-    _JSONSTRING._serialized_start = 199
-    _JSONSTRING._serialized_end = 225
+    _COMMONRESPONSE._serialized_end = 189
+    _COMMONRESPONSE_STATUS._serialized_start = 132
+    _COMMONRESPONSE_STATUS._serialized_end = 189
+    _JSONSTRING._serialized_start = 191
+    _JSONSTRING._serialized_end = 217
+    _SERVICESTATE._serialized_start = 219
+    _SERVICESTATE._serialized_end = 315
+    _SERVICESTATE_STATE._serialized_start = 282
+    _SERVICESTATE_STATE._serialized_end = 315
 # @@protoc_insertion_point(module_scope)

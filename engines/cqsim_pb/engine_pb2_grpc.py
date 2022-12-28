@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from simenvs.cqsim import engine_pb2 as simenvs_dot_cqsim_dot_engine__pb2
+from engines.cqsim_pb import engine_pb2 as engines_dot_cqsim__pb_dot_engine__pb2
 
 
 class SimControllerStub(object):
@@ -17,53 +17,63 @@ class SimControllerStub(object):
         """
         self.GetEntityList = channel.unary_unary(
             '/cqsim.control.SimController/GetEntityList',
-            request_serializer=simenvs_dot_cqsim_dot_engine__pb2.EntityListRequest.SerializeToString,
-            response_deserializer=simenvs_dot_cqsim_dot_engine__pb2.EntityListResponse.FromString,
+            request_serializer=engines_dot_cqsim__pb_dot_engine__pb2.EntityListRequest.SerializeToString,
+            response_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.EntityListResponse.FromString,
         )
         self.Init = channel.unary_unary(
             '/cqsim.control.SimController/Init',
-            request_serializer=simenvs_dot_cqsim_dot_engine__pb2.InitInfo.SerializeToString,
-            response_deserializer=simenvs_dot_cqsim_dot_engine__pb2.CommonResponse.FromString,
+            request_serializer=engines_dot_cqsim__pb_dot_engine__pb2.InitInfo.SerializeToString,
+            response_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonResponse.FromString,
         )
         self.Control = channel.unary_unary(
             '/cqsim.control.SimController/Control',
-            request_serializer=simenvs_dot_cqsim_dot_engine__pb2.ControlCmd.SerializeToString,
-            response_deserializer=simenvs_dot_cqsim_dot_engine__pb2.CommonResponse.FromString,
+            request_serializer=engines_dot_cqsim__pb_dot_engine__pb2.ControlCmd.SerializeToString,
+            response_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonResponse.FromString,
         )
         self.GetSysInfo = channel.unary_stream(
             '/cqsim.control.SimController/GetSysInfo',
-            request_serializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
-            response_deserializer=simenvs_dot_cqsim_dot_engine__pb2.SysInfoResponse.FromString,
+            request_serializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.SerializeToString,
+            response_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.SysInfoResponse.FromString,
         )
         self.GetDataSysInfo = channel.unary_stream(
             '/cqsim.control.SimController/GetDataSysInfo',
-            request_serializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
-            response_deserializer=simenvs_dot_cqsim_dot_engine__pb2.DataSysInfoResponse.FromString,
+            request_serializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.SerializeToString,
+            response_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.DataSysInfoResponse.FromString,
         )
         self.GetAllNode = channel.unary_unary(
             '/cqsim.control.SimController/GetAllNode',
-            request_serializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
-            response_deserializer=simenvs_dot_cqsim_dot_engine__pb2.NodeResponse.FromString,
+            request_serializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.SerializeToString,
+            response_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.NodeResponse.FromString,
         )
         self.GetInitedPercent = channel.unary_stream(
             '/cqsim.control.SimController/GetInitedPercent',
-            request_serializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
-            response_deserializer=simenvs_dot_cqsim_dot_engine__pb2.InitedResponse.FromString,
+            request_serializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.SerializeToString,
+            response_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.InitedResponse.FromString,
         )
         self.GetErrorMsg = channel.unary_stream(
             '/cqsim.control.SimController/GetErrorMsg',
-            request_serializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
-            response_deserializer=simenvs_dot_cqsim_dot_engine__pb2.ErrMsgResponse.FromString,
+            request_serializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.SerializeToString,
+            response_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.ErrMsgResponse.FromString,
         )
         self.GetNodeJoinExit = channel.unary_stream(
             '/cqsim.control.SimController/GetNodeJoinExit',
-            request_serializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
-            response_deserializer=simenvs_dot_cqsim_dot_engine__pb2.NodeJoinExitResponse.FromString,
+            request_serializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.SerializeToString,
+            response_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.NodeJoinExitResponse.FromString,
         )
         self.SetLogLevel = channel.unary_unary(
             '/cqsim.control.SimController/SetLogLevel',
-            request_serializer=simenvs_dot_cqsim_dot_engine__pb2.LogLevelRequest.SerializeToString,
-            response_deserializer=simenvs_dot_cqsim_dot_engine__pb2.CommonResponse.FromString,
+            request_serializer=engines_dot_cqsim__pb_dot_engine__pb2.LogLevelRequest.SerializeToString,
+            response_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonResponse.FromString,
+        )
+        self.SetHttpInfo = channel.unary_unary(
+            '/cqsim.control.SimController/SetHttpInfo',
+            request_serializer=engines_dot_cqsim__pb_dot_engine__pb2.HttpInfo.SerializeToString,
+            response_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonResponse.FromString,
+        )
+        self.GetScenarioInfo = channel.unary_unary(
+            '/cqsim.control.SimController/GetScenarioInfo',
+            request_serializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.SerializeToString,
+            response_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.ScenarioInfo.FromString,
         )
 
 
@@ -141,68 +151,94 @@ class SimControllerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SetHttpInfo(self, request, context):
+        """http相关设置
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetScenarioInfo(self, request, context):
+        """获取当前运行的想定信息
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_SimControllerServicer_to_server(servicer, server):
     rpc_method_handlers = {
         'GetEntityList':
             grpc.unary_unary_rpc_method_handler(
                 servicer.GetEntityList,
-                request_deserializer=simenvs_dot_cqsim_dot_engine__pb2.EntityListRequest.FromString,
-                response_serializer=simenvs_dot_cqsim_dot_engine__pb2.EntityListResponse.SerializeToString,
+                request_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.EntityListRequest.FromString,
+                response_serializer=engines_dot_cqsim__pb_dot_engine__pb2.EntityListResponse.SerializeToString,
             ),
         'Init':
             grpc.unary_unary_rpc_method_handler(
                 servicer.Init,
-                request_deserializer=simenvs_dot_cqsim_dot_engine__pb2.InitInfo.FromString,
-                response_serializer=simenvs_dot_cqsim_dot_engine__pb2.CommonResponse.SerializeToString,
+                request_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.InitInfo.FromString,
+                response_serializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonResponse.SerializeToString,
             ),
         'Control':
             grpc.unary_unary_rpc_method_handler(
                 servicer.Control,
-                request_deserializer=simenvs_dot_cqsim_dot_engine__pb2.ControlCmd.FromString,
-                response_serializer=simenvs_dot_cqsim_dot_engine__pb2.CommonResponse.SerializeToString,
+                request_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.ControlCmd.FromString,
+                response_serializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonResponse.SerializeToString,
             ),
         'GetSysInfo':
             grpc.unary_stream_rpc_method_handler(
                 servicer.GetSysInfo,
-                request_deserializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.FromString,
-                response_serializer=simenvs_dot_cqsim_dot_engine__pb2.SysInfoResponse.SerializeToString,
+                request_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.FromString,
+                response_serializer=engines_dot_cqsim__pb_dot_engine__pb2.SysInfoResponse.SerializeToString,
             ),
         'GetDataSysInfo':
             grpc.unary_stream_rpc_method_handler(
                 servicer.GetDataSysInfo,
-                request_deserializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.FromString,
-                response_serializer=simenvs_dot_cqsim_dot_engine__pb2.DataSysInfoResponse.SerializeToString,
+                request_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.FromString,
+                response_serializer=engines_dot_cqsim__pb_dot_engine__pb2.DataSysInfoResponse.SerializeToString,
             ),
         'GetAllNode':
             grpc.unary_unary_rpc_method_handler(
                 servicer.GetAllNode,
-                request_deserializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.FromString,
-                response_serializer=simenvs_dot_cqsim_dot_engine__pb2.NodeResponse.SerializeToString,
+                request_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.FromString,
+                response_serializer=engines_dot_cqsim__pb_dot_engine__pb2.NodeResponse.SerializeToString,
             ),
         'GetInitedPercent':
             grpc.unary_stream_rpc_method_handler(
                 servicer.GetInitedPercent,
-                request_deserializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.FromString,
-                response_serializer=simenvs_dot_cqsim_dot_engine__pb2.InitedResponse.SerializeToString,
+                request_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.FromString,
+                response_serializer=engines_dot_cqsim__pb_dot_engine__pb2.InitedResponse.SerializeToString,
             ),
         'GetErrorMsg':
             grpc.unary_stream_rpc_method_handler(
                 servicer.GetErrorMsg,
-                request_deserializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.FromString,
-                response_serializer=simenvs_dot_cqsim_dot_engine__pb2.ErrMsgResponse.SerializeToString,
+                request_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.FromString,
+                response_serializer=engines_dot_cqsim__pb_dot_engine__pb2.ErrMsgResponse.SerializeToString,
             ),
         'GetNodeJoinExit':
             grpc.unary_stream_rpc_method_handler(
                 servicer.GetNodeJoinExit,
-                request_deserializer=simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.FromString,
-                response_serializer=simenvs_dot_cqsim_dot_engine__pb2.NodeJoinExitResponse.SerializeToString,
+                request_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.FromString,
+                response_serializer=engines_dot_cqsim__pb_dot_engine__pb2.NodeJoinExitResponse.SerializeToString,
             ),
         'SetLogLevel':
             grpc.unary_unary_rpc_method_handler(
                 servicer.SetLogLevel,
-                request_deserializer=simenvs_dot_cqsim_dot_engine__pb2.LogLevelRequest.FromString,
-                response_serializer=simenvs_dot_cqsim_dot_engine__pb2.CommonResponse.SerializeToString,
+                request_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.LogLevelRequest.FromString,
+                response_serializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonResponse.SerializeToString,
+            ),
+        'SetHttpInfo':
+            grpc.unary_unary_rpc_method_handler(
+                servicer.SetHttpInfo,
+                request_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.HttpInfo.FromString,
+                response_serializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonResponse.SerializeToString,
+            ),
+        'GetScenarioInfo':
+            grpc.unary_unary_rpc_method_handler(
+                servicer.GetScenarioInfo,
+                request_deserializer=engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.FromString,
+                response_serializer=engines_dot_cqsim__pb_dot_engine__pb2.ScenarioInfo.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler('cqsim.control.SimController', rpc_method_handlers)
@@ -226,8 +262,8 @@ class SimController(object):
                       timeout=None,
                       metadata=None):
         return grpc.experimental.unary_unary(request, target, '/cqsim.control.SimController/GetEntityList',
-                                             simenvs_dot_cqsim_dot_engine__pb2.EntityListRequest.SerializeToString,
-                                             simenvs_dot_cqsim_dot_engine__pb2.EntityListResponse.FromString, options,
+                                             engines_dot_cqsim__pb_dot_engine__pb2.EntityListRequest.SerializeToString,
+                                             engines_dot_cqsim__pb_dot_engine__pb2.EntityListResponse.FromString, options,
                                              channel_credentials, insecure, call_credentials, compression, wait_for_ready,
                                              timeout, metadata)
 
@@ -243,8 +279,8 @@ class SimController(object):
              timeout=None,
              metadata=None):
         return grpc.experimental.unary_unary(request, target, '/cqsim.control.SimController/Init',
-                                             simenvs_dot_cqsim_dot_engine__pb2.InitInfo.SerializeToString,
-                                             simenvs_dot_cqsim_dot_engine__pb2.CommonResponse.FromString, options,
+                                             engines_dot_cqsim__pb_dot_engine__pb2.InitInfo.SerializeToString,
+                                             engines_dot_cqsim__pb_dot_engine__pb2.CommonResponse.FromString, options,
                                              channel_credentials, insecure, call_credentials, compression, wait_for_ready,
                                              timeout, metadata)
 
@@ -260,8 +296,8 @@ class SimController(object):
                 timeout=None,
                 metadata=None):
         return grpc.experimental.unary_unary(request, target, '/cqsim.control.SimController/Control',
-                                             simenvs_dot_cqsim_dot_engine__pb2.ControlCmd.SerializeToString,
-                                             simenvs_dot_cqsim_dot_engine__pb2.CommonResponse.FromString, options,
+                                             engines_dot_cqsim__pb_dot_engine__pb2.ControlCmd.SerializeToString,
+                                             engines_dot_cqsim__pb_dot_engine__pb2.CommonResponse.FromString, options,
                                              channel_credentials, insecure, call_credentials, compression, wait_for_ready,
                                              timeout, metadata)
 
@@ -277,8 +313,8 @@ class SimController(object):
                    timeout=None,
                    metadata=None):
         return grpc.experimental.unary_stream(request, target, '/cqsim.control.SimController/GetSysInfo',
-                                              simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
-                                              simenvs_dot_cqsim_dot_engine__pb2.SysInfoResponse.FromString, options,
+                                              engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.SerializeToString,
+                                              engines_dot_cqsim__pb_dot_engine__pb2.SysInfoResponse.FromString, options,
                                               channel_credentials, insecure, call_credentials, compression, wait_for_ready,
                                               timeout, metadata)
 
@@ -294,8 +330,8 @@ class SimController(object):
                        timeout=None,
                        metadata=None):
         return grpc.experimental.unary_stream(request, target, '/cqsim.control.SimController/GetDataSysInfo',
-                                              simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
-                                              simenvs_dot_cqsim_dot_engine__pb2.DataSysInfoResponse.FromString, options,
+                                              engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.SerializeToString,
+                                              engines_dot_cqsim__pb_dot_engine__pb2.DataSysInfoResponse.FromString, options,
                                               channel_credentials, insecure, call_credentials, compression, wait_for_ready,
                                               timeout, metadata)
 
@@ -311,8 +347,8 @@ class SimController(object):
                    timeout=None,
                    metadata=None):
         return grpc.experimental.unary_unary(request, target, '/cqsim.control.SimController/GetAllNode',
-                                             simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
-                                             simenvs_dot_cqsim_dot_engine__pb2.NodeResponse.FromString, options,
+                                             engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.SerializeToString,
+                                             engines_dot_cqsim__pb_dot_engine__pb2.NodeResponse.FromString, options,
                                              channel_credentials, insecure, call_credentials, compression, wait_for_ready,
                                              timeout, metadata)
 
@@ -328,8 +364,8 @@ class SimController(object):
                          timeout=None,
                          metadata=None):
         return grpc.experimental.unary_stream(request, target, '/cqsim.control.SimController/GetInitedPercent',
-                                              simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
-                                              simenvs_dot_cqsim_dot_engine__pb2.InitedResponse.FromString, options,
+                                              engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.SerializeToString,
+                                              engines_dot_cqsim__pb_dot_engine__pb2.InitedResponse.FromString, options,
                                               channel_credentials, insecure, call_credentials, compression, wait_for_ready,
                                               timeout, metadata)
 
@@ -345,8 +381,8 @@ class SimController(object):
                     timeout=None,
                     metadata=None):
         return grpc.experimental.unary_stream(request, target, '/cqsim.control.SimController/GetErrorMsg',
-                                              simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
-                                              simenvs_dot_cqsim_dot_engine__pb2.ErrMsgResponse.FromString, options,
+                                              engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.SerializeToString,
+                                              engines_dot_cqsim__pb_dot_engine__pb2.ErrMsgResponse.FromString, options,
                                               channel_credentials, insecure, call_credentials, compression, wait_for_ready,
                                               timeout, metadata)
 
@@ -362,8 +398,8 @@ class SimController(object):
                         timeout=None,
                         metadata=None):
         return grpc.experimental.unary_stream(request, target, '/cqsim.control.SimController/GetNodeJoinExit',
-                                              simenvs_dot_cqsim_dot_engine__pb2.CommonRequest.SerializeToString,
-                                              simenvs_dot_cqsim_dot_engine__pb2.NodeJoinExitResponse.FromString, options,
+                                              engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.SerializeToString,
+                                              engines_dot_cqsim__pb_dot_engine__pb2.NodeJoinExitResponse.FromString, options,
                                               channel_credentials, insecure, call_credentials, compression, wait_for_ready,
                                               timeout, metadata)
 
@@ -379,7 +415,41 @@ class SimController(object):
                     timeout=None,
                     metadata=None):
         return grpc.experimental.unary_unary(request, target, '/cqsim.control.SimController/SetLogLevel',
-                                             simenvs_dot_cqsim_dot_engine__pb2.LogLevelRequest.SerializeToString,
-                                             simenvs_dot_cqsim_dot_engine__pb2.CommonResponse.FromString, options,
+                                             engines_dot_cqsim__pb_dot_engine__pb2.LogLevelRequest.SerializeToString,
+                                             engines_dot_cqsim__pb_dot_engine__pb2.CommonResponse.FromString, options,
+                                             channel_credentials, insecure, call_credentials, compression, wait_for_ready,
+                                             timeout, metadata)
+
+    @staticmethod
+    def SetHttpInfo(request,
+                    target,
+                    options=(),
+                    channel_credentials=None,
+                    call_credentials=None,
+                    insecure=False,
+                    compression=None,
+                    wait_for_ready=None,
+                    timeout=None,
+                    metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/cqsim.control.SimController/SetHttpInfo',
+                                             engines_dot_cqsim__pb_dot_engine__pb2.HttpInfo.SerializeToString,
+                                             engines_dot_cqsim__pb_dot_engine__pb2.CommonResponse.FromString, options,
+                                             channel_credentials, insecure, call_credentials, compression, wait_for_ready,
+                                             timeout, metadata)
+
+    @staticmethod
+    def GetScenarioInfo(request,
+                        target,
+                        options=(),
+                        channel_credentials=None,
+                        call_credentials=None,
+                        insecure=False,
+                        compression=None,
+                        wait_for_ready=None,
+                        timeout=None,
+                        metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/cqsim.control.SimController/GetScenarioInfo',
+                                             engines_dot_cqsim__pb_dot_engine__pb2.CommonRequest.SerializeToString,
+                                             engines_dot_cqsim__pb_dot_engine__pb2.ScenarioInfo.FromString, options,
                                              channel_credentials, insecure, call_credentials, compression, wait_for_ready,
                                              timeout, metadata)

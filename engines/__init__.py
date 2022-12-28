@@ -1,5 +1,5 @@
 from .cqsim import CQSim
 
-SimEnvs = {
+SimEngines = {
     'CQSim': CQSim,
 }
