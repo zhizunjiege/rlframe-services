@@ -51,21 +51,21 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
 
     def SimControl(self, request, context):
         self.check_state(context)
-        if request.cmd == simenv_pb2.SimCmd.Type.INIT:
+        if request.type == simenv_pb2.SimCmd.Type.INIT:
             cmd = 'init'
-        elif request.cmd == simenv_pb2.SimCmd.Type.START:
+        elif request.type == simenv_pb2.SimCmd.Type.START:
             cmd = 'start'
-        elif request.cmd == simenv_pb2.SimCmd.Type.PAUSE:
+        elif request.type == simenv_pb2.SimCmd.Type.PAUSE:
             cmd = 'pause'
-        elif request.cmd == simenv_pb2.SimCmd.Type.STEP:
+        elif request.type == simenv_pb2.SimCmd.Type.STEP:
             cmd = 'step'
-        elif request.cmd == simenv_pb2.SimCmd.Type.RESUME:
+        elif request.type == simenv_pb2.SimCmd.Type.RESUME:
             cmd = 'resume'
-        elif request.cmd == simenv_pb2.SimCmd.Type.STOP:
+        elif request.type == simenv_pb2.SimCmd.Type.STOP:
             cmd = 'stop'
-        elif request.cmd == simenv_pb2.SimCmd.Type.DONE:
+        elif request.type == simenv_pb2.SimCmd.Type.DONE:
             cmd = 'done'
-        elif request.cmd == simenv_pb2.SimCmd.Type.PARAM:
+        elif request.type == simenv_pb2.SimCmd.Type.PARAM:
             cmd = 'param'
         else:
             ...

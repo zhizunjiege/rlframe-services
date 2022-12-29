@@ -38,8 +38,8 @@ message SimCmd {
     DONE = 6;    // 单局结束
     PARAM = 7;   // 设置参数
   }
-  Type cmd = 1;                 // 仿真命令
-  types.JsonString params = 2;  // 仿真参数
+  Type type = 1;      // 仿真命令
+  string params = 2;  // 仿真参数，格式：Json字符串
 }
 
 message SimInfo {
@@ -49,7 +49,7 @@ message SimInfo {
     RUNNING = 2;    // 正在运行
     SUSPENDED = 3;  // 已挂起
   }
-  State state = 1;            // 仿真状态
-  types.JsonString data = 2;  // 仿真数据
-  types.JsonString logs = 3;  // 仿真日志
+  State state = 1;  // 仿真状态
+  string data = 2;  // 仿真数据，格式：Json字符串
+  string logs = 3;  // 仿真日志，格式：Json字符串
 }
