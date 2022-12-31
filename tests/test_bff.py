@@ -3,9 +3,11 @@ import time
 import unittest
 
 import grpc
+import numpy as np
 
 from protos import bff_pb2
 from protos import bff_pb2_grpc
+from protos import simenv_pb2
 from protos import types_pb2
 
 
@@ -15,157 +17,192 @@ class BFFServicerTestCase(unittest.TestCase):
     def setUpClass(cls):
         cls.channel = grpc.insecure_channel("localhost:10000")
         cls.stub = bff_pb2_grpc.BFFStub(channel=cls.channel)
-        cls.agent_id, cls.simenv_id = '', ''
+        cls.ids = []
 
     @classmethod
     def tearDownClass(cls):
+        cls.stub.ResetService(bff_pb2.ServiceIdList(ids=cls.ids))
         cls.stub.ResetServer(types_pb2.CommonRequest())
         cls.channel.close()
         cls.stub = None
 
-    def test_00_resetserver(self):
-        res = self.stub.ResetServer(types_pb2.CommonRequest())
-        self.assertEqual(res.code, 0)
-
-    def test_01_registerservice(self):
+    def test_00_registerservice(self):
         agent_service = bff_pb2.ServiceInfo(
+            type=bff_pb2.ServiceInfo.Type.AGENT,
             name='agent',
-            type=bff_pb2.ServiceType.AGENT,
-            subtype='DQN',
             ip='localhost',
             port=10001,
             desc='agent service',
-            params='',
         )
         simenv_service = bff_pb2.ServiceInfo(
+            type=bff_pb2.ServiceInfo.Type.SIMENV,
             name='simenv',
-            type=bff_pb2.ServiceType.SIMENV,
-            subtype='CQSim',
             ip='localhost',
-            port=50051,
+            port=10002,
             desc='simenv service',
-            params=json.dumps({'engine_url': 'localhost:50051'}),
         )
         res = self.stub.RegisterService(bff_pb2.ServiceInfoList(services=[agent_service, simenv_service]))
         self.assertEqual(len(res.ids), 2)
-
         res = self.stub.UnRegisterService(bff_pb2.ServiceIdList(ids=[]))
         self.assertEqual(res.code, 0)
 
         res = self.stub.RegisterService(bff_pb2.ServiceInfoList(services=[agent_service, simenv_service]))
-        self.agent_id, self.simenv_id = res.ids
+        self.ids += res.ids
 
-    def test_02_serviceinfo(self):
-        res = self.stub.GetServiceInfo(bff_pb2.ServiceIdList(ids=[self.agent_id]))
-        self.assertTrue(self.agent_id in res.services)
-
+    def test_01_serviceinfo(self):
+        res = self.stub.GetServiceInfo(bff_pb2.ServiceIdList(ids=[self.ids[0]]))
+        self.assertIn(self.ids[0], res.services)
         res = self.stub.SetServiceInfo(res)
         self.assertEqual(res.code, 0)
 
-    def test_02_agentsconfig(self):
-        req = bff_pb2.AgentsConfig()
-        with open('examples/states_inputs_func.py', 'r') as f1, \
-             open('examples/outputs_actions_func.py', 'r') as f2, \
-             open('examples/reward_func.py', 'r') as f3, \
-             open('examples/hypers.json', 'r') as f4, \
-             open('examples/builder.py', 'r') as f5:
-            req.configs[self.addr].training = True
-            req.configs[self.addr].states_inputs_func = f1.read()
-            req.configs[self.addr].outputs_actions_func = f2.read()
-            req.configs[self.addr].reward_func = f3.read()
-            req.configs[self.addr].type = 'DQN'
-            req.configs[self.addr].hypers = f4.read()
-            req.configs[self.addr].builder = f5.read()
-            req.configs[self.addr].structures = ''
+    def test_02_routeconfig(self):
+        with open('examples/route/data_config.json', 'r') as f1, \
+             open('examples/route/route_config.json', 'r') as f2, \
+             open('examples/route/sim_done_func.py', 'r') as f3:
+            data_config = json.load(f1)
+            route_config = json.load(f2)
+            sim_done_func = f3.read()
 
-        res = self.stub.SetAgentsConfig(req)
+        req = bff_pb2.DataConfig()
+        for type, struct in data_config['types'].items():
+            for field, value in struct.items():
+                req.types[type].fields[field] = value
+        for type, model in data_config['data'].items():
+            req.data[type].name = model['name']
+            for input, param in model['input_params'].items():
+                req.data[type].input_params[input].name = param['name']
+                req.data[type].input_params[input].type = param['type']
+                req.data[type].input_params[input].value = '{}'
+            for output, param in model['output_params'].items():
+                req.data[type].output_params[output].name = param['name']
+                req.data[type].output_params[output].type = param['type']
+                req.data[type].output_params[output].value = json.dumps(param['value'])
+        res = self.stub.SetDataConfig(req)
+        self.assertEqual(res.code, 0)
+        res = self.stub.GetDataConfig(types_pb2.CommonRequest())
+        self.assertIn('model1', res.data)
+
+        req = bff_pb2.RouteConfig()
+        for simenv, route in route_config['routes'].items():
+            req.routes[simenv].name = route['name']
+            for agent, config in route['configs'].items():
+                req.routes[simenv].configs[agent].name = config['name']
+                req.routes[simenv].configs[agent].models.extend(config['models'])
+        req.sim_done_func = sim_done_func
+        req.sim_step_ratio = route_config['sim_step_ratio']
+        res = self.stub.SetRouteConfig(req)
+        self.assertEqual(res.code, 0)
+        res = self.stub.GetRouteConfig(types_pb2.CommonRequest())
+        self.assertIn(self.ids[1], res.routes)
+
+    def test_03_resetservice(self):
+        res = self.stub.ResetService(bff_pb2.ServiceIdList(ids=self.ids))
         self.assertEqual(res.code, 0)
 
-        res = self.stub.GetAgentsConfig(types_pb2.CommonRequest())
-        self.assertEqual(len(res.configs), 1)
+    def test_04_queryservice(self):
+        res = self.stub.QueryService(bff_pb2.ServiceIdList(ids=self.ids))
+        self.assertEqual(res.states[self.ids[0]].state, types_pb2.ServiceState.State.UNINITED)
+        self.assertEqual(res.states[self.ids[1]].state, types_pb2.ServiceState.State.UNINITED)
 
-    def test_03_dataconfig(self):
-        res = self.stub.SetAgentMode(agent_pb2.AgentMode(training=True))
+    def test_05_agentconfig(self):
+        req = bff_pb2.AgentConfigMap()
+        with open('examples/agent/states_inputs_func.py', 'r') as f1, \
+             open('examples/agent/outputs_actions_func.py', 'r') as f2, \
+             open('examples/agent/reward_func.py', 'r') as f3, \
+             open('examples/agent/hypers_dqn.json', 'r') as f4, \
+             open('examples/agent/builder_dqn.py', 'r') as f5, \
+             open('examples/agent/structures_dqn.json', 'r') as f6:
+            req.configs[self.ids[0]].training = True
+            req.configs[self.ids[0]].states_inputs_func = f1.read()
+            req.configs[self.ids[0]].outputs_actions_func = f2.read()
+            req.configs[self.ids[0]].reward_func = f3.read()
+            req.configs[self.ids[0]].type = 'DQN'
+            req.configs[self.ids[0]].hypers = f4.read()
+            req.configs[self.ids[0]].builder = f5.read()
+            req.configs[self.ids[0]].structures = f6.read()
+        res = self.stub.SetAgentConfig(req)
+        self.assertEqual(res.code, 0)
+        res = self.stub.GetAgentConfig(bff_pb2.ServiceIdList(ids=[]))
+        self.assertIn(self.ids[0], res.configs)
+
+    def test_06_agentmode(self):
+        req = bff_pb2.AgentModeMap()
+        req.modes[self.ids[0]].training = True
+        res = self.stub.SetAgentMode(req)
+        self.assertEqual(res.code, 0)
+        res = self.stub.GetAgentMode(bff_pb2.ServiceIdList(ids=[]))
+        self.assertIn(self.ids[0], res.modes)
+
+    def test_07_modelweights(self):
+        res = self.stub.GetModelWeights(bff_pb2.ServiceIdList(ids=[]))
+        self.assertIn(self.ids[0], res.weights)
+        res = self.stub.SetModelWeights(res)
         self.assertEqual(res.code, 0)
 
-        res = self.stub.GetAgentMode(types_pb2.CommonRequest())
-        self.assertTrue(res.training)
-
-    def test_03_simconfig(self):
-        with open('examples/sample_done_func.py', 'r') as f:
-            sample_done_func = f.read()
-        req = bff_pb2.SimConfig(
-            exp_design_id=1,
-            time_steps=1000,
-            speed_ratio=1,
-            sim_start_time=time.time(),
-            sim_duration=10,
-            exp_repeat_times=1,
-            sample_done_func=sample_done_func,
-        )
-        res = self.stub.SetSimConfig(req)
+    def test_08_modelbuffer(self):
+        res = self.stub.GetModelBuffer(bff_pb2.ServiceIdList(ids=[]))
+        self.assertIn(self.ids[0], res.buffers)
+        res = self.stub.SetModelBuffer(res)
         self.assertEqual(res.code, 0)
 
-        res = self.stub.GetSimConfig(types_pb2.CommonRequest())
-        self.assertEqual(res.exp_design_id, 1)
-
-    def test_04_proxyconfig(self):
-        with open('examples/proxy.json', 'r') as f:
-            proxy = json.load(f)
-        req = bff_pb2.ProxyConfig()
-        for addr, config in proxy['configs'].items():
-            for type, model in config['models'].items():
-                req.configs[addr].models[type].name = model['name']
-                for input, param in model['input_params'].items():
-                    req.configs[addr].models[type].input_params[input].name = param['name']
-                    req.configs[addr].models[type].input_params[input].type = param['type']
-                    req.configs[addr].models[type].input_params[input].value = param['value']
-                for output, param in model['output_params'].items():
-                    req.configs[addr].models[type].output_params[output].name = param['name']
-                    req.configs[addr].models[type].output_params[output].type = param['type']
-                    req.configs[addr].models[type].output_params[output].value = param['value']
-        req.sim_steps_ratio = proxy['sim_steps_ratio']
-        res = self.stub.SetProxyConfig(req)
+    def test_09_modelstatus(self):
+        res = self.stub.GetModelStatus(bff_pb2.ServiceIdList(ids=[]))
+        self.assertIn(self.ids[0], res.status)
+        res = self.stub.SetModelStatus(res)
         self.assertEqual(res.code, 0)
 
-        res = self.stub.GetProxyConfig(types_pb2.CommonRequest())
-        self.assertEqual(len(res.configs), 1)
-
-    @unittest.skip('skip')
-    def test_05_control(self):
-        req = bff_pb2.ControlCommand()
-
-        req.cmd = bff_pb2.ControlCommand.Type.START
-        res = self.stub.Control(req)
+    def test_10_simenvconfig(self):
+        req = bff_pb2.SimenvConfigMap()
+        req.configs[self.ids[1]].type = 'CQSim'
+        req.configs[self.ids[1]].args = json.dumps({'engine_url': 'localhost:50041'})
+        res = self.stub.SetSimenvConfig(req)
         self.assertEqual(res.code, 0)
+        res = self.stub.GetSimenvConfig(bff_pb2.ServiceIdList(ids=[]))
+        self.assertIn(self.ids[1], res.configs)
 
-        req.cmd = bff_pb2.ControlCommand.Type.SUSPEND
-        res = self.stub.Control(req)
-        self.assertEqual(res.code, 0)
+    def test_11_simcontrol(self):
+        req = bff_pb2.SimCmdMap()
 
-        req.cmd = bff_pb2.ControlCommand.Type.CONTINUE
-        res = self.stub.Control(req)
-        self.assertEqual(res.code, 0)
+        req.cmds[self.ids[1]].type = simenv_pb2.SimCmd.Type.INIT
+        req.cmds[self.ids[1]].params = json.dumps({
+            'exp_design_id': 28,
+            'sim_start_time': int(time.time()),
+            'sim_duration': 30,
+            'time_step': 1000,
+            'speed_ratio': 10,
+        })
+        self.stub.SimControl(req)
 
-    @unittest.skip('skip')
-    def test_06_simstatus(self):
-        for res in self.stub.GetSimStatus(types_pb2.CommonRequest()):
-            self.assertEqual(res.srv_state, 1)
+        req.cmds[self.ids[1]].type = simenv_pb2.SimCmd.Type.START
+        req.cmds[self.ids[1]].params = json.dumps({})
+        self.stub.SimControl(req)
 
-    @unittest.skip('skip')
-    def test_07_proxychat(self):
+        time.sleep(5)
+
+        req.cmds[self.ids[1]].type = simenv_pb2.SimCmd.Type.STOP
+        self.stub.SimControl(req)
+
+    def test_12_simmonitor(self):
+        print(self.stub.SimMonitor(types_pb2.CommonRequest()))
+
+    def test_13_proxychat(self):
+        req_info = {
+            'states': {
+                'model1': [{
+                    'input1': np.random.rand(20).tolist(),
+                }]
+            },
+        }
+        req = types_pb2.JsonString(json=json.dumps(req_info))
 
         def generator():
-            info = {'states': {'example': [1, 2, 3, 4]}}
-            req = types_pb2.JsonString(json=json.dumps(info))
-            for _ in range(10000):
+            for _ in range(5000):
                 yield req
-            yield types_pb2.JsonString(json=json.dumps(info))
 
         t1 = time.time()
-        for res in self.stub.ProxyChat(generator()):
-            info = json.loads(res.json)
-            self.assertEqual(type(info['done']), bool)
+        for res in self.stub.ProxyChat(generator(), metadata=[('id', self.ids[1])]):
+            res_info = json.loads(res.json)
         t2 = time.time()
-        print()
-        print(f'Time cost: {t2 - t1} s, FPS: {10000 / (t2 - t1)}')
+
+        self.assertIn('actions', res_info)
+        print(f'Time cost: {t2 - t1} s, FPS: {5000 / (t2 - t1)}')

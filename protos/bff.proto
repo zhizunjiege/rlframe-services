@@ -97,17 +97,21 @@ message ServiceInfoMap {
 }
 
 message DataConfig {
+  message Type {
+    map<string, string> fields = 1;  // <字段名称,字段类型>
+  }
   message Param {
     string name = 1;   // 参数名称
     string type = 2;   // 参数类型
-    string value = 3;  // 参数初始值
+    string value = 3;  // 参数初始值，格式：Json字符串
   }
   message Model {
     string name = 1;                       // 模型名称
     map<string, Param> input_params = 2;   // <参数标识,输入参数>
     map<string, Param> output_params = 3;  // <参数标识,输出参数>
   }
-  map<string, Model> data = 1;  // <模型类型,模型数据>
+  map<string, Type> types = 1;  // <类型名称,类型结构>
+  map<string, Model> data = 2;  // <模型标识,模型数据>
 }
 
 message RouteConfig {

@@ -1,13 +1,15 @@
 {
   "routes": {
-    "51389f3968b427dd7c9fc7d134e0a57b4034b37dfbc8a110b1fa06e953638ee4": {
+    "6f185ee01042d43cd75a4843b70a144babfebdd817fa682292732e8bf57218a7": {
       "name": "route1",
       "configs": {
-        "8582be9fd2627db66fdb1893368ef493b2e8726119667559053bc0a842df69e9": {
+        "8ccb6b9e249f7686a1bc311f1c60b9ac8e869c2a1f9c0193571312860031e3e3": {
           "name": "config1",
-          "models": ["UAV"]
+          "models": ["model1"]
         }
       }
     }
-  }
+  },
+  "sim_done_func": "",
+  "sim_step_ratio": 1
 }

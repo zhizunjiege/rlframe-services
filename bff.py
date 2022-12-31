@@ -8,6 +8,7 @@ import grpc
 from protos import agent_pb2_grpc
 from protos import bff_pb2
 from protos import bff_pb2_grpc
+from protos import simenv_pb2
 from protos import simenv_pb2_grpc
 from protos import types_pb2
 
@@ -23,7 +24,6 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
         self.data_config = None
         self.route_config = None
         self.sim_done_func = None
-        self.sim_steps = 0  # TODO
 
         self.agents = {}
         self.simenvs = {}
@@ -44,10 +44,10 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
             id = sha256.hexdigest()
             self.services[id] = service
             ids.append(id)
-            if service.type == bff_pb2.ServiceType.AGENT:
+            if service.type == bff_pb2.ServiceInfo.Type.AGENT:
                 channel = grpc.insecure_channel(f'{service.ip}:{service.port}')
                 self.agents[id] = agent_pb2_grpc.AgentStub(channel)
-            elif service.type == bff_pb2.ServiceType.SIMENV:
+            elif service.type == bff_pb2.ServiceInfo.Type.SIMENV:
                 channel = grpc.insecure_channel(f'{service.ip}:{service.port}')
                 self.simenvs[id] = simenv_pb2_grpc.SimenvStub(channel)
             else:
@@ -99,14 +99,18 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
         return types_pb2.CommonResponse()
 
     def ProxyChat(self, request_iterator, context):
-        metadata = context.invocation_metadata()
-        if len(metadata) > 0 and metadata[0][0] == 'id':
-            id = metadata[0][1]
-        else:
-            context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'Missing id in metadata!')
+        id = ''
+        for datum in context.invocation_metadata():
+            if datum[0] == 'id':
+                id = datum[1]
+                break
 
-        if id in self.simenvs:
-            route = self.route_config[id]
+        if id == '':
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'Missing id in metadata!')
+        elif id not in self.simenvs:
+            self.unknown_id(id, context)
+        else:
+            route = self.route_config.routes[id]
             for request in request_iterator:
                 info = json.loads(request.json)
                 exec(self.sim_done_func, info)
@@ -115,17 +119,16 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
                     states_ = {}
                     for model in route.configs[id_].models:
                         states_[model] = states[model]
-                    result = self.agents[id_].GetAction({'states': states_, 'done': done})
-                    actions_ = json.loads(result.json)['actions']
+                    agent_req = types_pb2.JsonString(json=json.dumps({'states': states_, 'done': done}))
+                    agent_res = self.agents[id_].GetAction(agent_req)
+                    actions_ = json.loads(agent_res.json)['actions']
                     actions.update(actions_)
                 response = types_pb2.JsonString(json=json.dumps({'actions': actions}))
                 if done:
-                    self.simenvs[id].control('done', {})
+                    self.simenvs[id].SimControl(simenv_pb2.SimCmd(type=simenv_pb2.SimCmd.Type.DONE, params=json.dumps({})))
                     return response
                 else:
                     yield response
-        else:
-            self.unknown_id(id, context)
 
     def ResetService(self, request, context):
         ids = request.ids if len(request.ids) > 0 else list(self.services.keys())
