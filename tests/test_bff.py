@@ -154,7 +154,7 @@ class BFFServicerTestCase(unittest.TestCase):
     def test_10_simenvconfig(self):
         req = bff_pb2.SimenvConfigMap()
         req.configs[self.ids[1]].type = 'CQSim'
-        req.configs[self.ids[1]].args = json.dumps({'engine_url': 'localhost:50041'})
+        req.configs[self.ids[1]].args = json.dumps({'engine_addr': 'localhost:50041'})
         res = self.stub.SetSimenvConfig(req)
         self.assertEqual(res.code, 0)
         res = self.stub.GetSimenvConfig(bff_pb2.ServiceIdList(ids=[]))

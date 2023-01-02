@@ -8,7 +8,7 @@ class CQSimTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.engine = CQSim(id='cqsim', engine_url='localhost:50041')
+        cls.engine = CQSim(id='cqsim', engine_addr='localhost:50041')
 
     @classmethod
     def tearDownClass(cls):

@@ -12,17 +12,17 @@ from .cqsim_pb import engine_pb2_grpc
 
 class CQSim(SimEngineBase):
 
-    def __init__(self, id: str, engine_url: str):
+    def __init__(self, id: str, engine_addr: str):
         """Init CQSim engine.
 
         Args:
             id: Id of simulation engine.
-            engine_url: Url of CQSim engine.
+            engine_addr: Address of CQSim engine.
         """
         super().__init__(id=id)
 
-        self.engine_url = engine_url
-        self.channel = grpc.insecure_channel(engine_url)
+        self.engine_addr = engine_addr
+        self.channel = grpc.insecure_channel(engine_addr)
         self.engine = engine_pb2_grpc.SimControllerStub(channel=self.channel)
 
         self.data_thread = None

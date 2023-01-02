@@ -34,7 +34,7 @@ class SimenvServiceTestCase(unittest.TestCase):
 
         req = simenv_pb2.SimenvConfig()
         req.type = 'CQSim'
-        req.args = json.dumps({'engine_url': 'localhost:50041'})
+        req.args = json.dumps({'engine_addr': 'localhost:50041'})
         res = self.stub.SetSimenvConfig(req)
         self.assertEqual(res.code, 0)
 
