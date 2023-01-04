@@ -29,14 +29,14 @@ message SimenvConfig {
 
 message SimCmd {
   enum Type {
-    INIT = 0;    // 初始化
-    START = 1;   // 开始
-    PAUSE = 2;   // 暂停
-    STEP = 3;    // 步进
-    RESUME = 4;  // 继续
-    STOP = 5;    // 停止
-    DONE = 6;    // 单局结束
-    PARAM = 7;   // 设置参数
+    INIT = 0;     // 初始化
+    START = 1;    // 开始
+    PAUSE = 2;    // 暂停
+    STEP = 3;     // 步进
+    RESUME = 4;   // 继续
+    STOP = 5;     // 停止
+    EPISODE = 6;  // 单局结束
+    PARAM = 7;    // 设置参数
   }
   Type type = 1;      // 仿真命令
   string params = 2;  // 仿真参数，格式：Json字符串

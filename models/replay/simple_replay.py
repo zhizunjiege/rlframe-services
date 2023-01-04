@@ -26,10 +26,10 @@ class SimpleReplay:
         self.obs2_buf = np.zeros([max_size, obs_dim], dtype=dtype)
         self.acts_buf = np.zeros([max_size, act_dim], dtype=dtype)
         self.rews_buf = np.zeros(max_size, dtype=dtype)
-        self.done_buf = np.zeros(max_size, dtype=dtype)
+        self.term_buf = np.zeros(max_size, dtype=dtype)
         self.ptr, self.size = 0, 0
 
-    def store(self, obs: np.ndarray, act: Union[int, np.ndarray], rew: float, next_obs: np.ndarray, done: bool) -> None:
+    def store(self, obs: np.ndarray, act: Union[int, np.ndarray], rew: float, next_obs: np.ndarray, terminated: bool) -> None:
         """Store experience data.
 
         Args:
@@ -41,13 +41,13 @@ class SimpleReplay:
 
             next_obs: Next observation.
 
-            done: Indicate whether terminated or not.
+            terminated: Whether a terminal state is reached.
         """
         self.obs1_buf[self.ptr] = obs
         self.obs2_buf[self.ptr] = next_obs
         self.acts_buf[self.ptr] = act
         self.rews_buf[self.ptr] = rew
-        self.done_buf[self.ptr] = done
+        self.term_buf[self.ptr] = terminated
         self.ptr = (self.ptr + 1) % self.max_size
         self.size = min(self.size + 1, self.max_size)
 
@@ -66,7 +66,7 @@ class SimpleReplay:
             obs2=self.obs2_buf[idxs],
             acts=self.acts_buf[idxs],
             rews=self.rews_buf[idxs],
-            done=self.done_buf[idxs],
+            term=self.term_buf[idxs],
         )
 
     def get(self) -> Dict[str, Union[int, Dict[str, np.ndarray]]]:
@@ -87,7 +87,7 @@ class SimpleReplay:
                 'obs2_buf': self.obs2_buf[:self.size],
                 'acts_buf': self.acts_buf[:self.size],
                 'rews_buf': self.rews_buf[:self.size],
-                'done_buf': self.done_buf[:self.size],
+                'term_buf': self.term_buf[:self.size],
             }
         }
         return state
@@ -107,9 +107,9 @@ class SimpleReplay:
         self.obs2_buf = np.zeros([self.max_size, self.obs_dim], dtype=self.dtype)
         self.acts_buf = np.zeros([self.max_size, self.act_dim], dtype=self.dtype)
         self.rews_buf = np.zeros(self.max_size, dtype=self.dtype)
-        self.done_buf = np.zeros(self.max_size, dtype=self.dtype)
+        self.term_buf = np.zeros(self.max_size, dtype=self.dtype)
         self.obs1_buf[:self.size] = d['obs1_buf']
         self.obs2_buf[:self.size] = d['obs2_buf']
         self.acts_buf[:self.size] = d['acts_buf']
         self.rews_buf[:self.size] = d['rews_buf']
-        self.done_buf[:self.size] = d['done_buf']
+        self.term_buf[:self.size] = d['term_buf']

@@ -58,25 +58,22 @@ class BFFServicerTestCase(unittest.TestCase):
     def test_02_routeconfig(self):
         with open('examples/route/data_config.json', 'r') as f1, \
              open('examples/route/route_config.json', 'r') as f2, \
-             open('examples/route/sim_done_func.py', 'r') as f3:
+             open('examples/route/sim_term_func.py', 'r') as f3:
             data_config = json.load(f1)
             route_config = json.load(f2)
-            sim_done_func = f3.read()
+            sim_term_func = f3.read()
 
         req = bff_pb2.DataConfig()
         for type, struct in data_config['types'].items():
             for field, value in struct.items():
                 req.types[type].fields[field] = value
         for type, model in data_config['data'].items():
-            req.data[type].name = model['name']
             for input, param in model['input_params'].items():
-                req.data[type].input_params[input].name = param['name']
                 req.data[type].input_params[input].type = param['type']
-                req.data[type].input_params[input].value = '{}'
+                req.data[type].input_params[input].value = json.dumps(param['value'])
             for output, param in model['output_params'].items():
-                req.data[type].output_params[output].name = param['name']
                 req.data[type].output_params[output].type = param['type']
-                req.data[type].output_params[output].value = json.dumps(param['value'])
+                req.data[type].output_params[output].value = '{}'
         res = self.stub.SetDataConfig(req)
         self.assertEqual(res.code, 0)
         res = self.stub.GetDataConfig(types_pb2.CommonRequest())
@@ -84,11 +81,9 @@ class BFFServicerTestCase(unittest.TestCase):
 
         req = bff_pb2.RouteConfig()
         for simenv, route in route_config['routes'].items():
-            req.routes[simenv].name = route['name']
             for agent, config in route['configs'].items():
-                req.routes[simenv].configs[agent].name = config['name']
                 req.routes[simenv].configs[agent].models.extend(config['models'])
-        req.sim_done_func = sim_done_func
+        req.sim_term_func = sim_term_func
         req.sim_step_ratio = route_config['sim_step_ratio']
         res = self.stub.SetRouteConfig(req)
         self.assertEqual(res.code, 0)
@@ -189,9 +184,10 @@ class BFFServicerTestCase(unittest.TestCase):
         req_info = {
             'states': {
                 'model1': [{
-                    'input1': np.random.rand(20).tolist(),
+                    'output1': np.random.rand(20).tolist(),
                 }]
             },
+            'truncated': False,
         }
         req = types_pb2.JsonString(json=json.dumps(req_info))
 

@@ -23,7 +23,7 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
 
         self.data_config = None
         self.route_config = None
-        self.sim_done_func = None
+        self.sim_term_func = None
 
         self.agents = {}
         self.simenvs = {}
@@ -41,7 +41,7 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
             key = f'{service.type}-{service.name} {service.ip}:{service.port}'
             sha256 = hashlib.sha256()
             sha256.update(key.encode('utf-8'))
-            id = sha256.hexdigest()
+            id = sha256.hexdigest()[:8]
             self.services[id] = service
             ids.append(id)
             if service.type == bff_pb2.ServiceInfo.Type.AGENT:
@@ -94,8 +94,8 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
 
     def SetRouteConfig(self, request, context):
         self.route_config = request
-        sdfunc_src = request.sim_done_func + '\ndone = func(states)'
-        self.sim_done_func = compile(sdfunc_src, '', 'exec')
+        sdfunc_src = request.sim_term_func + '\nterminated = func(states)'
+        self.sim_term_func = compile(sdfunc_src, '', 'exec')
         return types_pb2.CommonResponse()
 
     def ProxyChat(self, request_iterator, context):
@@ -113,19 +113,23 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
             route = self.route_config.routes[id]
             for request in request_iterator:
                 info = json.loads(request.json)
-                exec(self.sim_done_func, info)
-                states, done, actions = info['states'], info['done'], {}
+                exec(self.sim_term_func, info)
+                states, terminated, truncated, actions = info['states'], info['terminated'], info['truncated'], {}
                 for id_ in route.configs:
                     states_ = {}
                     for model in route.configs[id_].models:
                         states_[model] = states[model]
-                    agent_req = types_pb2.JsonString(json=json.dumps({'states': states_, 'done': done}))
+                    agent_req = types_pb2.JsonString(json=json.dumps({
+                        'states': states_,
+                        'terminated': terminated,
+                        'truncated': truncated,
+                    }))
                     agent_res = self.agents[id_].GetAction(agent_req)
                     actions_ = json.loads(agent_res.json)['actions']
                     actions.update(actions_)
                 response = types_pb2.JsonString(json=json.dumps({'actions': actions}))
-                if done:
-                    self.simenvs[id].SimControl(simenv_pb2.SimCmd(type=simenv_pb2.SimCmd.Type.DONE, params=json.dumps({})))
+                if terminated:
+                    self.simenvs[id].SimControl(simenv_pb2.SimCmd(type=simenv_pb2.SimCmd.Type.EPISODE, params=json.dumps({})))
                     return response
                 else:
                     yield response

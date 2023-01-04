@@ -33,35 +33,23 @@ class DQN(RLModelBase):
 
         Args:
             training: Whether the model is in training mode.
-
             networks: Networks of model.
 
             lr: Learning rate.
-
             gamma: Discount factor.
-
             replay_size: Maximum size of replay buffer.
-
             batch_size: Size of batch.
-
             epsilon_max: Maximum value of epsilon.
-
             epsilon_min: Minimum value of epsilon.
-
             epsilon_decay: Decay rate of epsilon.
                 Note: Epsilon decayed exponentially, so always between 0 and 1.
-
             start_steps: Number of steps for uniform-random action selection before running real policy.
                 Note: Helps exploration.
-
             update_after: Number of env interactions to collect before starting to do gradient descent updates.
                 Note: Ensures replay buffer is full enough for useful updates.
-
             update_online_every: Number of env interactions that should elapse between gradient descent updates.
                 Note: Regardless of how long you wait between updates, the ratio of env steps to gradient steps is locked to 1.
-
             update_target_every: Number of env interactions that should elapse between target network updates.
-
             seed: Seed for random number generators.
         """
         super().__init__(training)
@@ -129,21 +117,26 @@ class DQN(RLModelBase):
             action = np.argmax(logits[0])
         return int(action)
 
-    def store(self, states: np.ndarray, actions: int, next_states: np.ndarray, reward: float, done: bool) -> None:
+    def store(
+        self,
+        states: np.ndarray,
+        actions: int,
+        next_states: np.ndarray,
+        reward: float,
+        terminated: bool,
+        truncated: bool,
+    ) -> None:
         """Store experience repplay data.
 
         Args:
             states: States of enviroment.
-
             actions: Actions of model.
-
             next_states: Next states of enviroment.
-
             reward: Reward.
-
-            done: Indicating whether terminated or not.
+            terminated: Whether a `terminal state` (as defined under the MDP of the task) is reached.
+            truncated: Whether a truncation condition outside the scope of the MDP is satisfied.
         """
-        self.replay_buffer.store(states, actions, reward, next_states, done)
+        self.replay_buffer.store(states, actions, reward, next_states, terminated)
 
     def train(self) -> None:
         """Train model."""
@@ -155,7 +148,7 @@ class DQN(RLModelBase):
                     batch['acts'].astype(np.int32).squeeze(axis=1),
                     batch['obs2'],
                     batch['rews'],
-                    batch['done'],
+                    batch['term'],
                 )
                 self.optimizer.apply_gradients(zip(grads, self.online_net.trainable_variables))
                 self._train_steps += 1
@@ -169,13 +162,13 @@ class DQN(RLModelBase):
                     self.update_target()
 
     @tf.function
-    def calc_grads(self, states, actions, next_states, rewards, done):
+    def calc_grads(self, states, actions, next_states, rewards, terminated):
         with tf.GradientTape() as tape:
             logits = self.online_net(states, training=True)
             q_values = tf.math.reduce_sum(logits * tf.one_hot(actions, self._actions_num), axis=1)
             next_logits = self.target_net(next_states, training=True)
             next_q_values = tf.math.reduce_max(next_logits, axis=1)
-            target_q_values = rewards + self.gamma * (1 - done) * next_q_values
+            target_q_values = rewards + self.gamma * (1 - terminated) * next_q_values
             td_errors = tf.stop_gradient(target_q_values) - q_values
             loss = tf.math.reduce_mean(tf.math.square(td_errors))
         grads = tape.gradient(loss, self.online_net.trainable_variables)

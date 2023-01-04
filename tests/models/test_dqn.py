@@ -40,9 +40,10 @@ class DQNModelTestCase(unittest.TestCase):
         action = 0
         next_states = np.random.random((20,))
         reward = 0.0
-        done = False
+        terminated = False
+        truncated = False
         for _ in range(1000):
-            self.model.store(states, action, next_states, reward, done)
+            self.model.store(states, action, next_states, reward, terminated, truncated)
         self.assertEqual(self.model.replay_buffer.size, 1000)
 
     def test_03_train(self):

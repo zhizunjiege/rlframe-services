@@ -28,19 +28,24 @@ class RLModelBase(ABC):
         ...
 
     @abstractmethod
-    def store(self, states: Any, actions: Any, next_states: Any, reward: float, done: bool) -> Any:
+    def store(
+        self,
+        states: Any,
+        actions: Any,
+        next_states: Any,
+        reward: float,
+        terminated: bool,
+        truncated: bool,
+    ) -> Any:
         """Store experience replay data.
 
         Args:
             states: States of enviroment.
-
             actions: Actions of model.
-
             next_states: Next states of enviroment.
-
             reward: Reward.
-
-            done: Indicating whether terminated or not.
+            terminated: Whether a `terminal state` (as defined under the MDP of the task) is reached.
+            truncated: Whether a truncation condition outside the scope of the MDP is satisfied.
         """
         ...
 

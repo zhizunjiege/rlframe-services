@@ -79,7 +79,7 @@ class SimenvServiceTestCase(unittest.TestCase):
 
         print(self.stub.SimMonitor(types_pb2.CommonRequest()))
 
-        cmd.type = simenv_pb2.SimCmd.Type.DONE
+        cmd.type = simenv_pb2.SimCmd.Type.EPISODE
         self.stub.SimControl(cmd)
         time.sleep(10)
 

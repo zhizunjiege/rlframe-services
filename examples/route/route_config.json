@@ -1,15 +1,13 @@
 {
   "routes": {
-    "6f185ee01042d43cd75a4843b70a144babfebdd817fa682292732e8bf57218a7": {
-      "name": "route1",
+    "6f185ee0": {
       "configs": {
-        "8ccb6b9e249f7686a1bc311f1c60b9ac8e869c2a1f9c0193571312860031e3e3": {
-          "name": "config1",
+        "8ccb6b9e": {
           "models": ["model1"]
         }
       }
     }
   },
-  "sim_done_func": "",
+  "sim_term_func": "",
   "sim_step_ratio": 1
 }

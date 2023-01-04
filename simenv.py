@@ -42,7 +42,7 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
 
     def SetSimenvConfig(self, request, context):
         args = json.loads(request.args)
-        self.engine = SimEngines[request.type](id=id, **args)
+        self.engine = SimEngines[request.type](**args)
 
         self.state = types_pb2.ServiceState.State.INITED
         self.configs = request
@@ -63,8 +63,8 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
             cmd = 'resume'
         elif request.type == simenv_pb2.SimCmd.Type.STOP:
             cmd = 'stop'
-        elif request.type == simenv_pb2.SimCmd.Type.DONE:
-            cmd = 'done'
+        elif request.type == simenv_pb2.SimCmd.Type.EPISODE:
+            cmd = 'episode'
         elif request.type == simenv_pb2.SimCmd.Type.PARAM:
             cmd = 'param'
         else:

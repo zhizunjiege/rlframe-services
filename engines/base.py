@@ -7,26 +7,20 @@ class SimEngineBase(ABC):
     """Abstract base class for all simulation engines."""
 
     @abstractmethod
-    def __init__(self, id: str) -> None:
-        """Init engine.
-
-        Args:
-            id: Id of simulation engine.
-        """
-        self.id = id
-
+    def __init__(self) -> None:
+        """Init engine."""
         self._state = 'uninited'
 
     @abstractmethod
     def control(
         self,
-        cmd: Literal['init', 'start', 'pause', 'step', 'resume', 'stop', 'done', 'param'],
+        cmd: Literal['init', 'start', 'pause', 'step', 'resume', 'stop', 'episode', 'param'],
         params: Dict[str, Any],
     ) -> bool:
         """Control engine.
 
         Args:
-            cmd: Control command. `done` means ending current episode, `param` means setting simulation parameters.
+            cmd: Control command. `episode` means ending current episode, `param` means setting simulation parameters.
             params: Control parameters.
 
         Returns:

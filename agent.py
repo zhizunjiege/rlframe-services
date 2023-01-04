@@ -43,7 +43,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             'next_states': None,
             'next_inputs': None,
             'reward': 0,
-            'done': False,
+            'terminated': False,
             'cache': self.func_cache,
         }
 
@@ -71,7 +71,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         self.oafunc = compile(oafunc_src, '', 'exec')
         if request.training:
             rfunc_src = request.reward_func + '\nreward = func(states, inputs, actions, outputs,\
-                 next_states, next_inputs, done)'
+                 next_states, next_inputs, terminated)'
 
             self.rfunc = compile(rfunc_src, '', 'exec')
 
@@ -134,7 +134,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         self.check_state(context)
 
         info = json.loads(request.json)
-        states, done = info['states'], info['done']
+        states, terminated, truncated = info['states'], info['terminated'], info['truncated']
         self.sifunc_args['states'] = states
         exec(self.sifunc, self.sifunc_args)
         inputs = self.sifunc_args['inputs']
@@ -151,21 +151,23 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             else:
                 self.rfunc_args['next_states'] = states
                 self.rfunc_args['next_inputs'] = inputs
-                self.rfunc_args['done'] = done
+                self.rfunc_args['reward'] = 0.0
+                self.rfunc_args['terminated'] = terminated
                 exec(self.rfunc, self.rfunc_args)
                 self.model.store(
                     states=self.rfunc_args['inputs'],
                     actions=self.rfunc_args['outputs'],
                     next_states=self.rfunc_args['next_inputs'],
                     reward=self.rfunc_args['reward'],
-                    done=self.rfunc_args['done'],
+                    terminated=terminated,
+                    truncated=truncated,
                 )
                 self.rfunc_args['states'] = self.rfunc_args['next_states']
                 self.rfunc_args['inputs'] = self.rfunc_args['next_inputs']
                 self.rfunc_args['actions'] = actions
                 self.rfunc_args['outputs'] = outputs
                 self.model.train()
-        if done:
+        if terminated or truncated:
             self.reset_args()
 
         return types_pb2.JsonString(json=json.dumps({'actions': actions}))

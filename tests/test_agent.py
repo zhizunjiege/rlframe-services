@@ -104,10 +104,11 @@ class AgentServiceTestCase(unittest.TestCase):
         info = {
             'states': {
                 'model1': [{
-                    'input1': np.random.rand(20).tolist(),
+                    'output1': np.random.rand(20).tolist(),
                 }],
             },
-            'done': False,
+            'terminated': False,
+            'truncated': False,
         }
         req = types_pb2.JsonString(json=json.dumps(info))
 
@@ -118,4 +119,4 @@ class AgentServiceTestCase(unittest.TestCase):
         t2 = time.time()
         print()
         print(f'Time cost: {t2 - t1} s, FPS: {5000 / (t2 - t1)}')
-        self.assertEqual(type(action['model1']['output1']), int)
+        self.assertEqual(type(action['model1']['input1']), int)
