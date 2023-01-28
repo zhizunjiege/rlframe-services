@@ -1,6 +1,6 @@
 def func(outputs):
     return {
-        'model1': {
+        'model1': [{
             'input1': outputs,
-        },
+        }],
     }

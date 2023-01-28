@@ -20,18 +20,10 @@ service BFF {
   // 设置服务信息
   rpc SetServiceInfo(ServiceInfoMap) returns (types.CommonResponse);
 
-  // 获取数据配置
-  rpc GetDataConfig(types.CommonRequest) returns (DataConfig);
-  // 设置数据配置
-  rpc SetDataConfig(DataConfig) returns (types.CommonResponse);
-
   // 获取路由配置
   rpc GetRouteConfig(types.CommonRequest) returns (RouteConfig);
   // 设置路由配置
   rpc SetRouteConfig(RouteConfig) returns (types.CommonResponse);
-
-  // 智能代理流式通信
-  rpc ProxyChat(stream types.JsonString) returns (stream types.JsonString);
 
   // 重置服务
   rpc ResetService(ServiceIdList) returns (types.CommonResponse);
@@ -96,22 +88,6 @@ message ServiceInfoMap {
   map<string, ServiceInfo> services = 1;  // <服务id,服务信息>
 }
 
-message DataConfig {
-  message Type {
-    map<string, string> fields = 1;  // <字段名称,字段类型>
-  }
-  message Param {
-    string type = 1;   // 参数类型
-    string value = 2;  // 参数初始值，格式：Json字符串
-  }
-  message Model {
-    map<string, Param> input_params = 1;   // <参数名称,参数信息>
-    map<string, Param> output_params = 2;  // <参数名称,参数信息>
-  }
-  map<string, Type> types = 1;  // <类型名称,类型结构>
-  map<string, Model> data = 2;  // <模型名称,模型参数>
-}
-
 message RouteConfig {
   message Config {
     repeated string models = 1;  // 模型名称列表
@@ -120,8 +96,6 @@ message RouteConfig {
     map<string, Config> configs = 1;  // <智能服务id,智能服务路由>
   }
   map<string, Route> routes = 1;  // <仿真服务id,仿真服务路由>
-  string sim_term_func = 2;       // 仿真结束判断函数
-  uint32 sim_step_ratio = 3;      // 仿真步数比
 }
 
 message ServiceStateMap {

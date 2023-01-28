@@ -1,0 +1,41 @@
+{
+  "changed": true,
+  "task": {
+    "task_id": 18,
+    "exp_design_id": 28,
+    "exp_sample_num": 4,
+    "repeat_times": 4,
+    "sim_start_time": 0,
+    "sim_duration": 30,
+    "time_step": 1000,
+    "speed_ratio": 10
+  },
+  "proxy": {
+    "types": {},
+    "data": {
+      "model1": {
+        "model_id": "model1",
+        "inputs": {
+          "input1": {
+            "type": "uint64",
+            "value": 0
+          }
+        },
+        "outputs": {
+          "output1": {
+            "type": "float64[]",
+            "value": 0
+          }
+        }
+      }
+    },
+    "routes": {
+      "8ccb6b9e": [
+        "model1"
+      ]
+    },
+    "simenv_addr": "localhost:10001",
+    "sim_term_func": "",
+    "sim_step_ratio": 5
+  }
+}

@@ -14,14 +14,43 @@ message CommonResponse {
   string msg = 2;   // 消息内容
 }
 
-message JsonString {
-  string json = 1;  // Json字符串
-}
-
 message ServiceState {
   enum State {
     UNINITED = 0;  // 未初始化
     INITED = 1;    // 已初始化
   }
   State state = 1;  // 服务状态
+}
+
+message SimParam {
+  message Array {
+    repeated SimParam items = 1;  // 数组元素
+  }
+  message Struct {
+    map<string, SimParam> fields = 1;  // <字段名称,字段数据>
+  }
+  oneof value {
+    bool bool = 1;      // 布尔型
+    string string = 2;  // 字符串
+    int32 int32 = 3;    // 整型
+    uint64 uint64 = 4;  // 无符号长整型
+    float float = 5;    // 浮点型
+    double double = 6;  // 双精度浮点型
+    Array array = 7;    // 数组
+    Struct struct = 8;  // 结构体
+  }
+}
+message SimEntity {
+  map<string, SimParam> params = 1;  // <参数名称,参数数据>
+}
+message SimModel {
+  repeated SimEntity entities = 1;  // 实体数据列表
+}
+message SimState {
+  map<string, SimModel> states = 1;  // <模型名称,模型数据>
+  bool terminated = 2;               // 是否结束
+  bool truncated = 3;                // 是否超时
+}
+message SimAction {
+  map<string, SimModel> actions = 1;  // <模型名称,模型数据>
 }

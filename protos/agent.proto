@@ -36,7 +36,7 @@ service Agent {
   rpc SetModelStatus(ModelStatus) returns (types.CommonResponse);
 
   // 获取决策动作
-  rpc GetAction(types.JsonString) returns (types.JsonString);
+  rpc GetAction(stream types.SimState) returns (stream types.SimAction);
 }
 
 message AgentConfig {

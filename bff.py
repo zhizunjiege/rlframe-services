@@ -1,14 +1,12 @@
 import argparse
 from concurrent import futures
 import hashlib
-import json
 
 import grpc
 
 from protos import agent_pb2_grpc
 from protos import bff_pb2
 from protos import bff_pb2_grpc
-from protos import simenv_pb2
 from protos import simenv_pb2_grpc
 from protos import types_pb2
 
@@ -21,9 +19,7 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
     def reset(self):
         self.services = {}
 
-        self.data_config = None
         self.route_config = None
-        self.sim_term_func = None
 
         self.agents = {}
         self.simenvs = {}
@@ -82,57 +78,12 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
                 self.services[id] = request.services[id]
         return types_pb2.CommonResponse()
 
-    def GetDataConfig(self, request, context):
-        return self.data_config
-
-    def SetDataConfig(self, request, context):
-        self.data_config = request
-        return types_pb2.CommonResponse()
-
     def GetRouteConfig(self, request, context):
         return self.route_config
 
     def SetRouteConfig(self, request, context):
         self.route_config = request
-        sdfunc_src = request.sim_term_func + '\nterminated = func(states)'
-        self.sim_term_func = compile(sdfunc_src, '', 'exec')
         return types_pb2.CommonResponse()
-
-    def ProxyChat(self, request_iterator, context):
-        id = ''
-        for datum in context.invocation_metadata():
-            if datum[0] == 'id':
-                id = datum[1]
-                break
-
-        if id == '':
-            context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'Missing id in metadata!')
-        elif id not in self.simenvs:
-            self.unknown_id(id, context)
-        else:
-            route = self.route_config.routes[id]
-            for request in request_iterator:
-                info = json.loads(request.json)
-                exec(self.sim_term_func, info)
-                states, terminated, truncated, actions = info['states'], info['terminated'], info['truncated'], {}
-                for id_ in route.configs:
-                    states_ = {}
-                    for model in route.configs[id_].models:
-                        states_[model] = states[model]
-                    agent_req = types_pb2.JsonString(json=json.dumps({
-                        'states': states_,
-                        'terminated': terminated,
-                        'truncated': truncated,
-                    }))
-                    agent_res = self.agents[id_].GetAction(agent_req)
-                    actions_ = json.loads(agent_res.json)['actions']
-                    actions.update(actions_)
-                response = types_pb2.JsonString(json=json.dumps({'actions': actions}))
-                if terminated:
-                    self.simenvs[id].SimControl(simenv_pb2.SimCmd(type=simenv_pb2.SimCmd.Type.EPISODE, params=json.dumps({})))
-                    return response
-                else:
-                    yield response
 
     def ResetService(self, request, context):
         ids = request.ids if len(request.ids) > 0 else list(self.services.keys())

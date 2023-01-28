@@ -75,10 +75,10 @@ class AgentStub(object):
             request_serializer=protos_dot_agent__pb2.ModelStatus.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
         )
-        self.GetAction = channel.unary_unary(
+        self.GetAction = channel.stream_stream(
             '/game.agent.Agent/GetAction',
-            request_serializer=protos_dot_types__pb2.JsonString.SerializeToString,
-            response_deserializer=protos_dot_types__pb2.JsonString.FromString,
+            request_serializer=protos_dot_types__pb2.SimState.SerializeToString,
+            response_deserializer=protos_dot_types__pb2.SimAction.FromString,
         )
 
 
@@ -169,7 +169,7 @@ class AgentServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetAction(self, request, context):
+    def GetAction(self, request_iterator, context):
         """获取决策动作
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -252,10 +252,10 @@ def add_AgentServicer_to_server(servicer, server):
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
             ),
         'GetAction':
-            grpc.unary_unary_rpc_method_handler(
+            grpc.stream_stream_rpc_method_handler(
                 servicer.GetAction,
-                request_deserializer=protos_dot_types__pb2.JsonString.FromString,
-                response_serializer=protos_dot_types__pb2.JsonString.SerializeToString,
+                request_deserializer=protos_dot_types__pb2.SimState.FromString,
+                response_serializer=protos_dot_types__pb2.SimAction.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler('game.agent.Agent', rpc_method_handlers)
@@ -459,7 +459,7 @@ class Agent(object):
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def GetAction(request,
+    def GetAction(request_iterator,
                   target,
                   options=(),
                   channel_credentials=None,
@@ -469,7 +469,7 @@ class Agent(object):
                   wait_for_ready=None,
                   timeout=None,
                   metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/GetAction',
-                                             protos_dot_types__pb2.JsonString.SerializeToString,
-                                             protos_dot_types__pb2.JsonString.FromString, options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+        return grpc.experimental.stream_stream(request_iterator, target, '/game.agent.Agent/GetAction',
+                                               protos_dot_types__pb2.SimState.SerializeToString,
+                                               protos_dot_types__pb2.SimAction.FromString, options, channel_credentials,
+                                               insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

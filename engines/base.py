@@ -51,3 +51,8 @@ class SimEngineBase(ABC):
     def state(self) -> Literal['uninited', 'stopped', 'running', 'suspended']:
         """Getter of state."""
         return self._state
+
+    @state.setter
+    def state(self, value: Literal['uninited', 'stopped', 'running', 'suspended']) -> None:
+        """Setter of state."""
+        self._state = value

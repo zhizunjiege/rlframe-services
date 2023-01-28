@@ -40,16 +40,6 @@ class BFFStub(object):
             request_serializer=protos_dot_bff__pb2.ServiceInfoMap.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
         )
-        self.GetDataConfig = channel.unary_unary(
-            '/game.bff.BFF/GetDataConfig',
-            request_serializer=protos_dot_types__pb2.CommonRequest.SerializeToString,
-            response_deserializer=protos_dot_bff__pb2.DataConfig.FromString,
-        )
-        self.SetDataConfig = channel.unary_unary(
-            '/game.bff.BFF/SetDataConfig',
-            request_serializer=protos_dot_bff__pb2.DataConfig.SerializeToString,
-            response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
-        )
         self.GetRouteConfig = channel.unary_unary(
             '/game.bff.BFF/GetRouteConfig',
             request_serializer=protos_dot_types__pb2.CommonRequest.SerializeToString,
@@ -59,11 +49,6 @@ class BFFStub(object):
             '/game.bff.BFF/SetRouteConfig',
             request_serializer=protos_dot_bff__pb2.RouteConfig.SerializeToString,
             response_deserializer=protos_dot_types__pb2.CommonResponse.FromString,
-        )
-        self.ProxyChat = channel.stream_stream(
-            '/game.bff.BFF/ProxyChat',
-            request_serializer=protos_dot_types__pb2.JsonString.SerializeToString,
-            response_deserializer=protos_dot_types__pb2.JsonString.FromString,
         )
         self.ResetService = channel.unary_unary(
             '/game.bff.BFF/ResetService',
@@ -185,20 +170,6 @@ class BFFServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetDataConfig(self, request, context):
-        """获取数据配置
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def SetDataConfig(self, request, context):
-        """设置数据配置
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
     def GetRouteConfig(self, request, context):
         """获取路由配置
         """
@@ -208,13 +179,6 @@ class BFFServicer(object):
 
     def SetRouteConfig(self, request, context):
         """设置路由配置
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def ProxyChat(self, request_iterator, context):
-        """智能代理流式通信
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -365,18 +329,6 @@ def add_BFFServicer_to_server(servicer, server):
                 request_deserializer=protos_dot_bff__pb2.ServiceInfoMap.FromString,
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
             ),
-        'GetDataConfig':
-            grpc.unary_unary_rpc_method_handler(
-                servicer.GetDataConfig,
-                request_deserializer=protos_dot_types__pb2.CommonRequest.FromString,
-                response_serializer=protos_dot_bff__pb2.DataConfig.SerializeToString,
-            ),
-        'SetDataConfig':
-            grpc.unary_unary_rpc_method_handler(
-                servicer.SetDataConfig,
-                request_deserializer=protos_dot_bff__pb2.DataConfig.FromString,
-                response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
-            ),
         'GetRouteConfig':
             grpc.unary_unary_rpc_method_handler(
                 servicer.GetRouteConfig,
@@ -388,12 +340,6 @@ def add_BFFServicer_to_server(servicer, server):
                 servicer.SetRouteConfig,
                 request_deserializer=protos_dot_bff__pb2.RouteConfig.FromString,
                 response_serializer=protos_dot_types__pb2.CommonResponse.SerializeToString,
-            ),
-        'ProxyChat':
-            grpc.stream_stream_rpc_method_handler(
-                servicer.ProxyChat,
-                request_deserializer=protos_dot_types__pb2.JsonString.FromString,
-                response_serializer=protos_dot_types__pb2.JsonString.SerializeToString,
             ),
         'ResetService':
             grpc.unary_unary_rpc_method_handler(
@@ -581,38 +527,6 @@ class BFF(object):
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def GetDataConfig(request,
-                      target,
-                      options=(),
-                      channel_credentials=None,
-                      call_credentials=None,
-                      insecure=False,
-                      compression=None,
-                      wait_for_ready=None,
-                      timeout=None,
-                      metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/GetDataConfig',
-                                             protos_dot_types__pb2.CommonRequest.SerializeToString,
-                                             protos_dot_bff__pb2.DataConfig.FromString, options, channel_credentials, insecure,
-                                             call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def SetDataConfig(request,
-                      target,
-                      options=(),
-                      channel_credentials=None,
-                      call_credentials=None,
-                      insecure=False,
-                      compression=None,
-                      wait_for_ready=None,
-                      timeout=None,
-                      metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/SetDataConfig',
-                                             protos_dot_bff__pb2.DataConfig.SerializeToString,
-                                             protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
     def GetRouteConfig(request,
                        target,
                        options=(),
@@ -643,22 +557,6 @@ class BFF(object):
                                              protos_dot_bff__pb2.RouteConfig.SerializeToString,
                                              protos_dot_types__pb2.CommonResponse.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def ProxyChat(request_iterator,
-                  target,
-                  options=(),
-                  channel_credentials=None,
-                  call_credentials=None,
-                  insecure=False,
-                  compression=None,
-                  wait_for_ready=None,
-                  timeout=None,
-                  metadata=None):
-        return grpc.experimental.stream_stream(request_iterator, target, '/game.bff.BFF/ProxyChat',
-                                               protos_dot_types__pb2.JsonString.SerializeToString,
-                                               protos_dot_types__pb2.JsonString.FromString, options, channel_credentials,
-                                               insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def ResetService(request,

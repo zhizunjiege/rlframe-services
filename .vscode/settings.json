@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "*.ejs": "html",
+        ".eslintrc": "yaml",
+        ".prettierrc": "yaml",
+        "xstring": "cpp"
+    }
+}
