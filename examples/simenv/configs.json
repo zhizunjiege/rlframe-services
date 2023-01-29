@@ -14,7 +14,7 @@
     "types": {},
     "data": {
       "model1": {
-        "model_id": "model1",
+        "id": "model1",
         "inputs": {
           "input1": {
             "type": "uint64",

@@ -347,9 +347,9 @@ class CQSim(SimEngineBase):
             xml.SubElement(proxy_pubsub, 'PublishParams')
             xml.SubElement(proxy_pubsub, 'SubscribeParams')
         for model_name, model_config in self.sim_params['proxy']['data'].items():
-            pub_sub = interaction_xml[3].find(f'./ModelPubSubInfo[@modelID="{model_config["model_id"]}"]')
+            pub_sub = interaction_xml[3].find(f'./ModelPubSubInfo[@modelID="{model_config["id"]}"]')
             if pub_sub is None:
-                pub_sub = xml.SubElement(interaction_xml[3], 'ModelPubSubInfo', attrib={'modelID': model_config['model_id']})
+                pub_sub = xml.SubElement(interaction_xml[3], 'ModelPubSubInfo', attrib={'modelID': model_config['id']})
                 xml.SubElement(pub_sub, 'PublishParams')
                 xml.SubElement(pub_sub, 'SubscribeParams')
 
@@ -359,7 +359,7 @@ class CQSim(SimEngineBase):
                 'TopicType',
                 attrib={
                     'name': topic_name,
-                    'modelID': model_config['model_id'],
+                    'modelID': model_config['id'],
                     'isTaskFlow': 'false',
                     'proxy': 'true',
                 },
@@ -395,7 +395,7 @@ class CQSim(SimEngineBase):
                 'TopicType',
                 attrib={
                     'name': topic_name,
-                    'modelID': model_config['model_id'],
+                    'modelID': model_config['id'],
                     'isTaskFlow': 'false',
                     'proxy': 'true',
                 },

@@ -11,7 +11,7 @@ python -m grpc_tools.protoc --proto_path=. --python_out=. --grpc_python_out=. ./
 运行以下命令生成 C++ 接口文件：
 
 ```bash
-protoc -I . --grpc_out=. --plugin=protoc-gen-grpc="D:\Programs\grpc\bin\grpc_cpp_plugin.exe" ./protos/*.proto
+protoc -I . --grpc_out=. --plugin=protoc-gen-grpc="grpc_cpp_plugin.exe" ./protos/*.proto
 protoc -I . --cpp_out=. ./protos/*.proto
 ```
 
