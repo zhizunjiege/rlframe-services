@@ -29,6 +29,8 @@ service BFF {
   rpc ResetService(ServiceIdList) returns (types.CommonResponse);
   // 查询服务
   rpc QueryService(ServiceIdList) returns (ServiceStateMap);
+  // 调用服务
+  rpc CallService(CallDataMap) returns (CallDataMap);
 
   // 获取智能体配置
   rpc GetAgentConfig(ServiceIdList) returns (AgentConfigMap);
@@ -100,6 +102,9 @@ message RouteConfig {
 
 message ServiceStateMap {
   map<string, types.ServiceState> states = 1;  // <服务id,服务状态>
+}
+message CallDataMap {
+  map<string, types.CallData> data = 1;  // <服务id,调用数据>
 }
 
 message AgentConfigMap {

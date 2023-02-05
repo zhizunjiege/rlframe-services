@@ -1,6 +1,6 @@
 from abc import ABC
 from abc import abstractmethod
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 
 class RLModelBase(ABC):
@@ -137,3 +137,15 @@ class RLModelBase(ABC):
     def training(self, value: bool):
         """Setter of training."""
         self._training = value
+
+    def call(self, str_data: str = '', bin_data: bytes = b'') -> Tuple[str, bytes]:
+        """Any method can be called.
+
+        Args:
+            str_data: String data.
+            bin_data: Binary data.
+
+        Returns:
+            String data and binary data.
+        """
+        return str_data, bin_data

@@ -37,6 +37,9 @@ service Agent {
 
   // 获取决策动作
   rpc GetAction(stream types.SimState) returns (stream types.SimAction);
+
+  // 其他任意调用
+  rpc Call(types.CallData) returns (types.CallData);
 }
 
 message AgentConfig {

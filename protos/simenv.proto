@@ -20,6 +20,9 @@ service Simenv {
 
   // 获取仿真信息
   rpc SimMonitor(types.CommonRequest) returns (SimInfo);
+
+  // 其他任意调用
+  rpc Call(types.CallData) returns (types.CallData);
 }
 
 message SimenvConfig {

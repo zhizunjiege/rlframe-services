@@ -45,6 +45,11 @@ class SimenvStub(object):
             request_serializer=protos_dot_types__pb2.CommonRequest.SerializeToString,
             response_deserializer=protos_dot_simenv__pb2.SimInfo.FromString,
         )
+        self.Call = channel.unary_unary(
+            '/game.simenv.Simenv/Call',
+            request_serializer=protos_dot_types__pb2.CallData.SerializeToString,
+            response_deserializer=protos_dot_types__pb2.CallData.FromString,
+        )
 
 
 class SimenvServicer(object):
@@ -92,6 +97,13 @@ class SimenvServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def Call(self, request, context):
+        """其他任意调用
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_SimenvServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -130,6 +142,12 @@ def add_SimenvServicer_to_server(servicer, server):
                 servicer.SimMonitor,
                 request_deserializer=protos_dot_types__pb2.CommonRequest.FromString,
                 response_serializer=protos_dot_simenv__pb2.SimInfo.SerializeToString,
+            ),
+        'Call':
+            grpc.unary_unary_rpc_method_handler(
+                servicer.Call,
+                request_deserializer=protos_dot_types__pb2.CallData.FromString,
+                response_serializer=protos_dot_types__pb2.CallData.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler('game.simenv.Simenv', rpc_method_handlers)
@@ -234,4 +252,20 @@ class Simenv(object):
         return grpc.experimental.unary_unary(request, target, '/game.simenv.Simenv/SimMonitor',
                                              protos_dot_types__pb2.CommonRequest.SerializeToString,
                                              protos_dot_simenv__pb2.SimInfo.FromString, options, channel_credentials, insecure,
+                                             call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Call(request,
+             target,
+             options=(),
+             channel_credentials=None,
+             call_credentials=None,
+             insecure=False,
+             compression=None,
+             wait_for_ready=None,
+             timeout=None,
+             metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/game.simenv.Simenv/Call',
+                                             protos_dot_types__pb2.CallData.SerializeToString,
+                                             protos_dot_types__pb2.CallData.FromString, options, channel_credentials, insecure,
                                              call_credentials, compression, wait_for_ready, timeout, metadata)

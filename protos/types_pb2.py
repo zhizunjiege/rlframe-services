@@ -12,11 +12,12 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x12protos/types.proto\x12\ngame.types\"\x0f\n\rCommonRequest\"\x89\x01\n\x0e\x43ommonResponse\x12/\n\x04\x63ode\x18\x01 \x01(\x0e\x32!.game.types.CommonResponse.Status\x12\x0b\n\x03msg\x18\x02 \x01(\t\"9\n\x06Status\x12\x06\n\x02OK\x10\x00\x12\x0b\n\x07WARNING\x10\x01\x12\t\n\x05\x45RROR\x10\x02\x12\x0f\n\x0b\x46\x41TAL_ERROR\x10\x03\"`\n\x0cServiceState\x12-\n\x05state\x18\x01 \x01(\x0e\x32\x1e.game.types.ServiceState.State\"!\n\x05State\x12\x0c\n\x08UNINITED\x10\x00\x12\n\n\x06INITED\x10\x01\"\x8f\x03\n\x08SimParam\x12\x16\n\x0c\x64ouble_value\x18\x01 \x01(\x01H\x00\x12\x15\n\x0bint32_value\x18\x02 \x01(\x05H\x00\x12\x14\n\nbool_value\x18\x03 \x01(\x08H\x00\x12\x16\n\x0cstring_value\x18\x04 \x01(\tH\x00\x12\x31\n\x0b\x61rray_value\x18\x05 \x01(\x0b\x32\x1a.game.types.SimParam.ArrayH\x00\x12\x33\n\x0cstruct_value\x18\x06 \x01(\x0b\x32\x1b.game.types.SimParam.StructH\x00\x1a,\n\x05\x41rray\x12#\n\x05items\x18\x01 \x03(\x0b\x32\x14.game.types.SimParam\x1a\x86\x01\n\x06Struct\x12\x37\n\x06\x66ields\x18\x01 \x03(\x0b\x32\'.game.types.SimParam.Struct.FieldsEntry\x1a\x43\n\x0b\x46ieldsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.game.types.SimParam:\x02\x38\x01\x42\x07\n\x05value\"\x83\x01\n\tSimEntity\x12\x31\n\x06params\x18\x01 \x03(\x0b\x32!.game.types.SimEntity.ParamsEntry\x1a\x43\n\x0bParamsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.game.types.SimParam:\x02\x38\x01\"3\n\x08SimModel\x12\'\n\x08\x65ntities\x18\x01 \x03(\x0b\x32\x15.game.types.SimEntity\"\xa8\x01\n\x08SimState\x12\x30\n\x06states\x18\x01 \x03(\x0b\x32 .game.types.SimState.StatesEntry\x12\x12\n\nterminated\x18\x02 \x01(\x08\x12\x11\n\ttruncated\x18\x03 \x01(\x08\x1a\x43\n\x0bStatesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.game.types.SimModel:\x02\x38\x01\"\x86\x01\n\tSimAction\x12\x33\n\x07\x61\x63tions\x18\x01 \x03(\x0b\x32\".game.types.SimAction.ActionsEntry\x1a\x44\n\x0c\x41\x63tionsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.game.types.SimModel:\x02\x38\x01\x62\x06proto3'
+    b'\n\x12protos/types.proto\x12\ngame.types\"\x0f\n\rCommonRequest\"\x89\x01\n\x0e\x43ommonResponse\x12/\n\x04\x63ode\x18\x01 \x01(\x0e\x32!.game.types.CommonResponse.Status\x12\x0b\n\x03msg\x18\x02 \x01(\t\"9\n\x06Status\x12\x06\n\x02OK\x10\x00\x12\x0b\n\x07WARNING\x10\x01\x12\t\n\x05\x45RROR\x10\x02\x12\x0f\n\x0b\x46\x41TAL_ERROR\x10\x03\".\n\x08\x43\x61llData\x12\x10\n\x08str_data\x18\x01 \x01(\t\x12\x10\n\x08\x62in_data\x18\x02 \x01(\x0c\"`\n\x0cServiceState\x12-\n\x05state\x18\x01 \x01(\x0e\x32\x1e.game.types.ServiceState.State\"!\n\x05State\x12\x0c\n\x08UNINITED\x10\x00\x12\n\n\x06INITED\x10\x01\"\x8f\x03\n\x08SimParam\x12\x16\n\x0c\x64ouble_value\x18\x01 \x01(\x01H\x00\x12\x15\n\x0bint32_value\x18\x02 \x01(\x05H\x00\x12\x14\n\nbool_value\x18\x03 \x01(\x08H\x00\x12\x16\n\x0cstring_value\x18\x04 \x01(\tH\x00\x12\x31\n\x0b\x61rray_value\x18\x05 \x01(\x0b\x32\x1a.game.types.SimParam.ArrayH\x00\x12\x33\n\x0cstruct_value\x18\x06 \x01(\x0b\x32\x1b.game.types.SimParam.StructH\x00\x1a,\n\x05\x41rray\x12#\n\x05items\x18\x01 \x03(\x0b\x32\x14.game.types.SimParam\x1a\x86\x01\n\x06Struct\x12\x37\n\x06\x66ields\x18\x01 \x03(\x0b\x32\'.game.types.SimParam.Struct.FieldsEntry\x1a\x43\n\x0b\x46ieldsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.game.types.SimParam:\x02\x38\x01\x42\x07\n\x05value\"\x83\x01\n\tSimEntity\x12\x31\n\x06params\x18\x01 \x03(\x0b\x32!.game.types.SimEntity.ParamsEntry\x1a\x43\n\x0bParamsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.game.types.SimParam:\x02\x38\x01\"3\n\x08SimModel\x12\'\n\x08\x65ntities\x18\x01 \x03(\x0b\x32\x15.game.types.SimEntity\"\xa8\x01\n\x08SimState\x12\x30\n\x06states\x18\x01 \x03(\x0b\x32 .game.types.SimState.StatesEntry\x12\x12\n\nterminated\x18\x02 \x01(\x08\x12\x11\n\ttruncated\x18\x03 \x01(\x08\x1a\x43\n\x0bStatesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.game.types.SimModel:\x02\x38\x01\"\x86\x01\n\tSimAction\x12\x33\n\x07\x61\x63tions\x18\x01 \x03(\x0b\x32\".game.types.SimAction.ActionsEntry\x1a\x44\n\x0c\x41\x63tionsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.game.types.SimModel:\x02\x38\x01\x62\x06proto3'
 )
 
 _COMMONREQUEST = DESCRIPTOR.message_types_by_name['CommonRequest']
 _COMMONRESPONSE = DESCRIPTOR.message_types_by_name['CommonResponse']
+_CALLDATA = DESCRIPTOR.message_types_by_name['CallData']
 _SERVICESTATE = DESCRIPTOR.message_types_by_name['ServiceState']
 _SIMPARAM = DESCRIPTOR.message_types_by_name['SimParam']
 _SIMPARAM_ARRAY = _SIMPARAM.nested_types_by_name['Array']
@@ -50,6 +51,16 @@ CommonResponse = _reflection.GeneratedProtocolMessageType(
         # @@protoc_insertion_point(class_scope:game.types.CommonResponse)
     })
 _sym_db.RegisterMessage(CommonResponse)
+
+CallData = _reflection.GeneratedProtocolMessageType(
+    'CallData',
+    (_message.Message,),
+    {
+        'DESCRIPTOR': _CALLDATA,
+        '__module__': 'protos.types_pb2'
+        # @@protoc_insertion_point(class_scope:game.types.CallData)
+    })
+_sym_db.RegisterMessage(CallData)
 
 ServiceState = _reflection.GeneratedProtocolMessageType(
     'ServiceState',
@@ -198,30 +209,32 @@ if _descriptor._USE_C_DESCRIPTORS == False:
     _COMMONRESPONSE._serialized_end = 189
     _COMMONRESPONSE_STATUS._serialized_start = 132
     _COMMONRESPONSE_STATUS._serialized_end = 189
-    _SERVICESTATE._serialized_start = 191
-    _SERVICESTATE._serialized_end = 287
-    _SERVICESTATE_STATE._serialized_start = 254
-    _SERVICESTATE_STATE._serialized_end = 287
-    _SIMPARAM._serialized_start = 290
-    _SIMPARAM._serialized_end = 689
-    _SIMPARAM_ARRAY._serialized_start = 499
-    _SIMPARAM_ARRAY._serialized_end = 543
-    _SIMPARAM_STRUCT._serialized_start = 546
-    _SIMPARAM_STRUCT._serialized_end = 680
-    _SIMPARAM_STRUCT_FIELDSENTRY._serialized_start = 613
-    _SIMPARAM_STRUCT_FIELDSENTRY._serialized_end = 680
-    _SIMENTITY._serialized_start = 692
-    _SIMENTITY._serialized_end = 823
-    _SIMENTITY_PARAMSENTRY._serialized_start = 756
-    _SIMENTITY_PARAMSENTRY._serialized_end = 823
-    _SIMMODEL._serialized_start = 825
-    _SIMMODEL._serialized_end = 876
-    _SIMSTATE._serialized_start = 879
-    _SIMSTATE._serialized_end = 1047
-    _SIMSTATE_STATESENTRY._serialized_start = 980
-    _SIMSTATE_STATESENTRY._serialized_end = 1047
-    _SIMACTION._serialized_start = 1050
-    _SIMACTION._serialized_end = 1184
-    _SIMACTION_ACTIONSENTRY._serialized_start = 1116
-    _SIMACTION_ACTIONSENTRY._serialized_end = 1184
+    _CALLDATA._serialized_start = 191
+    _CALLDATA._serialized_end = 237
+    _SERVICESTATE._serialized_start = 239
+    _SERVICESTATE._serialized_end = 335
+    _SERVICESTATE_STATE._serialized_start = 302
+    _SERVICESTATE_STATE._serialized_end = 335
+    _SIMPARAM._serialized_start = 338
+    _SIMPARAM._serialized_end = 737
+    _SIMPARAM_ARRAY._serialized_start = 547
+    _SIMPARAM_ARRAY._serialized_end = 591
+    _SIMPARAM_STRUCT._serialized_start = 594
+    _SIMPARAM_STRUCT._serialized_end = 728
+    _SIMPARAM_STRUCT_FIELDSENTRY._serialized_start = 661
+    _SIMPARAM_STRUCT_FIELDSENTRY._serialized_end = 728
+    _SIMENTITY._serialized_start = 740
+    _SIMENTITY._serialized_end = 871
+    _SIMENTITY_PARAMSENTRY._serialized_start = 804
+    _SIMENTITY_PARAMSENTRY._serialized_end = 871
+    _SIMMODEL._serialized_start = 873
+    _SIMMODEL._serialized_end = 924
+    _SIMSTATE._serialized_start = 927
+    _SIMSTATE._serialized_end = 1095
+    _SIMSTATE_STATESENTRY._serialized_start = 1028
+    _SIMSTATE_STATESENTRY._serialized_end = 1095
+    _SIMACTION._serialized_start = 1098
+    _SIMACTION._serialized_end = 1232
+    _SIMACTION_ACTIONSENTRY._serialized_start = 1164
+    _SIMACTION_ACTIONSENTRY._serialized_end = 1232
 # @@protoc_insertion_point(module_scope)

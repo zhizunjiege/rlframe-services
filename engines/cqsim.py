@@ -147,7 +147,7 @@ class CQSim(SimEngineBase):
             self.logs_cache.clear()
         return data, logs
 
-    def close(self):
+    def close(self) -> bool:
         """Close CQSim engine.
 
         Returns:

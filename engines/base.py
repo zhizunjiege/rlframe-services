@@ -56,3 +56,15 @@ class SimEngineBase(ABC):
     def state(self, value: Literal['uninited', 'stopped', 'running', 'suspended']) -> None:
         """Setter of state."""
         self._state = value
+
+    def call(self, str_data: str = '', bin_data: bytes = b'') -> Tuple[str, bytes]:
+        """Any method can be called.
+
+        Args:
+            str_data: String data.
+            bin_data: Binary data.
+
+        Returns:
+            String data and binary data.
+        """
+        return str_data, bin_data

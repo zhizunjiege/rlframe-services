@@ -80,6 +80,11 @@ class AgentStub(object):
             request_serializer=protos_dot_types__pb2.SimState.SerializeToString,
             response_deserializer=protos_dot_types__pb2.SimAction.FromString,
         )
+        self.Call = channel.unary_unary(
+            '/game.agent.Agent/Call',
+            request_serializer=protos_dot_types__pb2.CallData.SerializeToString,
+            response_deserializer=protos_dot_types__pb2.CallData.FromString,
+        )
 
 
 class AgentServicer(object):
@@ -176,6 +181,13 @@ class AgentServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def Call(self, request, context):
+        """其他任意调用
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_AgentServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -256,6 +268,12 @@ def add_AgentServicer_to_server(servicer, server):
                 servicer.GetAction,
                 request_deserializer=protos_dot_types__pb2.SimState.FromString,
                 response_serializer=protos_dot_types__pb2.SimAction.SerializeToString,
+            ),
+        'Call':
+            grpc.unary_unary_rpc_method_handler(
+                servicer.Call,
+                request_deserializer=protos_dot_types__pb2.CallData.FromString,
+                response_serializer=protos_dot_types__pb2.CallData.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler('game.agent.Agent', rpc_method_handlers)
@@ -473,3 +491,19 @@ class Agent(object):
                                                protos_dot_types__pb2.SimState.SerializeToString,
                                                protos_dot_types__pb2.SimAction.FromString, options, channel_credentials,
                                                insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Call(request,
+             target,
+             options=(),
+             channel_credentials=None,
+             call_credentials=None,
+             insecure=False,
+             compression=None,
+             wait_for_ready=None,
+             timeout=None,
+             metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/game.agent.Agent/Call',
+                                             protos_dot_types__pb2.CallData.SerializeToString,
+                                             protos_dot_types__pb2.CallData.FromString, options, channel_credentials, insecure,
+                                             call_credentials, compression, wait_for_ready, timeout, metadata)
