@@ -1,3 +1,4 @@
+import json
 import threading
 import time
 import unittest
@@ -17,7 +18,18 @@ class CQSimTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.engine = CQSim(engine_addr='localhost:50041')
+        with open('examples/simenv/configs.json', 'r') as f1, open('examples/simenv/sim_term_func.cc', 'r') as f2:
+            cls.sim_params = json.load(f1)
+            cls.sim_params['proxy']['sim_term_func'] = f2.read()
+
+        cls.engine = CQSim(
+            ctrl_addr='localhost:50041',
+            res_addr='localhost:8001',
+            x_token='Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhc2NvcGUiOiIiLCJleHAiOjQ4MTAxOTcxNTQsImlkZW50aXR5I' +
+            'joxLCJuaWNlIjoiYWRtaW4iLCJvcmlnX2lhdCI6MTY1NjU2MTE1NCwicm9sZWlkIjoxLCJyb2xla2V5IjoiYWRtaW4iLCJyb2xlbm' +
+            'FtZSI6Iuezu-e7n-euoeeQhuWRmCJ9.BvjGw26L1vbWHwl0n8Y1_yTF-fiFNZNmIw20iYe7ToU',
+            proxy_id='b0547a7a-472b-4773-89d3-d1bf50199d9d',
+        )
         cls.timer = RepeatTimer(1, cls.print_monitor)
         cls.timer.start()
 
@@ -32,21 +44,10 @@ class CQSimTestCase(unittest.TestCase):
         cls.engine = None
 
     def test_00_onesample(self):
-        self.engine.control(
-            'init',
-            {
-                'task_id': 18,
-                'repeat_times': 4,
-                'sim_start_time': int(time.time()),
-                'sim_duration': 30,
-                'time_step': 1000,
-                'speed_ratio': 10,
-            },
-        )
+        self.engine.control('init', self.sim_params)
         self.engine.control('start', {})
         time.sleep(3)
         self.engine.control('pause', {})
-        time.sleep(1)
         self.engine.control('param', {'speed_ratio': 100})
         self.engine.control('step', {})
         self.engine.control('resume', {})
@@ -55,23 +56,15 @@ class CQSimTestCase(unittest.TestCase):
         time.sleep(10)
 
     def test_01_multisample(self):
-        self.engine.control(
-            'init',
-            {
-                'exp_design_id': 28,
-                'exp_sample_num': 4,
-                'repeat_times': 2,
-                'sim_start_time': int(time.time()),
-                'sim_duration': 30,
-                'time_step': 1000,
-                'speed_ratio': 10,
-            },
-        )
+        self.sim_params['task']['exp_design_id'] = 28
+        self.sim_params['task']['exp_sample_num'] = 3
+        self.sim_params['task']['repeat_times'] = 2
+
+        self.engine.control('init', self.sim_params)
         self.engine.control('start', {})
         time.sleep(3)
         self.engine.control('pause', {})
-        time.sleep(1)
-        self.engine.control('param', {'speed_ratio': 100})
+        self.engine.control('param', {'speed_ratio': 10})
         self.engine.control('step', {})
         self.engine.control('resume', {})
         time.sleep(3)

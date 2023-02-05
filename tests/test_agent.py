@@ -3,8 +3,8 @@ import pickle
 import time
 import unittest
 
+from google.protobuf import json_format
 import grpc
-import numpy as np
 
 from protos import agent_pb2
 from protos import agent_pb2_grpc
@@ -15,7 +15,7 @@ class AgentServiceTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.channel = grpc.insecure_channel("localhost:10001")
+        cls.channel = grpc.insecure_channel("localhost:10002")
         cls.stub = agent_pb2_grpc.AgentStub(channel=cls.channel)
 
     @classmethod
@@ -38,17 +38,17 @@ class AgentServiceTestCase(unittest.TestCase):
         with open('examples/agent/states_inputs_func.py', 'r') as f1, \
              open('examples/agent/outputs_actions_func.py', 'r') as f2, \
              open('examples/agent/reward_func.py', 'r') as f3, \
-             open('examples/agent/hypers_dqn.json', 'r') as f4, \
-             open('examples/agent/builder_dqn.py', 'r') as f5, \
-             open('examples/agent/structures_dqn.json', 'r') as f6:
+             open('examples/agent/hypers.json', 'r') as f4, \
+             open('examples/agent/structs.json', 'r') as f5, \
+             open('examples/agent/builder.py', 'r') as f6:
             req.training = False
             req.states_inputs_func = f1.read()
             req.outputs_actions_func = f2.read()
             req.reward_func = f3.read()
             req.type = 'DQN'
             req.hypers = f4.read()
-            req.builder = f5.read()
-            req.structures = f6.read()
+            req.structs = f5.read()
+            req.builder = f6.read()
 
         res = self.stub.SetAgentConfig(req)
         self.assertEqual(res.code, 0)
@@ -103,20 +103,65 @@ class AgentServiceTestCase(unittest.TestCase):
     def test_06_getaction(self):
         info = {
             'states': {
-                'model1': [{
-                    'output1': np.random.rand(20).tolist(),
-                }],
+                'example_uav': {
+                    'entities': [{
+                        'params': {
+                            'longitude': {
+                                'double_value': 0.0
+                            },
+                            'latitude': {
+                                'double_value': 0.0
+                            },
+                            'altitude': {
+                                'double_value': 0.0
+                            },
+                            'speed': {
+                                'double_value': 0.0
+                            },
+                            'azimuth': {
+                                'double_value': 0.0
+                            },
+                        }
+                    }],
+                },
+                'example_sub': {
+                    'entities': [{
+                        'params': {
+                            'longitude': {
+                                'double_value': 0.0
+                            },
+                            'latitude': {
+                                'double_value': 0.0
+                            },
+                            'altitude': {
+                                'double_value': 0.0
+                            },
+                            'speed': {
+                                'double_value': 0.0
+                            },
+                            'azimuth': {
+                                'double_value': 0.0
+                            },
+                        }
+                    }],
+                }
             },
             'terminated': False,
             'truncated': False,
         }
-        req = types_pb2.JsonString(json=json.dumps(info))
+        req = json_format.ParseDict(info, types_pb2.SimState())
+
+        def generator():
+            for _ in range(5000):
+                yield req
+            return None
 
         t1 = time.time()
-        for _ in range(5000):
-            res = self.stub.GetAction(req)
-            action = json.loads(res.json)['actions']
+        for res in self.stub.GetAction(generator()):
+            res = json_format.MessageToDict(res, preserving_proto_field_name=True)
         t2 = time.time()
-        print()
         print(f'Time cost: {t2 - t1} s, FPS: {5000 / (t2 - t1)}')
-        self.assertEqual(type(action['model1']['input1']), int)
+
+        azimuth = res['actions']['example_uav']['entities'][0]['params']['azimuth']['double_value']
+        print(f'Azimuth: {azimuth}')
+        self.assertIsInstance(azimuth, float)

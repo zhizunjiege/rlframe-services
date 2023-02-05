@@ -65,8 +65,8 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             exec(builder_src, result)
             networks = result['networks']
         else:
-            structures = json.loads(request.structures)
-            networks = default_builder(structures)
+            structs = json.loads(request.structs)
+            networks = default_builder(structs)
         self.model = RLModels[request.type](training=request.training, networks=networks, **hypers)
 
         self.state = types_pb2.ServiceState.State.INITED
@@ -129,8 +129,8 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             'truncated': False,
         }
         for request in request_iterator:
-            sim_state = json_format.MessageToDict(request)
-            states, terminated, truncated = sim_state['states'], sim_state['terminated'], sim_state['truncated']
+            states, terminated, truncated = self.parse_state(request)
+
             sifunc_args['states'] = states
             exec(self.sifunc, sifunc_args)
             inputs = sifunc_args['inputs']
@@ -165,12 +165,59 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
                     rfunc_args['outputs'] = outputs
                     self.model.train()
 
-            sim_action = types_pb2.SimAction()
-            response = json_format.ParseDict({'actions': actions}, sim_action)
+            response = self.wrap_action(actions)
             if terminated or truncated:
                 return response
             else:
                 yield response
+
+    def parse_param(self, param):
+        if 'double_value' in param:
+            return param['double_value']
+        elif 'int32_value' in param:
+            return param['int32_value']
+        elif 'bool_value' in param:
+            return param['bool_value']
+        elif 'string_value' in param:
+            return param['string_value']
+        elif 'array_value' in param:
+            return [self.parse_param(item) for item in param['array_value']['items']]
+        elif 'struct_value' in param:
+            return {field: self.parse_param(value) for field, value in param['struct_value']['fields'].items()}
+
+    def parse_state(self, req):
+        req = json_format.MessageToDict(req, preserving_proto_field_name=True, including_default_value_fields=True)
+        states, terminated, truncated = req['states'], req['terminated'], req['truncated']
+        for k in states:
+            states[k] = states[k]['entities']
+            for i in range(len(states[k])):
+                states[k][i] = states[k][i]['params']
+                for j in states[k][i]:
+                    states[k][i][j] = self.parse_param(states[k][i][j])
+        return states, terminated, truncated
+
+    def wrap_param(self, param):
+        if isinstance(param, float):
+            return {'double_value': param}
+        elif isinstance(param, int):
+            return {'int32_value': param}
+        elif isinstance(param, bool):
+            return {'bool_value': param}
+        elif isinstance(param, str):
+            return {'string_value': param}
+        elif isinstance(param, list):
+            return {'array_value': {'items': [self.wrap_param(item) for item in param]}}
+        elif isinstance(param, dict):
+            return {'struct_value': {'fields': {k: self.wrap_param(v) for k, v in param.items()}}}
+
+    def wrap_action(self, actions):
+        for k in actions:
+            actions[k] = {'entities': actions[k]}
+            for i in range(len(actions[k]['entities'])):
+                actions[k]['entities'][i] = {'params': actions[k]['entities'][i]}
+                for j in actions[k]['entities'][i]['params']:
+                    actions[k]['entities'][i]['params'][j] = self.wrap_param(actions[k]['entities'][i]['params'][j])
+        return json_format.ParseDict({'actions': actions}, types_pb2.SimAction())
 
 
 def agent_server(ip, port, max_workers, max_msg_len):

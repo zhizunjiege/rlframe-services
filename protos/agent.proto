@@ -46,8 +46,8 @@ message AgentConfig {
   string reward_func = 4;           // 奖励函数
   string type = 5;                  // 模型类型
   string hypers = 6;                // 超参数，格式：Json字符串
-  string builder = 7;               // 模型构建函数代码
-  string structures = 8;            // 网络结构，格式：Json字符串
+  string structs = 7;               // 网络结构，格式：Json字符串
+  string builder = 8;               // 模型构建函数代码
 }
 
 message AgentMode {

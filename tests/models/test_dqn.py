@@ -12,11 +12,11 @@ class DQNModelTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with open('examples/agent/hypers_dqn.json', 'r') as f1, \
-             open('examples/agent/structures_dqn.json', 'r') as f2:
-            hypers = json.loads(f1.read())
-            structures = json.loads(f2.read())
-        cls.model = DQN(training=True, networks=default_builder(structures), **hypers)
+        with open('examples/agent/hypers.json', 'r') as f1, \
+             open('examples/agent/structs.json', 'r') as f2:
+            hypers = json.load(f1)
+            structs = json.load(f2)
+        cls.model = DQN(training=True, networks=default_builder(structs), **hypers)
 
     @classmethod
     def tearDownClass(cls):
@@ -27,18 +27,18 @@ class DQNModelTestCase(unittest.TestCase):
         self.assertTrue(self.model.training)
 
     def test_01_react(self):
-        states = np.random.random((20,))
+        states = np.random.random((12,))
         t1 = time.time()
         for _ in range(5000):
             action = self.model.react(states)
         t2 = time.time()
-        print(f'20x256x256x8 nn 5000 react time: {t2 - t1:.2f}s')
-        self.assertEqual(type(action), int)
+        print(f'12x256x256x8 nn 5000 react time: {t2 - t1:.2f}s')
+        self.assertIsInstance(action, int)
 
     def test_02_store(self):
-        states = np.random.random((20,))
+        states = np.random.random((12,))
         action = 0
-        next_states = np.random.random((20,))
+        next_states = np.random.random((12,))
         reward = 0.0
         terminated = False
         truncated = False
@@ -51,7 +51,7 @@ class DQNModelTestCase(unittest.TestCase):
         for _ in range(5000):
             self.model.train()
         t2 = time.time()
-        print(f'20x256x256x8 nn 5000 train time: {t2 - t1:.2f}s')
+        print(f'12x256x256x8 nn 5000 train time: {t2 - t1:.2f}s')
         self.assertEqual(self.model._train_steps, 5000)
 
     def test_04_weights(self):
@@ -71,5 +71,5 @@ class DQNModelTestCase(unittest.TestCase):
         self.model.set_status(status)
         self.assertEqual(status['react_steps'], 5000)
         self.assertEqual(status['train_steps'], 5000)
-        self.assertEqual(status['states_dim'], 20)
+        self.assertEqual(status['states_dim'], 12)
         self.assertEqual(status['actions_num'], 8)

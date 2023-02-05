@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import threading
+import time
 from typing import Any, Dict, List, Literal, Tuple
 import xml.etree.ElementTree as xml
 import zipfile
@@ -76,12 +77,10 @@ class CQSim(SimEngineBase):
             self.sim_params = params
 
             if self.need_repeat:
-                self.current_repeat_time += 1
                 self.need_repeat = False
             else:
                 self.current_repeat_time = 1
-                if params['changed']:
-                    self.update_resource()
+                self.update_resource()
                 self.join_threads()
                 self.init_threads()
 
@@ -143,7 +142,6 @@ class CQSim(SimEngineBase):
         """
         with self.data_lock:
             data = self.data_cache.copy()
-            data['current_repeat_time'] = self.current_repeat_time
         with self.logs_lock:
             logs = self.logs_cache.copy()
             self.logs_cache.clear()
@@ -162,6 +160,7 @@ class CQSim(SimEngineBase):
     def data_callback(self):
         self.data_responses = self.engine.GetSysInfo(engine_pb2.CommonRequest())
         try:
+            prev_state, now_state = None, None
             for response in self.data_responses:
                 with self.data_lock:
                     self.data_cache['sim_current_time'] = response.sim_current_time.ToSeconds()
@@ -171,15 +170,22 @@ class CQSim(SimEngineBase):
                     self.data_cache['speed_ratio'] = response.speed_ratio
                     self.data_cache['real_speed_ratio'] = response.real_speed_ratio
                     self.data_cache['current_sample_id'] = response.current_sample_id
+                    self.data_cache['current_repeat_time'] = self.current_repeat_time
 
+                now_state = response.node_state[0].state
                 p = self.sim_params['task']
                 if not ('exp_design_id' in p and response.current_sample_id != p['exp_sample_num'] - 1) and \
-                        response.node_state[0].state == engine_pb2.EngineNodeState.State.STOPPED and \
-                        self.current_repeat_time < p['repeat_times']:
+                        self.current_repeat_time < p['repeat_times'] and \
+                        now_state == engine_pb2.EngineNodeState.State.STOPPED and \
+                        now_state != prev_state and prev_state is not None:
                     self.need_repeat = True
                     self.control('stop', {})
-                    self.control('init', p)
+                    time.sleep(0.5)
+                    self.control('init', self.sim_params)
+                    time.sleep(0.5)
                     self.control('start', {})
+                    self.current_repeat_time += 1
+                prev_state = now_state
         except grpc.RpcError:
             with self.data_lock:
                 self.data_cache.clear()
@@ -217,7 +223,7 @@ class CQSim(SimEngineBase):
         r = requests.post(
             f'http://{self.res_addr}/api/model/unpack',
             headers={'x-token': self.x_token},
-            data={
+            json={
                 'ids': [self.proxy_id],
                 'types': [1]
             },
@@ -225,70 +231,61 @@ class CQSim(SimEngineBase):
         msg = r.json()
 
         cfg_b64 = msg['data'][0]['configFile']
-        cfg_bin = base64.b64decode(cfg_b64.encode('utf-8'))
-        cfg_str = cfg_bin.decode('utf-8')
+        cfg_str = base64.b64decode(cfg_b64.encode('utf-8')).decode('utf-8')
         cfg_xml = xml.fromstring(cfg_str)
-        for el in cfg_xml[0].findall('./Parameter[@proxy="true"]'):
+        for el in cfg_xml[0].findall('./Parameter[@unit="proxy"]'):
             cfg_xml[0].remove(el)
         proxy_name = cfg_xml.get('displayName', '代理')
         cfg_xml[0].find('./Parameter[@name="InstanceName"]').set('value', proxy_name)
         cfg_xml[0].find('./Parameter[@name="ForceSideID"]').set('value', '80')
         cfg_xml[0].find('./Parameter[@name="ID"]').set('value', '8080')
         for model_name, model_config in self.sim_params['proxy']['data'].items():
-            for input_name, input_config in model_config['inputs'].items():
-                param_name = f'{model_name}_{input_name}'
-                xml.SubElement(
-                    cfg_xml[0],
-                    'Parameter',
-                    attrib={
-                        'name': param_name,
-                        'type': input_config['type'],
-                        'displayName': param_name,
-                        'usage': 'input',
-                        'value': json.dumps(input_config['value']),
-                        'unit': '',
-                        'proxy': 'true',
-                    },
-                )
-            for output_name, output_config in model_config['outputs'].items():
-                xml.SubElement(
-                    cfg_xml[0],
-                    'Parameter',
-                    attrib={
-                        'name': param_name,
-                        'type': output_config['type'],
-                        'displayName': param_name,
-                        'usage': 'output',
-                        'value': '',
-                        'unit': '',
-                        'proxy': 'true',
-                    },
-                )
-        cfg_str = xml.tostring(cfg_xml, encoding='unicode')
-        cfg_bin = cfg_str.encode('utf-8')
+            for inouts_tuple in [
+                (model_config['inputs'], 'input', 'output'),
+                (model_config['outputs'], 'output', 'input'),
+            ]:
+                for inouts_name, inouts_config in inouts_tuple[0].items():
+                    param_name = f'{model_name}_{inouts_tuple[1]}_{inouts_name}'
+                    param_type = inouts_config['type'] if isinstance(inouts_config, dict) else inouts_config
+                    xml.SubElement(
+                        cfg_xml[0],
+                        'Parameter',
+                        attrib={
+                            'name': param_name,
+                            'type': param_type,
+                            'displayName': param_name,
+                            'usage': inouts_tuple[2],
+                            'value': '',
+                            'unit': 'proxy',
+                        },
+                    )
+        cfg_bin = xml.tostring(cfg_xml, encoding='UTF-8', xml_declaration=True)
         cfg_b64 = base64.b64encode(cfg_bin).decode('utf-8')
 
         with open(f'{cwd}/configs.json', 'w') as f1, open(f'{cwd}/sim_term_func.cc', 'w') as f2:
             json.dump(self.sim_params, f1)
             f2.write(self.sim_params['proxy']['sim_term_func'])
-        cmd = 'cl /LD /std:c++17 sim_term_func.cc'
+        cmd = 'g++ -shared -o sim_term_func.dll -std=c++17 sim_term_func.cc'
         subprocess.run(cmd, cwd=cwd, timeout=10, shell=True, capture_output=True)
         with zipfile.ZipFile(f'{cwd}/dependency.zip', 'w') as f:
             f.write(f'{cwd}/configs.json', arcname='configs.json')
             f.write(f'{cwd}/sim_term_func.dll', arcname='sim_term_func.dll')
 
-        requests.put(
-            f'http://{self.res_addr}/api/model/{self.proxy_id}',
-            headers={'x-token': self.x_token},
-            data={'configFile': cfg_b64},
-            files={'dependencyFile': open(f'{cwd}/dependency.zip', 'rb')},
-        )
+        with open(f'{cwd}/dependency.zip', 'rb') as fb:
+            requests.put(
+                f'http://{self.res_addr}/api/model/{self.proxy_id}',
+                headers={'x-token': self.x_token},
+                files={
+                    'configFile': (None, cfg_b64),
+                    'dependencyFile': ('dependency.zip', fb),
+                },
+            )
 
         scenario_id = self.sim_params['task']['task_id']
         r = requests.post(
             f'http://{self.res_addr}/api/scenario/unpack',
             headers={'x-token': self.x_token},
-            data={
+            json={
                 'id': scenario_id,
                 'types': [1, 2],
             },
@@ -296,142 +293,108 @@ class CQSim(SimEngineBase):
         msg = r.json()
 
         scenario_b64 = msg['data']['scenarioFile']
-        scenario_bin = base64.b64decode(scenario_b64.encode('utf-8'))
-        scenario_str = scenario_bin.decode('utf-8')
+        scenario_str = base64.b64decode(scenario_b64.encode('utf-8')).decode('utf-8')
         scenario_xml = xml.fromstring(scenario_str)
-        proxy_side = scenario_xml[2].find('./ForceSide[@proxy="true"]')
-        if proxy_side is None:
-            proxy_side = xml.fromstring('''
-            <ForceSide id="80" name="代理" color="#FFD700" proxy="true">
-                <Units>
-                    <Unit id="8080"/>
-                </Units>
-            </ForceSide>''')
-            scenario_xml[2].append(proxy_side)
-        proxy_entity = scenario_xml[3].find('./Entity[@proxy="true"]')
-        if proxy_entity is None:
-            proxy_entity = xml.SubElement(
-                scenario_xml[3],
-                'Entity',
-                attrib={
-                    'id': '8080',
-                    'modelID': self.proxy_id,
-                    'entityName': proxy_name,
-                    'modelDisplayName': proxy_name,
-                    'proxy': 'true',
-                },
-            )
-        else:
-            proxy_entity.clear()
+        proxy_side = scenario_xml[2].find('./ForceSide[@id="80"]')
+        if proxy_side is not None:
+            scenario_xml[2].remove(proxy_side)
+        proxy_side = xml.fromstring('''
+        <ForceSide id="80" name="代理" color="#FFD700">
+            <Units>
+                <Unit id="8080"/>
+            </Units>
+        </ForceSide>''')
+        scenario_xml[2].append(proxy_side)
+        proxy_entity = scenario_xml[3].find('./Entity[@id="8080"]')
+        if proxy_entity is not None:
+            scenario_xml[3].remove(proxy_entity)
+        proxy_entity = xml.SubElement(
+            scenario_xml[3],
+            'Entity',
+            attrib={
+                'id': '8080',
+                'modelID': self.proxy_id,
+                'entityName': proxy_name,
+                'modelDisplayName': proxy_name,
+            },
+        )
         proxy_entity.append(cfg_xml[0])
-        scenario_str = xml.tostring(scenario_xml, encoding='unicode')
-        scenario_bin = scenario_str.encode('utf-8')
+        scenario_bin = xml.tostring(scenario_xml, encoding='UTF-8', xml_declaration=True)
         scenario_b64 = base64.b64encode(scenario_bin).decode('utf-8')
 
         interaction_b64 = msg['data']['interactionFile']
-        interaction_bin = base64.b64decode(interaction_b64.encode('utf-8'))
-        interaction_str = interaction_bin.decode('utf-8')
+        interaction_str = base64.b64decode(interaction_b64.encode('utf-8')).decode('utf-8')
         interaction_xml = xml.fromstring(interaction_str)
-        for el in interaction_xml[0].findall('./TopicType[@proxy="true"]'):
-            interaction_xml[0].remove(el)
-        for el in interaction_xml[1].findall('./Topic[@proxy="true"]'):
-            interaction_xml[1].remove(el)
-        for pub_sub in interaction_xml[3]:
-            for el in pub_sub[0].findall('./PublishParam[@proxy="true"]'):
-                pub_sub[0].remove(el)
-            for el in pub_sub[1].findall('./SubscribeParam[@proxy="true"]'):
-                pub_sub[1].remove(el)
-        proxy_pubsub = interaction_xml[3].find(f'./ModelPubSubInfo[@modelID="{self.proxy_id}"]')
+
+        for node in interaction_xml[0:2]:
+            for topic in node.findall('*'):
+                name = topic.get('name')
+                if name.find('Proxy') != -1:
+                    node.remove(topic)
+        for pub_sub in interaction_xml[2]:
+            for node in pub_sub:
+                for param in node.findall('*'):
+                    name = param.get('topicName')
+                    if name.find('Proxy') != -1:
+                        node.remove(param)
+        proxy_pubsub = interaction_xml[2].find(f'./ModelPubSubInfo[@modelID="{self.proxy_id}"]')
         if proxy_pubsub is None:
-            proxy_pubsub = xml.SubElement(interaction_xml[3], 'ModelPubSubInfo', attrib={'modelID': self.proxy_id})
+            proxy_pubsub = xml.SubElement(interaction_xml[2], 'ModelPubSubInfo', attrib={'modelID': self.proxy_id})
             xml.SubElement(proxy_pubsub, 'PublishParams')
             xml.SubElement(proxy_pubsub, 'SubscribeParams')
         for model_name, model_config in self.sim_params['proxy']['data'].items():
-            pub_sub = interaction_xml[3].find(f'./ModelPubSubInfo[@modelID="{model_config["id"]}"]')
+            pub_sub = interaction_xml[2].find(f'./ModelPubSubInfo[@modelID="{model_config["id"]}"]')
             if pub_sub is None:
-                pub_sub = xml.SubElement(interaction_xml[3], 'ModelPubSubInfo', attrib={'modelID': model_config['id']})
+                pub_sub = xml.SubElement(interaction_xml[2], 'ModelPubSubInfo', attrib={'modelID': model_config['id']})
                 xml.SubElement(pub_sub, 'PublishParams')
                 xml.SubElement(pub_sub, 'SubscribeParams')
 
-            topic_name = f'ProxyInput_{model_name}'
-            topic_type = xml.SubElement(
-                interaction_xml[0],
-                'TopicType',
-                attrib={
-                    'name': topic_name,
-                    'modelID': model_config['id'],
-                    'isTaskFlow': 'false',
-                    'proxy': 'true',
-                },
-            )
-            topic_params = xml.SubElement(topic_type, 'Params')
-            for input_name, input_config in model_config['inputs'].items():
-                xml.SubElement(topic_params, 'Param', attrib={'name': input_name, 'type': input_config['type']})
-                xml.SubElement(
-                    proxy_pubsub[0],
-                    'PublishParam',
-                    attrib={
-                        'topicName': topic_name,
-                        'topicParamName': input_name,
-                        'modelParamName': f'{model_name}_{input_name}',
-                        'proxy': 'true',
-                    },
-                )
-                xml.SubElement(
-                    pub_sub[1],
-                    'SubscribeParam',
-                    attrib={
-                        'topicName': topic_name,
-                        'topicParamName': input_name,
-                        'modelParamName': input_name,
-                        'proxy': 'true',
-                    },
-                )
-            xml.SubElement(interaction_xml[1], 'Topic', attrib={'name': topic_name, 'type': topic_name})
-
-            topic_name = f'ProxyOutput_{model_name}'
-            topic_type = xml.SubElement(
-                interaction_xml[0],
-                'TopicType',
-                attrib={
-                    'name': topic_name,
-                    'modelID': model_config['id'],
-                    'isTaskFlow': 'false',
-                    'proxy': 'true',
-                },
-            )
-            topic_params = xml.SubElement(topic_type, 'Params')
-            for output_name, output_config in model_config['outputs'].items():
-                xml.SubElement(topic_params, 'Param', attrib={'name': output_name, 'type': output_config['type']})
-                xml.SubElement(
-                    proxy_pubsub[1],
-                    'SubscribeParam',
-                    attrib={
-                        'topicName': topic_name,
-                        'topicParamName': output_name,
-                        'modelParamName': f'{model_name}_{output_name}',
-                        'proxy': 'true',
-                    },
-                )
-                xml.SubElement(
-                    pub_sub[0],
-                    'PublishParams',
-                    attrib={
-                        'topicName': topic_name,
-                        'topicParamName': output_name,
-                        'modelParamName': output_name,
-                        'proxy': 'true',
-                    },
-                )
-            xml.SubElement(interaction_xml[1], 'Topic', attrib={'name': topic_name, 'type': topic_name})
-        interaction_str = xml.tostring(interaction_xml, encoding='unicode')
-        interaction_bin = interaction_str.encode('utf-8')
+            for inouts_tuple in [
+                (model_config['inputs'], 'input', 0, 'PublishParam', 1, 'SubscribeParam'),
+                (model_config['outputs'], 'output', 1, 'SubscribeParam', 0, 'PublishParam'),
+            ]:
+                if len(inouts_tuple[0]) > 0:
+                    topic_name = f'Proxy_{model_name}_{inouts_tuple[1].capitalize()}'
+                    topic_type = xml.SubElement(
+                        interaction_xml[0],
+                        'TopicType',
+                        attrib={
+                            'name': topic_name,
+                            'modelID': model_config['id'],
+                            'isTaskFlow': 'false',
+                        },
+                    )
+                    topic_params = xml.SubElement(topic_type, 'Params')
+                    xml.SubElement(interaction_xml[1], 'Topic', attrib={'name': topic_name, 'type': topic_name})
+                    for inout_name, inout_config in inouts_tuple[0].items():
+                        xml.SubElement(
+                            topic_params,
+                            'Param',
+                            attrib={
+                                'name': inout_name,
+                                'type': inout_config['type'] if isinstance(inout_config, dict) else inout_config,
+                            },
+                        )
+                        for sub_tuple in [
+                            (proxy_pubsub[inouts_tuple[2]], inouts_tuple[3], f'{model_name}_{inouts_tuple[1]}_{inout_name}'),
+                            (pub_sub[inouts_tuple[4]], inouts_tuple[5], inout_name),
+                        ]:
+                            xml.SubElement(
+                                sub_tuple[0],
+                                sub_tuple[1],
+                                attrib={
+                                    'topicName': topic_name,
+                                    'topicParamName': inout_name,
+                                    'modelParamName': sub_tuple[2],
+                                },
+                            )
+        interaction_bin = xml.tostring(interaction_xml, encoding='UTF-8', xml_declaration=True)
         interaction_b64 = base64.b64encode(interaction_bin).decode('utf-8')
 
         requests.put(
             f'http://{self.res_addr}/api/scenario/{scenario_id}',
             headers={'x-token': self.x_token},
-            data={
+            json={
                 'scenarioFile': scenario_b64,
                 'interactionFile': interaction_b64,
             },

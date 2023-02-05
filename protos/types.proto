@@ -30,14 +30,12 @@ message SimParam {
     map<string, SimParam> fields = 1;  // <字段名称,字段数据>
   }
   oneof value {
-    bool bool = 1;      // 布尔型
-    string string = 2;  // 字符串
-    int32 int32 = 3;    // 整型
-    uint64 uint64 = 4;  // 无符号长整型
-    float float = 5;    // 浮点型
-    double double = 6;  // 双精度浮点型
-    Array array = 7;    // 数组
-    Struct struct = 8;  // 结构体
+    double double_value = 1;  // 双精度浮点型
+    int32 int32_value = 2;    // 有符号整型
+    bool bool_value = 3;      // 布尔型
+    string string_value = 4;  // 字符串
+    Array array_value = 5;    // 数组
+    Struct struct_value = 6;  // 结构体
   }
 }
 message SimEntity {
