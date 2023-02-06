@@ -234,6 +234,17 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
                 self.unknown_id(id, context)
         return bff_pb2.SimInfoMap(infos=infos)
 
+    def Call(self, request, context):
+        data = {}
+        for id in request.data:
+            if id in self.agents:
+                data[id] = self.agents[id].Call(request.data[id])
+            elif id in self.simenvs:
+                data[id] = self.simenvs[id].Call(request.data[id])
+            else:
+                self.unknown_id(id, context)
+        return bff_pb2.CallDataMap(data=data)
+
 
 def bff_server(ip, port, max_workers, max_msg_len):
     server = grpc.server(

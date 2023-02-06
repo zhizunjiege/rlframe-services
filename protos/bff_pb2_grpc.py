@@ -60,11 +60,6 @@ class BFFStub(object):
             request_serializer=protos_dot_bff__pb2.ServiceIdList.SerializeToString,
             response_deserializer=protos_dot_bff__pb2.ServiceStateMap.FromString,
         )
-        self.CallService = channel.unary_unary(
-            '/game.bff.BFF/CallService',
-            request_serializer=protos_dot_bff__pb2.CallDataMap.SerializeToString,
-            response_deserializer=protos_dot_bff__pb2.CallDataMap.FromString,
-        )
         self.GetAgentConfig = channel.unary_unary(
             '/game.bff.BFF/GetAgentConfig',
             request_serializer=protos_dot_bff__pb2.ServiceIdList.SerializeToString,
@@ -135,6 +130,11 @@ class BFFStub(object):
             request_serializer=protos_dot_bff__pb2.ServiceIdList.SerializeToString,
             response_deserializer=protos_dot_bff__pb2.SimInfoMap.FromString,
         )
+        self.Call = channel.unary_unary(
+            '/game.bff.BFF/Call',
+            request_serializer=protos_dot_bff__pb2.CallDataMap.SerializeToString,
+            response_deserializer=protos_dot_bff__pb2.CallDataMap.FromString,
+        )
 
 
 class BFFServicer(object):
@@ -198,13 +198,6 @@ class BFFServicer(object):
 
     def QueryService(self, request, context):
         """查询服务
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def CallService(self, request, context):
-        """调用服务
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -308,6 +301,13 @@ class BFFServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def Call(self, request, context):
+        """其他任意调用
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_BFFServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -364,12 +364,6 @@ def add_BFFServicer_to_server(servicer, server):
                 servicer.QueryService,
                 request_deserializer=protos_dot_bff__pb2.ServiceIdList.FromString,
                 response_serializer=protos_dot_bff__pb2.ServiceStateMap.SerializeToString,
-            ),
-        'CallService':
-            grpc.unary_unary_rpc_method_handler(
-                servicer.CallService,
-                request_deserializer=protos_dot_bff__pb2.CallDataMap.FromString,
-                response_serializer=protos_dot_bff__pb2.CallDataMap.SerializeToString,
             ),
         'GetAgentConfig':
             grpc.unary_unary_rpc_method_handler(
@@ -454,6 +448,12 @@ def add_BFFServicer_to_server(servicer, server):
                 servicer.SimMonitor,
                 request_deserializer=protos_dot_bff__pb2.ServiceIdList.FromString,
                 response_serializer=protos_dot_bff__pb2.SimInfoMap.SerializeToString,
+            ),
+        'Call':
+            grpc.unary_unary_rpc_method_handler(
+                servicer.Call,
+                request_deserializer=protos_dot_bff__pb2.CallDataMap.FromString,
+                response_serializer=protos_dot_bff__pb2.CallDataMap.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler('game.bff.BFF', rpc_method_handlers)
@@ -607,22 +607,6 @@ class BFF(object):
                                              protos_dot_bff__pb2.ServiceIdList.SerializeToString,
                                              protos_dot_bff__pb2.ServiceStateMap.FromString, options, channel_credentials,
                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def CallService(request,
-                    target,
-                    options=(),
-                    channel_credentials=None,
-                    call_credentials=None,
-                    insecure=False,
-                    compression=None,
-                    wait_for_ready=None,
-                    timeout=None,
-                    metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/CallService',
-                                             protos_dot_bff__pb2.CallDataMap.SerializeToString,
-                                             protos_dot_bff__pb2.CallDataMap.FromString, options, channel_credentials, insecure,
-                                             call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def GetAgentConfig(request,
@@ -846,4 +830,20 @@ class BFF(object):
         return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/SimMonitor',
                                              protos_dot_bff__pb2.ServiceIdList.SerializeToString,
                                              protos_dot_bff__pb2.SimInfoMap.FromString, options, channel_credentials, insecure,
+                                             call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Call(request,
+             target,
+             options=(),
+             channel_credentials=None,
+             call_credentials=None,
+             insecure=False,
+             compression=None,
+             wait_for_ready=None,
+             timeout=None,
+             metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/Call',
+                                             protos_dot_bff__pb2.CallDataMap.SerializeToString,
+                                             protos_dot_bff__pb2.CallDataMap.FromString, options, channel_credentials, insecure,
                                              call_credentials, compression, wait_for_ready, timeout, metadata)

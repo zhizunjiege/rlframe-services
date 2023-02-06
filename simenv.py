@@ -89,6 +89,11 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
         data, logs = json.dumps(data_), json.dumps(logs_)
         return simenv_pb2.SimInfo(state=state, data=data, logs=logs)
 
+    def Call(self, request, context):
+        self.check_state(context)
+        str_data, bin_data = self.engine.call(str_data=request.str_data, bin_data=request.bin_data)
+        return types_pb2.CallData(str_data=str_data, bin_data=bin_data)
+
 
 def simenv_server(ip, port, max_workers, max_msg_len):
     server = grpc.server(

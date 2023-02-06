@@ -64,7 +64,7 @@ class CQSimTestCase(unittest.TestCase):
         self.engine.control('start', {})
         time.sleep(3)
         self.engine.control('pause', {})
-        self.engine.control('param', {'speed_ratio': 10})
+        self.engine.control('param', {'speed_ratio': 100})
         self.engine.control('step', {})
         self.engine.control('resume', {})
         time.sleep(3)

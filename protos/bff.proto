@@ -29,8 +29,6 @@ service BFF {
   rpc ResetService(ServiceIdList) returns (types.CommonResponse);
   // 查询服务
   rpc QueryService(ServiceIdList) returns (ServiceStateMap);
-  // 调用服务
-  rpc CallService(CallDataMap) returns (CallDataMap);
 
   // 获取智能体配置
   rpc GetAgentConfig(ServiceIdList) returns (AgentConfigMap);
@@ -67,6 +65,9 @@ service BFF {
 
   // 获取仿真信息
   rpc SimMonitor(ServiceIdList) returns (SimInfoMap);
+
+  // 其他任意调用
+  rpc Call(CallDataMap) returns (CallDataMap);
 }
 
 message ServiceInfo {
@@ -103,9 +104,6 @@ message RouteConfig {
 message ServiceStateMap {
   map<string, types.ServiceState> states = 1;  // <服务id,服务状态>
 }
-message CallDataMap {
-  map<string, types.CallData> data = 1;  // <服务id,调用数据>
-}
 
 message AgentConfigMap {
   map<string, agent.AgentConfig> configs = 1;  // <智能服务id,智能服务配置>
@@ -131,4 +129,8 @@ message SimCmdMap {
 }
 message SimInfoMap {
   map<string, simenv.SimInfo> infos = 1;  // <仿真服务id,仿真信息>
+}
+
+message CallDataMap {
+  map<string, types.CallData> data = 1;  // <服务id,调用数据>
 }

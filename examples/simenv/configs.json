@@ -1,7 +1,6 @@
 {
-  "changed": false,
   "task": {
-    "task_id": 17,
+    "scenario_id": 17,
     "repeat_times": 4,
     "sim_start_time": 0,
     "sim_duration": 30,
@@ -9,52 +8,34 @@
     "speed_ratio": 10
   },
   "proxy": {
-    "types": {
-      "ExampleStruct": {
-        "field1": "bool",
-        "field2": "int32",
-        "field3": "uint64",
-        "field4": "float64",
-        "field5": "string"
-      },
-      "ExamplaNest": {
-        "field1": "bool",
-        "field2": "string[]",
-        "field3": "ExampleStruct",
-        "field4": "ExampleStruct[]"
-      }
-    },
     "data": {
       "example_uav": {
         "id": "7a06fc01-ca09-4d1a-95e8-63ebacc859ef",
-        "inputs": {
-          "azimuth": {
-            "type": "float64",
-            "value": 100.0
-          },
-          "example_struct": "ExampleStruct",
-          "example_array": "float64[]",
-          "example_combine": "ExampleStruct[]",
-          "example_nest": "ExamplaNest"
-        },
-        "outputs": {
-          "longitude": "float64",
-          "latitude": "float64",
-          "altitude": "float64",
-          "speed": "float64",
-          "azimuth": "float64"
-        }
+        "inputs": [
+          "azimuth",
+          "example_struct",
+          "example_array",
+          "example_combine",
+          "example_nest"
+        ],
+        "outputs": [
+          "longitude",
+          "latitude",
+          "altitude",
+          "speed",
+          "azimuth"
+        ]
       },
       "example_sub": {
         "id": "0436c1f9-be91-423d-bea8-571fbc9ae2df",
-        "inputs": {},
-        "outputs": {
-          "longitude": "float64",
-          "latitude": "float64",
-          "altitude": "float64",
-          "speed": "float64",
-          "azimuth": "float64"
-        }
+        "inputs": [],
+        "outputs": [
+          "longitude",
+          "latitude",
+          "altitude",
+          "speed",
+          "azimuth"
+        ]
       }
     },
     "routes": {

@@ -16,7 +16,7 @@ from protos import agent_pb2 as protos_dot_agent__pb2
 from protos import simenv_pb2 as protos_dot_simenv__pb2
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x10protos/bff.proto\x12\x08game.bff\x1a\x12protos/types.proto\x1a\x12protos/agent.proto\x1a\x13protos/simenv.proto\"\x8c\x01\n\x0bServiceInfo\x12(\n\x04type\x18\x01 \x01(\x0e\x32\x1a.game.bff.ServiceInfo.Type\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\n\n\x02ip\x18\x03 \x01(\t\x12\x0c\n\x04port\x18\x04 \x01(\r\x12\x0c\n\x04\x64\x65sc\x18\x05 \x01(\t\"\x1d\n\x04Type\x12\t\n\x05\x41GENT\x10\x00\x12\n\n\x06SIMENV\x10\x01\"\x1c\n\rServiceIdList\x12\x0b\n\x03ids\x18\x01 \x03(\t\":\n\x0fServiceInfoList\x12\'\n\x08services\x18\x01 \x03(\x0b\x32\x15.game.bff.ServiceInfo\"\x92\x01\n\x0eServiceInfoMap\x12\x38\n\x08services\x18\x01 \x03(\x0b\x32&.game.bff.ServiceInfoMap.ServicesEntry\x1a\x46\n\rServicesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12$\n\x05value\x18\x02 \x01(\x0b\x32\x15.game.bff.ServiceInfo:\x02\x38\x01\"\xb9\x02\n\x0bRouteConfig\x12\x31\n\x06routes\x18\x01 \x03(\x0b\x32!.game.bff.RouteConfig.RoutesEntry\x1a\x18\n\x06\x43onfig\x12\x0e\n\x06models\x18\x01 \x03(\t\x1a\x90\x01\n\x05Route\x12\x39\n\x07\x63onfigs\x18\x01 \x03(\x0b\x32(.game.bff.RouteConfig.Route.ConfigsEntry\x1aL\n\x0c\x43onfigsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12+\n\x05value\x18\x02 \x01(\x0b\x32\x1c.game.bff.RouteConfig.Config:\x02\x38\x01\x1aJ\n\x0bRoutesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12*\n\x05value\x18\x02 \x01(\x0b\x32\x1b.game.bff.RouteConfig.Route:\x02\x38\x01\"\x91\x01\n\x0fServiceStateMap\x12\x35\n\x06states\x18\x01 \x03(\x0b\x32%.game.bff.ServiceStateMap.StatesEntry\x1aG\n\x0bStatesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\'\n\x05value\x18\x02 \x01(\x0b\x32\x18.game.types.ServiceState:\x02\x38\x01\"\x7f\n\x0b\x43\x61llDataMap\x12-\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x1f.game.bff.CallDataMap.DataEntry\x1a\x41\n\tDataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.game.types.CallData:\x02\x38\x01\"\x91\x01\n\x0e\x41gentConfigMap\x12\x36\n\x07\x63onfigs\x18\x01 \x03(\x0b\x32%.game.bff.AgentConfigMap.ConfigsEntry\x1aG\n\x0c\x43onfigsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12&\n\x05value\x18\x02 \x01(\x0b\x32\x17.game.agent.AgentConfig:\x02\x38\x01\"\x85\x01\n\x0c\x41gentModeMap\x12\x30\n\x05modes\x18\x01 \x03(\x0b\x32!.game.bff.AgentModeMap.ModesEntry\x1a\x43\n\nModesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12$\n\x05value\x18\x02 \x01(\x0b\x32\x15.game.agent.AgentMode:\x02\x38\x01\"\x94\x01\n\x0fModelWeightsMap\x12\x37\n\x07weights\x18\x01 \x03(\x0b\x32&.game.bff.ModelWeightsMap.WeightsEntry\x1aH\n\x0cWeightsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\'\n\x05value\x18\x02 \x01(\x0b\x32\x18.game.agent.ModelWeights:\x02\x38\x01\"\x91\x01\n\x0eModelBufferMap\x12\x36\n\x07\x62uffers\x18\x01 \x03(\x0b\x32%.game.bff.ModelBufferMap.BuffersEntry\x1aG\n\x0c\x42uffersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12&\n\x05value\x18\x02 \x01(\x0b\x32\x17.game.agent.ModelBuffer:\x02\x38\x01\"\x8e\x01\n\x0eModelStatusMap\x12\x34\n\x06status\x18\x01 \x03(\x0b\x32$.game.bff.ModelStatusMap.StatusEntry\x1a\x46\n\x0bStatusEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12&\n\x05value\x18\x02 \x01(\x0b\x32\x17.game.agent.ModelStatus:\x02\x38\x01\"\x95\x01\n\x0fSimenvConfigMap\x12\x37\n\x07\x63onfigs\x18\x01 \x03(\x0b\x32&.game.bff.SimenvConfigMap.ConfigsEntry\x1aI\n\x0c\x43onfigsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12(\n\x05value\x18\x02 \x01(\x0b\x32\x19.game.simenv.SimenvConfig:\x02\x38\x01\"z\n\tSimCmdMap\x12+\n\x04\x63mds\x18\x01 \x03(\x0b\x32\x1d.game.bff.SimCmdMap.CmdsEntry\x1a@\n\tCmdsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\"\n\x05value\x18\x02 \x01(\x0b\x32\x13.game.simenv.SimCmd:\x02\x38\x01\"\x80\x01\n\nSimInfoMap\x12.\n\x05infos\x18\x01 \x03(\x0b\x32\x1f.game.bff.SimInfoMap.InfosEntry\x1a\x42\n\nInfosEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.game.simenv.SimInfo:\x02\x38\x01\x32\x82\r\n\x03\x42\x46\x46\x12\x44\n\x0bResetServer\x12\x19.game.types.CommonRequest\x1a\x1a.game.types.CommonResponse\x12\x45\n\x0fRegisterService\x12\x19.game.bff.ServiceInfoList\x1a\x17.game.bff.ServiceIdList\x12H\n\x11UnRegisterService\x12\x17.game.bff.ServiceIdList\x1a\x1a.game.types.CommonResponse\x12\x43\n\x0eGetServiceInfo\x12\x17.game.bff.ServiceIdList\x1a\x18.game.bff.ServiceInfoMap\x12\x46\n\x0eSetServiceInfo\x12\x18.game.bff.ServiceInfoMap\x1a\x1a.game.types.CommonResponse\x12\x42\n\x0eGetRouteConfig\x12\x19.game.types.CommonRequest\x1a\x15.game.bff.RouteConfig\x12\x43\n\x0eSetRouteConfig\x12\x15.game.bff.RouteConfig\x1a\x1a.game.types.CommonResponse\x12\x43\n\x0cResetService\x12\x17.game.bff.ServiceIdList\x1a\x1a.game.types.CommonResponse\x12\x42\n\x0cQueryService\x12\x17.game.bff.ServiceIdList\x1a\x19.game.bff.ServiceStateMap\x12;\n\x0b\x43\x61llService\x12\x15.game.bff.CallDataMap\x1a\x15.game.bff.CallDataMap\x12\x43\n\x0eGetAgentConfig\x12\x17.game.bff.ServiceIdList\x1a\x18.game.bff.AgentConfigMap\x12\x46\n\x0eSetAgentConfig\x12\x18.game.bff.AgentConfigMap\x1a\x1a.game.types.CommonResponse\x12?\n\x0cGetAgentMode\x12\x17.game.bff.ServiceIdList\x1a\x16.game.bff.AgentModeMap\x12\x42\n\x0cSetAgentMode\x12\x16.game.bff.AgentModeMap\x1a\x1a.game.types.CommonResponse\x12\x45\n\x0fGetModelWeights\x12\x17.game.bff.ServiceIdList\x1a\x19.game.bff.ModelWeightsMap\x12H\n\x0fSetModelWeights\x12\x19.game.bff.ModelWeightsMap\x1a\x1a.game.types.CommonResponse\x12\x43\n\x0eGetModelBuffer\x12\x17.game.bff.ServiceIdList\x1a\x18.game.bff.ModelBufferMap\x12\x46\n\x0eSetModelBuffer\x12\x18.game.bff.ModelBufferMap\x1a\x1a.game.types.CommonResponse\x12\x43\n\x0eGetModelStatus\x12\x17.game.bff.ServiceIdList\x1a\x18.game.bff.ModelStatusMap\x12\x46\n\x0eSetModelStatus\x12\x18.game.bff.ModelStatusMap\x1a\x1a.game.types.CommonResponse\x12\x45\n\x0fGetSimenvConfig\x12\x17.game.bff.ServiceIdList\x1a\x19.game.bff.SimenvConfigMap\x12H\n\x0fSetSimenvConfig\x12\x19.game.bff.SimenvConfigMap\x1a\x1a.game.types.CommonResponse\x12=\n\nSimControl\x12\x13.game.bff.SimCmdMap\x1a\x1a.game.types.CommonResponse\x12;\n\nSimMonitor\x12\x17.game.bff.ServiceIdList\x1a\x14.game.bff.SimInfoMapb\x06proto3'
+    b'\n\x10protos/bff.proto\x12\x08game.bff\x1a\x12protos/types.proto\x1a\x12protos/agent.proto\x1a\x13protos/simenv.proto\"\x8c\x01\n\x0bServiceInfo\x12(\n\x04type\x18\x01 \x01(\x0e\x32\x1a.game.bff.ServiceInfo.Type\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\n\n\x02ip\x18\x03 \x01(\t\x12\x0c\n\x04port\x18\x04 \x01(\r\x12\x0c\n\x04\x64\x65sc\x18\x05 \x01(\t\"\x1d\n\x04Type\x12\t\n\x05\x41GENT\x10\x00\x12\n\n\x06SIMENV\x10\x01\"\x1c\n\rServiceIdList\x12\x0b\n\x03ids\x18\x01 \x03(\t\":\n\x0fServiceInfoList\x12\'\n\x08services\x18\x01 \x03(\x0b\x32\x15.game.bff.ServiceInfo\"\x92\x01\n\x0eServiceInfoMap\x12\x38\n\x08services\x18\x01 \x03(\x0b\x32&.game.bff.ServiceInfoMap.ServicesEntry\x1a\x46\n\rServicesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12$\n\x05value\x18\x02 \x01(\x0b\x32\x15.game.bff.ServiceInfo:\x02\x38\x01\"\xb9\x02\n\x0bRouteConfig\x12\x31\n\x06routes\x18\x01 \x03(\x0b\x32!.game.bff.RouteConfig.RoutesEntry\x1a\x18\n\x06\x43onfig\x12\x0e\n\x06models\x18\x01 \x03(\t\x1a\x90\x01\n\x05Route\x12\x39\n\x07\x63onfigs\x18\x01 \x03(\x0b\x32(.game.bff.RouteConfig.Route.ConfigsEntry\x1aL\n\x0c\x43onfigsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12+\n\x05value\x18\x02 \x01(\x0b\x32\x1c.game.bff.RouteConfig.Config:\x02\x38\x01\x1aJ\n\x0bRoutesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12*\n\x05value\x18\x02 \x01(\x0b\x32\x1b.game.bff.RouteConfig.Route:\x02\x38\x01\"\x91\x01\n\x0fServiceStateMap\x12\x35\n\x06states\x18\x01 \x03(\x0b\x32%.game.bff.ServiceStateMap.StatesEntry\x1aG\n\x0bStatesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\'\n\x05value\x18\x02 \x01(\x0b\x32\x18.game.types.ServiceState:\x02\x38\x01\"\x91\x01\n\x0e\x41gentConfigMap\x12\x36\n\x07\x63onfigs\x18\x01 \x03(\x0b\x32%.game.bff.AgentConfigMap.ConfigsEntry\x1aG\n\x0c\x43onfigsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12&\n\x05value\x18\x02 \x01(\x0b\x32\x17.game.agent.AgentConfig:\x02\x38\x01\"\x85\x01\n\x0c\x41gentModeMap\x12\x30\n\x05modes\x18\x01 \x03(\x0b\x32!.game.bff.AgentModeMap.ModesEntry\x1a\x43\n\nModesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12$\n\x05value\x18\x02 \x01(\x0b\x32\x15.game.agent.AgentMode:\x02\x38\x01\"\x94\x01\n\x0fModelWeightsMap\x12\x37\n\x07weights\x18\x01 \x03(\x0b\x32&.game.bff.ModelWeightsMap.WeightsEntry\x1aH\n\x0cWeightsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\'\n\x05value\x18\x02 \x01(\x0b\x32\x18.game.agent.ModelWeights:\x02\x38\x01\"\x91\x01\n\x0eModelBufferMap\x12\x36\n\x07\x62uffers\x18\x01 \x03(\x0b\x32%.game.bff.ModelBufferMap.BuffersEntry\x1aG\n\x0c\x42uffersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12&\n\x05value\x18\x02 \x01(\x0b\x32\x17.game.agent.ModelBuffer:\x02\x38\x01\"\x8e\x01\n\x0eModelStatusMap\x12\x34\n\x06status\x18\x01 \x03(\x0b\x32$.game.bff.ModelStatusMap.StatusEntry\x1a\x46\n\x0bStatusEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12&\n\x05value\x18\x02 \x01(\x0b\x32\x17.game.agent.ModelStatus:\x02\x38\x01\"\x95\x01\n\x0fSimenvConfigMap\x12\x37\n\x07\x63onfigs\x18\x01 \x03(\x0b\x32&.game.bff.SimenvConfigMap.ConfigsEntry\x1aI\n\x0c\x43onfigsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12(\n\x05value\x18\x02 \x01(\x0b\x32\x19.game.simenv.SimenvConfig:\x02\x38\x01\"z\n\tSimCmdMap\x12+\n\x04\x63mds\x18\x01 \x03(\x0b\x32\x1d.game.bff.SimCmdMap.CmdsEntry\x1a@\n\tCmdsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\"\n\x05value\x18\x02 \x01(\x0b\x32\x13.game.simenv.SimCmd:\x02\x38\x01\"\x80\x01\n\nSimInfoMap\x12.\n\x05infos\x18\x01 \x03(\x0b\x32\x1f.game.bff.SimInfoMap.InfosEntry\x1a\x42\n\nInfosEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.game.simenv.SimInfo:\x02\x38\x01\"\x7f\n\x0b\x43\x61llDataMap\x12-\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x1f.game.bff.CallDataMap.DataEntry\x1a\x41\n\tDataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.game.types.CallData:\x02\x38\x01\x32\xfb\x0c\n\x03\x42\x46\x46\x12\x44\n\x0bResetServer\x12\x19.game.types.CommonRequest\x1a\x1a.game.types.CommonResponse\x12\x45\n\x0fRegisterService\x12\x19.game.bff.ServiceInfoList\x1a\x17.game.bff.ServiceIdList\x12H\n\x11UnRegisterService\x12\x17.game.bff.ServiceIdList\x1a\x1a.game.types.CommonResponse\x12\x43\n\x0eGetServiceInfo\x12\x17.game.bff.ServiceIdList\x1a\x18.game.bff.ServiceInfoMap\x12\x46\n\x0eSetServiceInfo\x12\x18.game.bff.ServiceInfoMap\x1a\x1a.game.types.CommonResponse\x12\x42\n\x0eGetRouteConfig\x12\x19.game.types.CommonRequest\x1a\x15.game.bff.RouteConfig\x12\x43\n\x0eSetRouteConfig\x12\x15.game.bff.RouteConfig\x1a\x1a.game.types.CommonResponse\x12\x43\n\x0cResetService\x12\x17.game.bff.ServiceIdList\x1a\x1a.game.types.CommonResponse\x12\x42\n\x0cQueryService\x12\x17.game.bff.ServiceIdList\x1a\x19.game.bff.ServiceStateMap\x12\x43\n\x0eGetAgentConfig\x12\x17.game.bff.ServiceIdList\x1a\x18.game.bff.AgentConfigMap\x12\x46\n\x0eSetAgentConfig\x12\x18.game.bff.AgentConfigMap\x1a\x1a.game.types.CommonResponse\x12?\n\x0cGetAgentMode\x12\x17.game.bff.ServiceIdList\x1a\x16.game.bff.AgentModeMap\x12\x42\n\x0cSetAgentMode\x12\x16.game.bff.AgentModeMap\x1a\x1a.game.types.CommonResponse\x12\x45\n\x0fGetModelWeights\x12\x17.game.bff.ServiceIdList\x1a\x19.game.bff.ModelWeightsMap\x12H\n\x0fSetModelWeights\x12\x19.game.bff.ModelWeightsMap\x1a\x1a.game.types.CommonResponse\x12\x43\n\x0eGetModelBuffer\x12\x17.game.bff.ServiceIdList\x1a\x18.game.bff.ModelBufferMap\x12\x46\n\x0eSetModelBuffer\x12\x18.game.bff.ModelBufferMap\x1a\x1a.game.types.CommonResponse\x12\x43\n\x0eGetModelStatus\x12\x17.game.bff.ServiceIdList\x1a\x18.game.bff.ModelStatusMap\x12\x46\n\x0eSetModelStatus\x12\x18.game.bff.ModelStatusMap\x1a\x1a.game.types.CommonResponse\x12\x45\n\x0fGetSimenvConfig\x12\x17.game.bff.ServiceIdList\x1a\x19.game.bff.SimenvConfigMap\x12H\n\x0fSetSimenvConfig\x12\x19.game.bff.SimenvConfigMap\x1a\x1a.game.types.CommonResponse\x12=\n\nSimControl\x12\x13.game.bff.SimCmdMap\x1a\x1a.game.types.CommonResponse\x12;\n\nSimMonitor\x12\x17.game.bff.ServiceIdList\x1a\x14.game.bff.SimInfoMap\x12\x34\n\x04\x43\x61ll\x12\x15.game.bff.CallDataMap\x1a\x15.game.bff.CallDataMapb\x06proto3'
 )
 
 _SERVICEINFO = DESCRIPTOR.message_types_by_name['ServiceInfo']
@@ -31,8 +31,6 @@ _ROUTECONFIG_ROUTE_CONFIGSENTRY = _ROUTECONFIG_ROUTE.nested_types_by_name['Confi
 _ROUTECONFIG_ROUTESENTRY = _ROUTECONFIG.nested_types_by_name['RoutesEntry']
 _SERVICESTATEMAP = DESCRIPTOR.message_types_by_name['ServiceStateMap']
 _SERVICESTATEMAP_STATESENTRY = _SERVICESTATEMAP.nested_types_by_name['StatesEntry']
-_CALLDATAMAP = DESCRIPTOR.message_types_by_name['CallDataMap']
-_CALLDATAMAP_DATAENTRY = _CALLDATAMAP.nested_types_by_name['DataEntry']
 _AGENTCONFIGMAP = DESCRIPTOR.message_types_by_name['AgentConfigMap']
 _AGENTCONFIGMAP_CONFIGSENTRY = _AGENTCONFIGMAP.nested_types_by_name['ConfigsEntry']
 _AGENTMODEMAP = DESCRIPTOR.message_types_by_name['AgentModeMap']
@@ -49,6 +47,8 @@ _SIMCMDMAP = DESCRIPTOR.message_types_by_name['SimCmdMap']
 _SIMCMDMAP_CMDSENTRY = _SIMCMDMAP.nested_types_by_name['CmdsEntry']
 _SIMINFOMAP = DESCRIPTOR.message_types_by_name['SimInfoMap']
 _SIMINFOMAP_INFOSENTRY = _SIMINFOMAP.nested_types_by_name['InfosEntry']
+_CALLDATAMAP = DESCRIPTOR.message_types_by_name['CallDataMap']
+_CALLDATAMAP_DATAENTRY = _CALLDATAMAP.nested_types_by_name['DataEntry']
 _SERVICEINFO_TYPE = _SERVICEINFO.enum_types_by_name['Type']
 ServiceInfo = _reflection.GeneratedProtocolMessageType(
     'ServiceInfo',
@@ -177,28 +177,6 @@ ServiceStateMap = _reflection.GeneratedProtocolMessageType(
     })
 _sym_db.RegisterMessage(ServiceStateMap)
 _sym_db.RegisterMessage(ServiceStateMap.StatesEntry)
-
-CallDataMap = _reflection.GeneratedProtocolMessageType(
-    'CallDataMap',
-    (_message.Message,),
-    {
-        'DataEntry':
-            _reflection.GeneratedProtocolMessageType(
-                'DataEntry',
-                (_message.Message,),
-                {
-                    'DESCRIPTOR': _CALLDATAMAP_DATAENTRY,
-                    '__module__': 'protos.bff_pb2'
-                    # @@protoc_insertion_point(class_scope:game.bff.CallDataMap.DataEntry)
-                }),
-        'DESCRIPTOR':
-            _CALLDATAMAP,
-        '__module__':
-            'protos.bff_pb2'
-        # @@protoc_insertion_point(class_scope:game.bff.CallDataMap)
-    })
-_sym_db.RegisterMessage(CallDataMap)
-_sym_db.RegisterMessage(CallDataMap.DataEntry)
 
 AgentConfigMap = _reflection.GeneratedProtocolMessageType(
     'AgentConfigMap',
@@ -376,6 +354,28 @@ SimInfoMap = _reflection.GeneratedProtocolMessageType(
 _sym_db.RegisterMessage(SimInfoMap)
 _sym_db.RegisterMessage(SimInfoMap.InfosEntry)
 
+CallDataMap = _reflection.GeneratedProtocolMessageType(
+    'CallDataMap',
+    (_message.Message,),
+    {
+        'DataEntry':
+            _reflection.GeneratedProtocolMessageType(
+                'DataEntry',
+                (_message.Message,),
+                {
+                    'DESCRIPTOR': _CALLDATAMAP_DATAENTRY,
+                    '__module__': 'protos.bff_pb2'
+                    # @@protoc_insertion_point(class_scope:game.bff.CallDataMap.DataEntry)
+                }),
+        'DESCRIPTOR':
+            _CALLDATAMAP,
+        '__module__':
+            'protos.bff_pb2'
+        # @@protoc_insertion_point(class_scope:game.bff.CallDataMap)
+    })
+_sym_db.RegisterMessage(CallDataMap)
+_sym_db.RegisterMessage(CallDataMap.DataEntry)
+
 _BFF = DESCRIPTOR.services_by_name['BFF']
 if _descriptor._USE_C_DESCRIPTORS == False:
 
@@ -388,8 +388,6 @@ if _descriptor._USE_C_DESCRIPTORS == False:
     _ROUTECONFIG_ROUTESENTRY._serialized_options = b'8\001'
     _SERVICESTATEMAP_STATESENTRY._options = None
     _SERVICESTATEMAP_STATESENTRY._serialized_options = b'8\001'
-    _CALLDATAMAP_DATAENTRY._options = None
-    _CALLDATAMAP_DATAENTRY._serialized_options = b'8\001'
     _AGENTCONFIGMAP_CONFIGSENTRY._options = None
     _AGENTCONFIGMAP_CONFIGSENTRY._serialized_options = b'8\001'
     _AGENTMODEMAP_MODESENTRY._options = None
@@ -406,6 +404,8 @@ if _descriptor._USE_C_DESCRIPTORS == False:
     _SIMCMDMAP_CMDSENTRY._serialized_options = b'8\001'
     _SIMINFOMAP_INFOSENTRY._options = None
     _SIMINFOMAP_INFOSENTRY._serialized_options = b'8\001'
+    _CALLDATAMAP_DATAENTRY._options = None
+    _CALLDATAMAP_DATAENTRY._serialized_options = b'8\001'
     _SERVICEINFO._serialized_start = 92
     _SERVICEINFO._serialized_end = 232
     _SERVICEINFO_TYPE._serialized_start = 203
@@ -432,42 +432,42 @@ if _descriptor._USE_C_DESCRIPTORS == False:
     _SERVICESTATEMAP._serialized_end = 935
     _SERVICESTATEMAP_STATESENTRY._serialized_start = 864
     _SERVICESTATEMAP_STATESENTRY._serialized_end = 935
-    _CALLDATAMAP._serialized_start = 937
-    _CALLDATAMAP._serialized_end = 1064
-    _CALLDATAMAP_DATAENTRY._serialized_start = 999
-    _CALLDATAMAP_DATAENTRY._serialized_end = 1064
-    _AGENTCONFIGMAP._serialized_start = 1067
-    _AGENTCONFIGMAP._serialized_end = 1212
-    _AGENTCONFIGMAP_CONFIGSENTRY._serialized_start = 1141
-    _AGENTCONFIGMAP_CONFIGSENTRY._serialized_end = 1212
-    _AGENTMODEMAP._serialized_start = 1215
-    _AGENTMODEMAP._serialized_end = 1348
-    _AGENTMODEMAP_MODESENTRY._serialized_start = 1281
-    _AGENTMODEMAP_MODESENTRY._serialized_end = 1348
-    _MODELWEIGHTSMAP._serialized_start = 1351
-    _MODELWEIGHTSMAP._serialized_end = 1499
-    _MODELWEIGHTSMAP_WEIGHTSENTRY._serialized_start = 1427
-    _MODELWEIGHTSMAP_WEIGHTSENTRY._serialized_end = 1499
-    _MODELBUFFERMAP._serialized_start = 1502
-    _MODELBUFFERMAP._serialized_end = 1647
-    _MODELBUFFERMAP_BUFFERSENTRY._serialized_start = 1576
-    _MODELBUFFERMAP_BUFFERSENTRY._serialized_end = 1647
-    _MODELSTATUSMAP._serialized_start = 1650
-    _MODELSTATUSMAP._serialized_end = 1792
-    _MODELSTATUSMAP_STATUSENTRY._serialized_start = 1722
-    _MODELSTATUSMAP_STATUSENTRY._serialized_end = 1792
-    _SIMENVCONFIGMAP._serialized_start = 1795
-    _SIMENVCONFIGMAP._serialized_end = 1944
-    _SIMENVCONFIGMAP_CONFIGSENTRY._serialized_start = 1871
-    _SIMENVCONFIGMAP_CONFIGSENTRY._serialized_end = 1944
-    _SIMCMDMAP._serialized_start = 1946
-    _SIMCMDMAP._serialized_end = 2068
-    _SIMCMDMAP_CMDSENTRY._serialized_start = 2004
-    _SIMCMDMAP_CMDSENTRY._serialized_end = 2068
-    _SIMINFOMAP._serialized_start = 2071
-    _SIMINFOMAP._serialized_end = 2199
-    _SIMINFOMAP_INFOSENTRY._serialized_start = 2133
-    _SIMINFOMAP_INFOSENTRY._serialized_end = 2199
+    _AGENTCONFIGMAP._serialized_start = 938
+    _AGENTCONFIGMAP._serialized_end = 1083
+    _AGENTCONFIGMAP_CONFIGSENTRY._serialized_start = 1012
+    _AGENTCONFIGMAP_CONFIGSENTRY._serialized_end = 1083
+    _AGENTMODEMAP._serialized_start = 1086
+    _AGENTMODEMAP._serialized_end = 1219
+    _AGENTMODEMAP_MODESENTRY._serialized_start = 1152
+    _AGENTMODEMAP_MODESENTRY._serialized_end = 1219
+    _MODELWEIGHTSMAP._serialized_start = 1222
+    _MODELWEIGHTSMAP._serialized_end = 1370
+    _MODELWEIGHTSMAP_WEIGHTSENTRY._serialized_start = 1298
+    _MODELWEIGHTSMAP_WEIGHTSENTRY._serialized_end = 1370
+    _MODELBUFFERMAP._serialized_start = 1373
+    _MODELBUFFERMAP._serialized_end = 1518
+    _MODELBUFFERMAP_BUFFERSENTRY._serialized_start = 1447
+    _MODELBUFFERMAP_BUFFERSENTRY._serialized_end = 1518
+    _MODELSTATUSMAP._serialized_start = 1521
+    _MODELSTATUSMAP._serialized_end = 1663
+    _MODELSTATUSMAP_STATUSENTRY._serialized_start = 1593
+    _MODELSTATUSMAP_STATUSENTRY._serialized_end = 1663
+    _SIMENVCONFIGMAP._serialized_start = 1666
+    _SIMENVCONFIGMAP._serialized_end = 1815
+    _SIMENVCONFIGMAP_CONFIGSENTRY._serialized_start = 1742
+    _SIMENVCONFIGMAP_CONFIGSENTRY._serialized_end = 1815
+    _SIMCMDMAP._serialized_start = 1817
+    _SIMCMDMAP._serialized_end = 1939
+    _SIMCMDMAP_CMDSENTRY._serialized_start = 1875
+    _SIMCMDMAP_CMDSENTRY._serialized_end = 1939
+    _SIMINFOMAP._serialized_start = 1942
+    _SIMINFOMAP._serialized_end = 2070
+    _SIMINFOMAP_INFOSENTRY._serialized_start = 2004
+    _SIMINFOMAP_INFOSENTRY._serialized_end = 2070
+    _CALLDATAMAP._serialized_start = 2072
+    _CALLDATAMAP._serialized_end = 2199
+    _CALLDATAMAP_DATAENTRY._serialized_start = 2134
+    _CALLDATAMAP_DATAENTRY._serialized_end = 2199
     _BFF._serialized_start = 2202
-    _BFF._serialized_end = 3868
+    _BFF._serialized_end = 3861
 # @@protoc_insertion_point(module_scope)

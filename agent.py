@@ -219,6 +219,11 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
                     actions[k]['entities'][i]['params'][j] = self.wrap_param(actions[k]['entities'][i]['params'][j])
         return json_format.ParseDict({'actions': actions}, types_pb2.SimAction())
 
+    def Call(self, request, context):
+        self.check_state(context)
+        str_data, bin_data = self.model.call(str_data=request.str_data, bin_data=request.bin_data)
+        return types_pb2.CallData(str_data=str_data, bin_data=bin_data)
+
 
 def agent_server(ip, port, max_workers, max_msg_len):
     server = grpc.server(
