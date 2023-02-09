@@ -34,7 +34,11 @@
           "latitude",
           "altitude",
           "speed",
-          "azimuth"
+          "azimuth",
+          "example_struct",
+          "example_array",
+          "example_combine",
+          "example_nest"
         ]
       }
     },

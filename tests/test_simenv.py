@@ -32,9 +32,12 @@ class SimenvServiceTestCase(unittest.TestCase):
         except grpc.RpcError as e:
             self.assertEqual(e.code(), grpc.StatusCode.FAILED_PRECONDITION)
 
+        with open('examples/simenv/args.json', 'r') as f:
+            args = f.read()
+
         req = simenv_pb2.SimenvConfig()
         req.type = 'CQSim'
-        req.args = json.dumps({'engine_addr': 'localhost:50041'})
+        req.args = args
         res = self.stub.SetSimenvConfig(req)
         self.assertEqual(res.code, 0)
 
@@ -47,14 +50,12 @@ class SimenvServiceTestCase(unittest.TestCase):
     def test_02_simcontrol(self):
         cmd = simenv_pb2.SimCmd()
 
+        with open('examples/simenv/configs.json', 'r') as f1, open('examples/simenv/sim_term_func.cc', 'r') as f2:
+            sim_params = json.load(f1)
+            sim_params['proxy']['sim_term_func'] = f2.read()
+
         cmd.type = simenv_pb2.SimCmd.Type.INIT
-        cmd.params = json.dumps({
-            'exp_design_id': 28,
-            'sim_start_time': int(time.time()),
-            'sim_duration': 30,
-            'time_step': 1000,
-            'speed_ratio': 10,
-        })
+        cmd.params = json.dumps(sim_params)
         self.stub.SimControl(cmd)
 
         cmd.type = simenv_pb2.SimCmd.Type.START
@@ -64,7 +65,6 @@ class SimenvServiceTestCase(unittest.TestCase):
 
         cmd.type = simenv_pb2.SimCmd.Type.PAUSE
         self.stub.SimControl(cmd)
-        time.sleep(1)
 
         cmd.type = simenv_pb2.SimCmd.Type.PARAM
         cmd.params = json.dumps({'speed_ratio': 100})
@@ -77,16 +77,15 @@ class SimenvServiceTestCase(unittest.TestCase):
         self.stub.SimControl(cmd)
         time.sleep(3)
 
-        print(self.stub.SimMonitor(types_pb2.CommonRequest()))
-
         cmd.type = simenv_pb2.SimCmd.Type.EPISODE
         self.stub.SimControl(cmd)
         time.sleep(10)
-
-        print(self.stub.SimMonitor(types_pb2.CommonRequest()))
 
         cmd.type = simenv_pb2.SimCmd.Type.STOP
         self.stub.SimControl(cmd)
 
     def test_03_simmonitor(self):
-        print(self.stub.SimMonitor(types_pb2.CommonRequest()))
+        res = self.stub.SimMonitor(types_pb2.CommonRequest())
+        print('state: ', res.state)
+        print('data: ', json.loads(res.data))
+        print('logs: ', json.loads(res.logs))

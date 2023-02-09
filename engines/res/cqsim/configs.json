@@ -1,0 +1,18 @@
+{
+  "task": {
+    "scenario_id": 0,
+    "repeat_times": 1,
+    "sim_start_time": 0,
+    "sim_duration": 3600,
+    "time_step": 50,
+    "speed_ratio": 1
+  },
+  "proxy": {
+    "types": {},
+    "data": {},
+    "routes": {},
+    "simenv_addr": "localhost:10001",
+    "sim_step_ratio": 1,
+    "sim_term_func": ""
+  }
+}

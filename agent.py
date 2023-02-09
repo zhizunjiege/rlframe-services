@@ -197,12 +197,12 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         return states, terminated, truncated
 
     def wrap_param(self, param):
-        if isinstance(param, float):
+        if isinstance(param, bool):
+            return {'bool_value': param}
+        elif isinstance(param, float):
             return {'double_value': param}
         elif isinstance(param, int):
             return {'int32_value': param}
-        elif isinstance(param, bool):
-            return {'bool_value': param}
         elif isinstance(param, str):
             return {'string_value': param}
         elif isinstance(param, list):
