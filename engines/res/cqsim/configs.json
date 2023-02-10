@@ -13,6 +13,6 @@
     "routes": {},
     "simenv_addr": "localhost:10001",
     "sim_step_ratio": 1,
-    "sim_term_func": ""
+    "sim_term_func": "#include <any>\n#include <cmath>\n#include <string>\n#include <unordered_map>\n#include <vector>\n\nusing CSValueMap = std::unordered_map<std::string, std::any>;\n\nextern \"C\" __declspec(dllexport) bool func(std::unordered_map<std::string, std::vector<CSValueMap>> &states)\n{\n  return false;\n}\n"
   }
 }

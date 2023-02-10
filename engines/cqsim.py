@@ -1,7 +1,6 @@
 import base64
 import json
 import os
-import subprocess
 import threading
 import time
 from typing import Any, Dict, List, Literal, Tuple
@@ -334,16 +333,16 @@ class CQSim(SimEngineBase):
         proxy_bin = xml.tostring(configs['proxy_xml'], encoding='UTF-8', xml_declaration=True)
         proxy_b64 = base64.b64encode(proxy_bin).decode('utf-8')
         with open(f'{self.cwd}/../zlib.dll', 'rb') as f1, \
-                open(f'{self.cwd}/configs.json', 'rb') as f2, \
-                open(f'{self.cwd}/sim_term_func.dll', 'rb') as f3:
+                open(f'{self.cwd}/../build.bat', 'rb') as f2, \
+                open(f'{self.cwd}/configs.json', 'rb') as f3:
             requests.put(
                 f'http://{self.res_addr}/api/model/{self.proxy_id}',
                 headers={'x-token': self.x_token},
                 files=[
                     ('configFile', (None, proxy_b64)),
                     ('dependencyFile', ('zlib.dll', f1)),
-                    ('dependencyFile', ('configs.json', f2)),
-                    ('dependencyFile', ('sim_term_func.dll', f3)),
+                    ('dependencyFile', ('build.bat', f2)),
+                    ('dependencyFile', ('configs.json', f3)),
                 ],
             )
 
@@ -365,12 +364,8 @@ class CQSim(SimEngineBase):
         for el in proxy_xml[0].findall('./Parameter[@unit="proxy"]'):
             proxy_xml[0].remove(el)
 
-        with open(f'{self.cwd}/../configs.json', 'rb') as src1, \
-                open(f'{self.cwd}/configs.json', 'wb') as tgt1, \
-                open(f'{self.cwd}/../sim_term_func.dll', 'rb') as src2, \
-                open(f'{self.cwd}/sim_term_func.dll', 'wb') as tgt2:
-            tgt1.write(src1.read())
-            tgt2.write(src2.read())
+        with open(f'{self.cwd}/../configs.json', 'rb') as src, open(f'{self.cwd}/configs.json', 'wb') as tgt:
+            tgt.write(src.read())
 
         scenario_xml = configs['scenario_xml']
         proxy_side = scenario_xml[2].find('./ForceSide[@id="80"]')
@@ -440,12 +435,8 @@ class CQSim(SimEngineBase):
                     },
                 )
 
-        with open(f'{self.cwd}/configs.json', 'w') as f1, open(f'{self.cwd}/sim_term_func.cc', 'w') as f2:
-            json.dump(self.sim_params, f1)
-            f2.write(self.sim_params['proxy']['sim_term_func'])
-        # cmd = 'g++ -shared -o sim_term_func.dll -std=c++17 sim_term_func.cc'
-        cmd = 'cl /LD /Fe:./sim_term_func.dll /std:c++17 sim_term_func.cc'
-        subprocess.run(cmd, cwd=self.cwd, timeout=10, shell=True, capture_output=True)
+        with open(f'{self.cwd}/configs.json', 'w') as f:
+            json.dump(self.sim_params, f)
 
         scenario_xml = configs['scenario_xml']
         proxy_side = xml.fromstring('''
