@@ -34,7 +34,7 @@ class BFFServicerTestCase(unittest.TestCase):
         res = self.stub.UnRegisterService(bff_pb2.ServiceIdList(ids=[]))
         self.assertEqual(res.code, 0)
         res = self.stub.RegisterService(bff_pb2.ServiceInfoList(services=services))
-        self.ids = res.ids
+        self.ids += res.ids
 
     def test_01_serviceinfo(self):
         res = self.stub.GetServiceInfo(bff_pb2.ServiceIdList(ids=self.ids[0:1]))
@@ -116,7 +116,7 @@ class BFFServicerTestCase(unittest.TestCase):
 
     def test_10_simenvconfig(self):
         with open('examples/simenv/args.json', 'r') as f:
-            args = f.read()
+            args = json.load(f)
 
         req = bff_pb2.SimenvConfigMap()
         req.configs[self.ids[0]].type = args['type']

@@ -33,7 +33,7 @@ class SimenvServiceTestCase(unittest.TestCase):
             self.assertEqual(e.code(), grpc.StatusCode.FAILED_PRECONDITION)
 
         with open('examples/simenv/args.json', 'r') as f:
-            args = f.read()
+            args = json.load(f)
 
         req = simenv_pb2.SimenvConfig()
         req.type = args['type']
