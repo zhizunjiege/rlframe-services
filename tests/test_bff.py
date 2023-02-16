@@ -147,7 +147,7 @@ class BFFServicerTestCase(unittest.TestCase):
         self.stub.SimControl(req)
 
     def test_12_simmonitor(self):
-        res = self.stub.SimMonitor(types_pb2.CommonRequest())
+        res = self.stub.SimMonitor(bff_pb2.ServiceIdList(ids=[]))
         for id, info in res.infos.items():
             print('id: ', id)
             print('state: ', info.state)

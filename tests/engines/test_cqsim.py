@@ -48,6 +48,7 @@ class CQSimTestCase(unittest.TestCase):
         time.sleep(3)
         self.engine.control('episode', {})
         time.sleep(10)
+        self.engine.control('stop', {})
 
     def test_01_multisample(self):
         self.sim_params['task']['exp_design_id'] = 28
@@ -64,3 +65,4 @@ class CQSimTestCase(unittest.TestCase):
         time.sleep(3)
         self.engine.control('episode', {})
         time.sleep(10)
+        self.engine.control('stop', {})

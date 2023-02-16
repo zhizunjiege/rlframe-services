@@ -48,6 +48,9 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         return self.configs
 
     def SetAgentConfig(self, request, context):
+        if self.model is not None:
+            self.model.close()
+
         sifunc_src = request.states_inputs_func + '\ninputs = func(states)'
         self.sifunc = compile(sifunc_src, '', 'exec')
         oafunc_src = request.outputs_actions_func + '\nactions = func(outputs)'

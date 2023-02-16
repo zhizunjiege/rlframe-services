@@ -1,6 +1,5 @@
 import argparse
 from concurrent import futures
-import hashlib
 
 import grpc
 
@@ -34,10 +33,7 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
     def RegisterService(self, request, context):
         ids = []
         for service in request.services:
-            key = f'{service.type}-{service.name} {service.ip}:{service.port}'
-            sha256 = hashlib.sha256()
-            sha256.update(key.encode('utf-8'))
-            id = sha256.hexdigest()[:8]
+            id = f'{service.ip}:{service.port}'
             self.services[id] = service
             ids.append(id)
             if service.type == bff_pb2.ServiceInfo.Type.AGENT:

@@ -144,3 +144,13 @@ logs/
 
 # other files
 misc/
+
+# static files
+static/
+
+# database files
+db.sqlite3
+
+# task files
+task/
+task.ipynb

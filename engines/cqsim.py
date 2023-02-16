@@ -45,7 +45,6 @@ class CQSim(SimEngineBase):
         self.sim_params = None
 
         self.current_repeat_time = 1
-        self.need_repeat = False
 
         self.data_thread = None
         self.data_responses = None
@@ -76,19 +75,16 @@ class CQSim(SimEngineBase):
         """
         if cmd == 'init':
             self.sim_params = params
-
+            self.join_threads()
+            self.init_threads()
+            self.fine_params()
+            self.set_configs(self.renew_configs(self.reset_configs(self.get_configs())))
             self.engine.SetHttpInfo(engine_pb2.HttpInfo(token=self.x_token))
-
-            if self.need_repeat:
-                self.need_repeat = False
-            else:
-                self.current_repeat_time = 1
-                self.fine_params()
-                self.set_configs(self.renew_configs(self.reset_configs(self.get_configs())))
-                self.join_threads()
-                self.init_threads()
-
-            p = params['task']
+            self.state = 'stopped'
+            return True
+        elif cmd == 'start':
+            self.current_repeat_time = 1
+            p = self.sim_params['task']
             if 'exp_design_id' in p:
                 sample = engine_pb2.InitInfo.MultiSample(exp_design_id=p['exp_design_id'])
                 self.engine.Init(engine_pb2.InitInfo(multi_sample_config=sample))
@@ -102,9 +98,6 @@ class CQSim(SimEngineBase):
             sim_duration.FromSeconds(p['sim_duration'])
             self.engine.Control(engine_pb2.ControlCmd(sim_duration=sim_duration))
             self.control('param', p)
-            self.state = 'stopped'
-            return True
-        elif cmd == 'start':
             self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.START))
             self.state = 'running'
             return True
@@ -161,9 +154,24 @@ class CQSim(SimEngineBase):
         self.channel.close()
         return True
 
+    def call(self, str_data: str, bin_data: bytes) -> Tuple[str, bytes]:
+        """Any method can be called.
+
+        Args:
+            str_data: String data. `reset-proxy` means resetting proxy enviroment.
+            bin_data: Binary data.
+
+        Returns:
+            String data and binary data.
+        """
+        if str_data == 'reset-proxy':
+            self.set_configs(self.reset_configs(self.get_configs()))
+        return '', b''
+
     def data_callback(self):
         self.data_responses = self.engine.GetSysInfo(engine_pb2.CommonRequest())
         try:
+            STOPPED = engine_pb2.EngineNodeState.State.STOPPED
             prev_state, now_state = None, None
             for response in self.data_responses:
                 with self.data_lock:
@@ -176,20 +184,19 @@ class CQSim(SimEngineBase):
                     self.data_cache['current_sample_id'] = response.current_sample_id
                     self.data_cache['current_repeat_time'] = self.current_repeat_time
 
-                now_state = response.node_state[0].state
                 p = self.sim_params['task']
-                if not ('exp_design_id' in p and response.current_sample_id != p['exp_sample_num'] - 1) and \
-                        self.current_repeat_time < p['repeat_times'] and \
-                        now_state == engine_pb2.EngineNodeState.State.STOPPED and \
-                        now_state != prev_state and prev_state is not None:
-                    self.need_repeat = True
-                    self.control('stop', {})
-                    time.sleep(0.5)
-                    self.control('init', self.sim_params)
-                    time.sleep(0.5)
-                    self.control('start', {})
-                    self.current_repeat_time += 1
-                prev_state = now_state
+                if self.state == 'running':
+                    now_state = response.node_state[0].state
+                    if now_state == STOPPED and now_state != prev_state and prev_state is not None:
+                        if 'exp_design_id' not in p or response.current_sample_id == p['exp_sample_num'] - 1:
+                            self.control('stop', {})
+                            if self.current_repeat_time < p['repeat_times']:
+                                time.sleep(0.2)
+                                self.control('start', {})
+                                self.current_repeat_time = self.data_cache['current_repeat_time']
+                                self.current_repeat_time += 1
+                                now_state = None
+                    prev_state = now_state
         except grpc.RpcError:
             with self.data_lock:
                 self.data_cache.clear()
@@ -204,6 +211,22 @@ class CQSim(SimEngineBase):
             with self.logs_lock:
                 self.logs_cache.clear()
 
+    def join_threads(self):
+        if self.data_thread is not None:
+            self.data_responses.cancel()
+            self.data_thread.join(1)
+            self.data_responses = None
+            self.data_thread = None
+            with self.data_lock:
+                self.data_cache.clear()
+        if self.logs_thread is not None:
+            self.logs_responses.cancel()
+            self.logs_thread.join(1)
+            self.logs_responses = None
+            self.logs_thread = None
+            with self.logs_lock:
+                self.logs_cache.clear()
+
     def init_threads(self):
         self.data_thread = threading.Thread(name='data_thread', target=self.data_callback)
         self.data_thread.daemon = True
@@ -211,14 +234,6 @@ class CQSim(SimEngineBase):
         self.logs_thread = threading.Thread(name='logs_thread', target=self.logs_callback)
         self.logs_thread.daemon = True
         self.logs_thread.start()
-
-    def join_threads(self):
-        if self.data_thread is not None:
-            self.data_responses.cancel()
-            self.data_thread.join(1)
-        if self.logs_thread is not None:
-            self.logs_responses.cancel()
-            self.logs_thread.join(1)
 
     def fine_params(self):
         structs = {}

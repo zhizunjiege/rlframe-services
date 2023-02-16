@@ -41,6 +41,9 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
         return self.configs
 
     def SetSimenvConfig(self, request, context):
+        if self.engine is not None:
+            self.engine.close()
+
         args = json.loads(request.args)
         self.engine = SimEngines[request.type](**args)
 
