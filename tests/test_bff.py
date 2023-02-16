@@ -6,7 +6,6 @@ import grpc
 
 from protos import bff_pb2
 from protos import bff_pb2_grpc
-from protos import simenv_pb2
 from protos import types_pb2
 
 
@@ -35,10 +34,10 @@ class BFFServicerTestCase(unittest.TestCase):
         res = self.stub.UnRegisterService(bff_pb2.ServiceIdList(ids=[]))
         self.assertEqual(res.code, 0)
         res = self.stub.RegisterService(bff_pb2.ServiceInfoList(services=services))
-        self.ids += res.ids
+        self.ids = res.ids
 
     def test_01_serviceinfo(self):
-        res = self.stub.GetServiceInfo(bff_pb2.ServiceIdList(ids=[self.ids[0]]))
+        res = self.stub.GetServiceInfo(bff_pb2.ServiceIdList(ids=self.ids[0:1]))
         self.assertIn(self.ids[0], res.services)
         res = self.stub.SetServiceInfo(res)
         self.assertEqual(res.code, 0)
@@ -55,7 +54,7 @@ class BFFServicerTestCase(unittest.TestCase):
         res = self.stub.SetRouteConfig(req)
         self.assertEqual(res.code, 0)
         res = self.stub.GetRouteConfig(types_pb2.CommonRequest())
-        self.assertIn(self.ids[1], res.routes)
+        self.assertIn(self.ids[0], res.routes)
 
     def test_03_resetservice(self):
         res = self.stub.ResetService(bff_pb2.ServiceIdList(ids=self.ids))
@@ -74,44 +73,44 @@ class BFFServicerTestCase(unittest.TestCase):
              open('examples/agent/hypers.json', 'r') as f4, \
              open('examples/agent/structs.json', 'r') as f5, \
              open('examples/agent/builder.py', 'r') as f6:
-            req.configs[self.ids[0]].training = True
-            req.configs[self.ids[0]].states_inputs_func = f1.read()
-            req.configs[self.ids[0]].outputs_actions_func = f2.read()
-            req.configs[self.ids[0]].reward_func = f3.read()
+            req.configs[self.ids[1]].training = True
+            req.configs[self.ids[1]].states_inputs_func = f1.read()
+            req.configs[self.ids[1]].outputs_actions_func = f2.read()
+            req.configs[self.ids[1]].reward_func = f3.read()
             hypers = json.load(f4)
-            req.configs[self.ids[0]].type = hypers['type']
-            req.configs[self.ids[0]].hypers = json.dumps(hypers['hypers'])
-            req.configs[self.ids[0]].structs = f5.read()
-            req.configs[self.ids[0]].builder = f6.read()
+            req.configs[self.ids[1]].type = hypers['type']
+            req.configs[self.ids[1]].hypers = json.dumps(hypers['hypers'])
+            req.configs[self.ids[1]].structs = f5.read()
+            req.configs[self.ids[1]].builder = f6.read()
 
         res = self.stub.SetAgentConfig(req)
         self.assertEqual(res.code, 0)
         res = self.stub.GetAgentConfig(bff_pb2.ServiceIdList(ids=[]))
-        self.assertIn(self.ids[0], res.configs)
+        self.assertIn(self.ids[1], res.configs)
 
     def test_06_agentmode(self):
         req = bff_pb2.AgentModeMap()
-        req.modes[self.ids[0]].training = True
+        req.modes[self.ids[1]].training = True
         res = self.stub.SetAgentMode(req)
         self.assertEqual(res.code, 0)
         res = self.stub.GetAgentMode(bff_pb2.ServiceIdList(ids=[]))
-        self.assertIn(self.ids[0], res.modes)
+        self.assertIn(self.ids[1], res.modes)
 
     def test_07_modelweights(self):
         res = self.stub.GetModelWeights(bff_pb2.ServiceIdList(ids=[]))
-        self.assertIn(self.ids[0], res.weights)
+        self.assertIn(self.ids[1], res.weights)
         res = self.stub.SetModelWeights(res)
         self.assertEqual(res.code, 0)
 
     def test_08_modelbuffer(self):
         res = self.stub.GetModelBuffer(bff_pb2.ServiceIdList(ids=[]))
-        self.assertIn(self.ids[0], res.buffers)
+        self.assertIn(self.ids[1], res.buffers)
         res = self.stub.SetModelBuffer(res)
         self.assertEqual(res.code, 0)
 
     def test_09_modelstatus(self):
         res = self.stub.GetModelStatus(bff_pb2.ServiceIdList(ids=[]))
-        self.assertIn(self.ids[0], res.status)
+        self.assertIn(self.ids[1], res.status)
         res = self.stub.SetModelStatus(res)
         self.assertEqual(res.code, 0)
 
@@ -120,12 +119,12 @@ class BFFServicerTestCase(unittest.TestCase):
             args = f.read()
 
         req = bff_pb2.SimenvConfigMap()
-        req.configs[self.ids[1]].type = args['type']
-        req.configs[self.ids[1]].args = json.dumps(args['args'])
+        req.configs[self.ids[0]].type = args['type']
+        req.configs[self.ids[0]].args = json.dumps(args['args'])
         res = self.stub.SetSimenvConfig(req)
         self.assertEqual(res.code, 0)
         res = self.stub.GetSimenvConfig(bff_pb2.ServiceIdList(ids=[]))
-        self.assertIn(self.ids[1], res.configs)
+        self.assertIn(self.ids[0], res.configs)
 
     def test_11_simcontrol(self):
         req = bff_pb2.SimCmdMap()
@@ -134,17 +133,18 @@ class BFFServicerTestCase(unittest.TestCase):
             sim_params = json.load(f1)
             sim_params['proxy']['sim_term_func'] = f2.read()
 
-        req.cmds[self.ids[1]].type = simenv_pb2.SimCmd.Type.INIT
-        req.cmds[self.ids[1]].params = json.dumps(sim_params)
+        req.cmds[self.ids[0]].type = 'init'
+        req.cmds[self.ids[0]].params = json.dumps(sim_params)
         self.stub.SimControl(req)
 
-        req.cmds[self.ids[1]].type = simenv_pb2.SimCmd.Type.START
-        req.cmds[self.ids[1]].params = json.dumps({})
+        req.cmds[self.ids[0]].type = 'start'
+        req.cmds[self.ids[0]].params = '{}'
         self.stub.SimControl(req)
 
         time.sleep(30)
 
-        req.cmds[self.ids[1]].type = simenv_pb2.SimCmd.Type.STOP
+        req.cmds[self.ids[0]].type = 'stop'
+        req.cmds[self.ids[0]].params = '{}'
         self.stub.SimControl(req)
 
     def test_12_simmonitor(self):

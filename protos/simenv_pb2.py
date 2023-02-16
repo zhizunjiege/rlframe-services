@@ -14,14 +14,12 @@ _sym_db = _symbol_database.Default()
 from protos import types_pb2 as protos_dot_types__pb2
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x13protos/simenv.proto\x12\x0bgame.simenv\x1a\x12protos/types.proto\"*\n\x0cSimenvConfig\x12\x0c\n\x04type\x18\x01 \x01(\t\x12\x0c\n\x04\x61rgs\x18\x02 \x01(\t\"\xa0\x01\n\x06SimCmd\x12&\n\x04type\x18\x01 \x01(\x0e\x32\x18.game.simenv.SimCmd.Type\x12\x0e\n\x06params\x18\x02 \x01(\t\"^\n\x04Type\x12\x08\n\x04INIT\x10\x00\x12\t\n\x05START\x10\x01\x12\t\n\x05PAUSE\x10\x02\x12\x08\n\x04STEP\x10\x03\x12\n\n\x06RESUME\x10\x04\x12\x08\n\x04STOP\x10\x05\x12\x0b\n\x07\x45PISODE\x10\x06\x12\t\n\x05PARAM\x10\x07\"\x90\x01\n\x07SimInfo\x12)\n\x05state\x18\x01 \x01(\x0e\x32\x1a.game.simenv.SimInfo.State\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\t\x12\x0c\n\x04logs\x18\x03 \x01(\t\">\n\x05State\x12\x0c\n\x08UNINITED\x10\x00\x12\x0b\n\x07STOPPED\x10\x01\x12\x0b\n\x07RUNNING\x10\x02\x12\r\n\tSUSPENDED\x10\x03\x32\xd9\x03\n\x06Simenv\x12\x45\n\x0cResetService\x12\x19.game.types.CommonRequest\x1a\x1a.game.types.CommonResponse\x12\x43\n\x0cQueryService\x12\x19.game.types.CommonRequest\x1a\x18.game.types.ServiceState\x12G\n\x0fGetSimenvConfig\x12\x19.game.types.CommonRequest\x1a\x19.game.simenv.SimenvConfig\x12H\n\x0fSetSimenvConfig\x12\x19.game.simenv.SimenvConfig\x1a\x1a.game.types.CommonResponse\x12=\n\nSimControl\x12\x13.game.simenv.SimCmd\x1a\x1a.game.types.CommonResponse\x12=\n\nSimMonitor\x12\x19.game.types.CommonRequest\x1a\x14.game.simenv.SimInfo\x12\x32\n\x04\x43\x61ll\x12\x14.game.types.CallData\x1a\x14.game.types.CallDatab\x06proto3'
+    b'\n\x13protos/simenv.proto\x12\x0bgame.simenv\x1a\x12protos/types.proto\"*\n\x0cSimenvConfig\x12\x0c\n\x04type\x18\x01 \x01(\t\x12\x0c\n\x04\x61rgs\x18\x02 \x01(\t\"&\n\x06SimCmd\x12\x0c\n\x04type\x18\x01 \x01(\t\x12\x0e\n\x06params\x18\x02 \x01(\t\"4\n\x07SimInfo\x12\r\n\x05state\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\t\x12\x0c\n\x04logs\x18\x03 \x01(\t2\xd9\x03\n\x06Simenv\x12\x45\n\x0cResetService\x12\x19.game.types.CommonRequest\x1a\x1a.game.types.CommonResponse\x12\x43\n\x0cQueryService\x12\x19.game.types.CommonRequest\x1a\x18.game.types.ServiceState\x12G\n\x0fGetSimenvConfig\x12\x19.game.types.CommonRequest\x1a\x19.game.simenv.SimenvConfig\x12H\n\x0fSetSimenvConfig\x12\x19.game.simenv.SimenvConfig\x1a\x1a.game.types.CommonResponse\x12=\n\nSimControl\x12\x13.game.simenv.SimCmd\x1a\x1a.game.types.CommonResponse\x12=\n\nSimMonitor\x12\x19.game.types.CommonRequest\x1a\x14.game.simenv.SimInfo\x12\x32\n\x04\x43\x61ll\x12\x14.game.types.CallData\x1a\x14.game.types.CallDatab\x06proto3'
 )
 
 _SIMENVCONFIG = DESCRIPTOR.message_types_by_name['SimenvConfig']
 _SIMCMD = DESCRIPTOR.message_types_by_name['SimCmd']
 _SIMINFO = DESCRIPTOR.message_types_by_name['SimInfo']
-_SIMCMD_TYPE = _SIMCMD.enum_types_by_name['Type']
-_SIMINFO_STATE = _SIMINFO.enum_types_by_name['State']
 SimenvConfig = _reflection.GeneratedProtocolMessageType(
     'SimenvConfig',
     (_message.Message,),
@@ -58,14 +56,10 @@ if _descriptor._USE_C_DESCRIPTORS == False:
     DESCRIPTOR._options = None
     _SIMENVCONFIG._serialized_start = 56
     _SIMENVCONFIG._serialized_end = 98
-    _SIMCMD._serialized_start = 101
-    _SIMCMD._serialized_end = 261
-    _SIMCMD_TYPE._serialized_start = 167
-    _SIMCMD_TYPE._serialized_end = 261
-    _SIMINFO._serialized_start = 264
-    _SIMINFO._serialized_end = 408
-    _SIMINFO_STATE._serialized_start = 346
-    _SIMINFO_STATE._serialized_end = 408
-    _SIMENV._serialized_start = 411
-    _SIMENV._serialized_end = 884
+    _SIMCMD._serialized_start = 100
+    _SIMCMD._serialized_end = 138
+    _SIMINFO._serialized_start = 140
+    _SIMINFO._serialized_end = 192
+    _SIMENV._serialized_start = 195
+    _SIMENV._serialized_end = 668
 # @@protoc_insertion_point(module_scope)

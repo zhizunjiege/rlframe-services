@@ -39,16 +39,16 @@ class CQSimTestCase(unittest.TestCase):
 
     def test_00_onesample(self):
         self.engine.control('init', self.sim_params)
-        self.engine.control('start', {})
+        self.engine.control('start')
         time.sleep(3)
-        self.engine.control('pause', {})
+        self.engine.control('pause')
         self.engine.control('param', {'speed_ratio': 100})
-        self.engine.control('step', {})
-        self.engine.control('resume', {})
+        self.engine.control('step')
+        self.engine.control('resume')
         time.sleep(3)
-        self.engine.control('episode', {})
+        self.engine.control('episode')
         time.sleep(10)
-        self.engine.control('stop', {})
+        self.engine.control('stop')
 
     def test_01_multisample(self):
         self.sim_params['task']['exp_design_id'] = 28
@@ -56,13 +56,13 @@ class CQSimTestCase(unittest.TestCase):
         self.sim_params['task']['repeat_times'] = 2
 
         self.engine.control('init', self.sim_params)
-        self.engine.control('start', {})
+        self.engine.control('start')
         time.sleep(3)
-        self.engine.control('pause', {})
+        self.engine.control('pause')
         self.engine.control('param', {'speed_ratio': 100})
-        self.engine.control('step', {})
-        self.engine.control('resume', {})
+        self.engine.control('step')
+        self.engine.control('resume')
         time.sleep(3)
-        self.engine.control('episode', {})
+        self.engine.control('episode')
         time.sleep(10)
-        self.engine.control('stop', {})
+        self.engine.control('stop')

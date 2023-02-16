@@ -1,16 +1,16 @@
 [
   {
-    "type": 0,
-    "name": "agent",
-    "ip": "localhost",
-    "port": 10002,
-    "desc": "agent service"
-  },
-  {
-    "type": 1,
+    "type": "simenv",
     "name": "simenv",
     "ip": "localhost",
     "port": 10001,
     "desc": "simenv service"
+  },
+  {
+    "type": "agent",
+    "name": "agent",
+    "ip": "localhost",
+    "port": 10002,
+    "desc": "agent service"
   }
 ]

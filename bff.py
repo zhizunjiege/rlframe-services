@@ -36,12 +36,12 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
             id = f'{service.ip}:{service.port}'
             self.services[id] = service
             ids.append(id)
-            if service.type == bff_pb2.ServiceInfo.Type.AGENT:
-                channel = grpc.insecure_channel(f'{service.ip}:{service.port}')
-                self.agents[id] = agent_pb2_grpc.AgentStub(channel)
-            elif service.type == bff_pb2.ServiceInfo.Type.SIMENV:
+            if service.type == 'simenv':
                 channel = grpc.insecure_channel(f'{service.ip}:{service.port}')
                 self.simenvs[id] = simenv_pb2_grpc.SimenvStub(channel)
+            elif service.type == 'agent':
+                channel = grpc.insecure_channel(f'{service.ip}:{service.port}')
+                self.agents[id] = agent_pb2_grpc.AgentStub(channel)
             else:
                 context.abort(grpc.StatusCode.INVALID_ARGUMENT, f'Unknown service type: {service.type}')
         return bff_pb2.ServiceIdList(ids=ids)

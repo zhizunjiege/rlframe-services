@@ -54,34 +54,39 @@ class SimenvServiceTestCase(unittest.TestCase):
             sim_params = json.load(f1)
             sim_params['proxy']['sim_term_func'] = f2.read()
 
-        cmd.type = simenv_pb2.SimCmd.Type.INIT
+        cmd.type = 'init'
         cmd.params = json.dumps(sim_params)
         self.stub.SimControl(cmd)
 
-        cmd.type = simenv_pb2.SimCmd.Type.START
-        cmd.params = json.dumps({})
+        cmd.type = 'start'
+        cmd.params = '{}'
         self.stub.SimControl(cmd)
         time.sleep(3)
 
-        cmd.type = simenv_pb2.SimCmd.Type.PAUSE
+        cmd.type = 'pause'
+        cmd.params = '{}'
         self.stub.SimControl(cmd)
 
-        cmd.type = simenv_pb2.SimCmd.Type.PARAM
+        cmd.type = 'param'
         cmd.params = json.dumps({'speed_ratio': 100})
         self.stub.SimControl(cmd)
 
-        cmd.type = simenv_pb2.SimCmd.Type.STEP
+        cmd.type = 'step'
+        cmd.params = '{}'
         self.stub.SimControl(cmd)
 
-        cmd.type = simenv_pb2.SimCmd.Type.RESUME
+        cmd.type = 'resume'
+        cmd.params = '{}'
         self.stub.SimControl(cmd)
         time.sleep(3)
 
-        cmd.type = simenv_pb2.SimCmd.Type.EPISODE
+        cmd.type = 'episode'
+        cmd.params = '{}'
         self.stub.SimControl(cmd)
         time.sleep(10)
 
-        cmd.type = simenv_pb2.SimCmd.Type.STOP
+        cmd.type = 'stop'
+        cmd.params = '{}'
         self.stub.SimControl(cmd)
 
     def test_03_simmonitor(self):

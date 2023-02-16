@@ -62,7 +62,7 @@ class CQSim(SimEngineBase):
     def control(
         self,
         cmd: Literal['init', 'start', 'pause', 'step', 'resume', 'stop', 'episode', 'param'],
-        params: Dict[str, Any],
+        params: Dict[str, Any] = {},
     ) -> bool:
         """Control CQSim engine.
 

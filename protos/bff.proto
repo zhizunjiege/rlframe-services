@@ -71,13 +71,10 @@ service BFF {
 }
 
 message ServiceInfo {
-  enum Type {
-    AGENT = 0;   // 智能服务
-    SIMENV = 1;  // 仿真服务
-  }
-  Type type = 1;    // 服务类型
+  // 预置：simenv-仿真服务/agent-智能服务
+  string type = 1;  // 服务类型
   string name = 2;  // 服务名称
-  string ip = 3;    // 服务ip
+  string ip = 3;    // 服务IP
   uint32 port = 4;  // 服务端口
   string desc = 5;  // 服务描述
 }

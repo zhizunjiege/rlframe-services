@@ -54,40 +54,14 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
 
     def SimControl(self, request, context):
         self.check_state(context)
-        if request.type == simenv_pb2.SimCmd.Type.INIT:
-            cmd = 'init'
-        elif request.type == simenv_pb2.SimCmd.Type.START:
-            cmd = 'start'
-        elif request.type == simenv_pb2.SimCmd.Type.PAUSE:
-            cmd = 'pause'
-        elif request.type == simenv_pb2.SimCmd.Type.STEP:
-            cmd = 'step'
-        elif request.type == simenv_pb2.SimCmd.Type.RESUME:
-            cmd = 'resume'
-        elif request.type == simenv_pb2.SimCmd.Type.STOP:
-            cmd = 'stop'
-        elif request.type == simenv_pb2.SimCmd.Type.EPISODE:
-            cmd = 'episode'
-        elif request.type == simenv_pb2.SimCmd.Type.PARAM:
-            cmd = 'param'
-        else:
-            ...
+        cmd = request.type
         params = json.loads(request.params)
         self.engine.control(cmd=cmd, params=params)
         return types_pb2.CommonResponse()
 
     def SimMonitor(self, request, context):
         self.check_state(context)
-        if self.engine.state == 'uninited':
-            state = simenv_pb2.SimInfo.State.UNINITED
-        elif self.engine.state == 'stopped':
-            state = simenv_pb2.SimInfo.State.STOPPED
-        elif self.engine.state == 'running':
-            state = simenv_pb2.SimInfo.State.RUNNING
-        elif self.engine.state == 'suspended':
-            state = simenv_pb2.SimInfo.State.SUSPENDED
-        else:
-            ...
+        state = self.engine.state
         data_, logs_ = self.engine.monitor()
         data, logs = json.dumps(data_), json.dumps(logs_)
         return simenv_pb2.SimInfo(state=state, data=data, logs=logs)
