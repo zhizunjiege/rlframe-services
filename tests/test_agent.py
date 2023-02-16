@@ -45,8 +45,9 @@ class AgentServiceTestCase(unittest.TestCase):
             req.states_inputs_func = f1.read()
             req.outputs_actions_func = f2.read()
             req.reward_func = f3.read()
-            req.type = 'DQN'
-            req.hypers = f4.read()
+            hypers = json.load(f4)
+            req.type = hypers['type']
+            req.hypers = json.dumps(hypers['hypers'])
             req.structs = f5.read()
             req.builder = f6.read()
 
@@ -57,7 +58,7 @@ class AgentServiceTestCase(unittest.TestCase):
         self.assertEqual(res.state, types_pb2.ServiceState.State.INITED)
 
         res = self.stub.GetAgentConfig(types_pb2.CommonRequest())
-        self.assertEqual(res.type, 'DQN')
+        self.assertEqual(res.type, hypers['type'])
 
         self.stub.ResetService(types_pb2.CommonRequest())
 

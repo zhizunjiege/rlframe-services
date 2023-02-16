@@ -78,8 +78,9 @@ class BFFServicerTestCase(unittest.TestCase):
             req.configs[self.ids[0]].states_inputs_func = f1.read()
             req.configs[self.ids[0]].outputs_actions_func = f2.read()
             req.configs[self.ids[0]].reward_func = f3.read()
-            req.configs[self.ids[0]].type = 'DQN'
-            req.configs[self.ids[0]].hypers = f4.read()
+            hypers = json.load(f4)
+            req.configs[self.ids[0]].type = hypers['type']
+            req.configs[self.ids[0]].hypers = json.dumps(hypers['hypers'])
             req.configs[self.ids[0]].structs = f5.read()
             req.configs[self.ids[0]].builder = f6.read()
 
@@ -119,8 +120,8 @@ class BFFServicerTestCase(unittest.TestCase):
             args = f.read()
 
         req = bff_pb2.SimenvConfigMap()
-        req.configs[self.ids[1]].type = 'CQSim'
-        req.configs[self.ids[1]].args = args
+        req.configs[self.ids[1]].type = args['type']
+        req.configs[self.ids[1]].args = json.dumps(args['args'])
         res = self.stub.SetSimenvConfig(req)
         self.assertEqual(res.code, 0)
         res = self.stub.GetSimenvConfig(bff_pb2.ServiceIdList(ids=[]))

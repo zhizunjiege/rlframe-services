@@ -36,8 +36,8 @@ class SimenvServiceTestCase(unittest.TestCase):
             args = f.read()
 
         req = simenv_pb2.SimenvConfig()
-        req.type = 'CQSim'
-        req.args = args
+        req.type = args['type']
+        req.args = json.dumps(args['args'])
         res = self.stub.SetSimenvConfig(req)
         self.assertEqual(res.code, 0)
 
@@ -45,7 +45,7 @@ class SimenvServiceTestCase(unittest.TestCase):
         self.assertEqual(res.state, types_pb2.ServiceState.State.INITED)
 
         res = self.stub.GetSimenvConfig(types_pb2.CommonRequest())
-        self.assertEqual(res.type, 'CQSim')
+        self.assertEqual(res.type, args['type'])
 
     def test_02_simcontrol(self):
         cmd = simenv_pb2.SimCmd()

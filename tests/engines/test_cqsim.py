@@ -21,7 +21,7 @@ class CQSimTestCase(unittest.TestCase):
         with open('examples/simenv/args.json', 'r') as f1, \
                 open('examples/simenv/configs.json', 'r') as f2, \
                 open('examples/simenv/sim_term_func.cc', 'r') as f3:
-            cls.engine = CQSim(**json.load(f1))
+            cls.engine = CQSim(**json.load(f1)['args'])
             cls.sim_params = json.load(f2)
             cls.sim_params['proxy']['sim_term_func'] = f3.read()
         cls.timer = RepeatTimer(1, cls.print_monitor)

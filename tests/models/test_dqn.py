@@ -16,7 +16,7 @@ class DQNModelTestCase(unittest.TestCase):
              open('examples/agent/structs.json', 'r') as f2:
             hypers = json.load(f1)
             structs = json.load(f2)
-        cls.model = DQN(training=True, networks=default_builder(structs), **hypers)
+        cls.model = DQN(training=True, networks=default_builder(structs), **hypers['hypers'])
 
     @classmethod
     def tearDownClass(cls):
