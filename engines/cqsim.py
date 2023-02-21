@@ -80,10 +80,6 @@ class CQSim(SimEngineBase):
             self.fine_params()
             self.set_configs(self.renew_configs(self.reset_configs(self.get_configs())))
             self.engine.SetHttpInfo(engine_pb2.HttpInfo(token=self.x_token))
-            self.state = 'stopped'
-            return True
-        elif cmd == 'start':
-            self.current_repeat_time = 1
             p = self.sim_params['task']
             if 'exp_design_id' in p:
                 sample = engine_pb2.InitInfo.MultiSample(exp_design_id=p['exp_design_id'])
@@ -98,6 +94,10 @@ class CQSim(SimEngineBase):
             sim_duration.FromSeconds(p['sim_duration'])
             self.engine.Control(engine_pb2.ControlCmd(sim_duration=sim_duration))
             self.control('param', p)
+            self.state = 'stopped'
+            return True
+        elif cmd == 'start':
+            self.current_repeat_time = 1
             self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.START))
             self.state = 'running'
             return True
@@ -189,10 +189,9 @@ class CQSim(SimEngineBase):
                     now_state = response.node_state[0].state
                     if now_state == STOPPED and now_state != prev_state and prev_state is not None:
                         if 'exp_design_id' not in p or response.current_sample_id == p['exp_sample_num'] - 1:
-                            self.control('stop', {})
                             if self.current_repeat_time < p['repeat_times']:
-                                time.sleep(0.2)
-                                self.control('start', {})
+                                time.sleep(0.5)
+                                self.control('start')
                                 self.current_repeat_time = self.data_cache['current_repeat_time']
                                 self.current_repeat_time += 1
                                 now_state = None
