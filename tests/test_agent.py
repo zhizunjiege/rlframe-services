@@ -15,7 +15,7 @@ class AgentServiceTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.channel = grpc.insecure_channel("localhost:10002")
+        cls.channel = grpc.insecure_channel('localhost:10002')
         cls.stub = agent_pb2_grpc.AgentStub(channel=cls.channel)
 
     @classmethod

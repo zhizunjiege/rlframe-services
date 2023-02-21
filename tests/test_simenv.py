@@ -13,7 +13,7 @@ class SimenvServiceTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.channel = grpc.insecure_channel("localhost:10001")
+        cls.channel = grpc.insecure_channel('localhost:10001')
         cls.stub = simenv_pb2_grpc.SimenvStub(channel=cls.channel)
 
     @classmethod

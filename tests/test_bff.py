@@ -13,7 +13,7 @@ class BFFServicerTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.channel = grpc.insecure_channel("localhost:10000")
+        cls.channel = grpc.insecure_channel('localhost:10000')
         cls.stub = bff_pb2_grpc.BFFStub(channel=cls.channel)
         cls.ids = []
 
