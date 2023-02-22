@@ -1,5 +1,6 @@
 import argparse
 from concurrent import futures
+import signal
 
 import grpc
 
@@ -254,17 +255,22 @@ def bff_server(ip, port, max_workers, max_msg_len):
     port = server.add_insecure_port(f'{ip}:{port}')
     server.start()
     print(f'BFF server started at {ip}:{port}')
-    try:
-        server.wait_for_termination()
-    except KeyboardInterrupt:
-        ...
+
+    def grace_exit(*_):
+        evt = server.stop(0)
+        evt.wait(1)
+
+    signal.signal(signal.SIGINT, grace_exit)
+    signal.signal(signal.SIGTERM, grace_exit)
+    server.wait_for_termination()
+    print('BFF server stopped.')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run an bff service.')
     parser.add_argument('-i', '--ip', type=str, default='0.0.0.0', help='IP address to listen on.')
     parser.add_argument('-p', '--port', type=int, default=0, help='Port to listen on.')
-    parser.add_argument('-w', '--work', type=int, default=10, help='Max workers in thread pool.')
+    parser.add_argument('-w', '--worker', type=int, default=10, help='Max workers in thread pool.')
     parser.add_argument('-m', '--msglen', type=int, default=256, help='Max message length in MB.')
     args = parser.parse_args()
-    bff_server(args.ip, args.port, args.work, args.msglen)
+    bff_server(args.ip, args.port, args.worker, args.msglen)

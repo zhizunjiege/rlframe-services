@@ -9,7 +9,7 @@ class WebServerTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.addr = 'http://localhost:5000/api/db'
+        cls.addr = 'http://localhost:5000'
 
     @classmethod
     def tearDownClass(cls):
@@ -21,7 +21,7 @@ class WebServerTestCase(unittest.TestCase):
         self.assertTrue(res.ok)
 
     def test_01_select(self):
-        addr = f'{self.addr}/simenv'
+        addr = f'{self.addr}/api/db/simenv'
         res = requests.get(
             addr,
             params={
@@ -33,7 +33,7 @@ class WebServerTestCase(unittest.TestCase):
         self.assertEqual(res.json()['code'], 1)
         print(res.json())
 
-        addr = f'{self.addr}/agent'
+        addr = f'{self.addr}/api/db/agent'
         res = requests.get(
             addr,
             params={
@@ -46,7 +46,7 @@ class WebServerTestCase(unittest.TestCase):
         self.assertEqual(res.json()['code'], 0)
         print(res.json())
 
-        addr = f'{self.addr}/task'
+        addr = f'{self.addr}/api/db/task'
         res = requests.get(
             addr,
             params={
@@ -58,7 +58,7 @@ class WebServerTestCase(unittest.TestCase):
         print(res.json())
 
     def test_02_insert(self):
-        addr = f'{self.addr}/simenv'
+        addr = f'{self.addr}/api/db/simenv'
         res = requests.post(
             addr,
             json={
@@ -71,7 +71,7 @@ class WebServerTestCase(unittest.TestCase):
         self.assertEqual(res.json()['code'], 1)
         print(res.json())
 
-        addr = f'{self.addr}/agent'
+        addr = f'{self.addr}/api/db/agent'
         with open('examples/agent/states_inputs_func.py', 'r') as f1, \
              open('examples/agent/outputs_actions_func.py', 'r') as f2, \
              open('examples/agent/reward_func.py', 'r') as f3, \
@@ -103,7 +103,7 @@ class WebServerTestCase(unittest.TestCase):
         self.assertEqual(res.json()['code'], 0)
         print(res.json())
 
-        addr = f'{self.addr}/task'
+        addr = f'{self.addr}/api/db/task'
         res = requests.post(
             addr,
             json={
@@ -116,7 +116,7 @@ class WebServerTestCase(unittest.TestCase):
         print(res.json())
 
     def test_03_update(self):
-        addr = f'{self.addr}/simenv/1'
+        addr = f'{self.addr}/api/db/simenv/1'
         res = requests.put(
             addr,
             json={
@@ -127,7 +127,7 @@ class WebServerTestCase(unittest.TestCase):
         self.assertEqual(res.json()['code'], 1)
         print(res.json())
 
-        addr = f'{self.addr}/agent/1'
+        addr = f'{self.addr}/api/db/agent/1'
         res = requests.put(
             addr,
             json={
@@ -138,7 +138,7 @@ class WebServerTestCase(unittest.TestCase):
         self.assertEqual(res.json()['code'], 0)
         print(res.json())
 
-        addr = f'{self.addr}/task/1'
+        addr = f'{self.addr}/api/db/task/1'
         res = requests.put(
             addr,
             json={
@@ -150,7 +150,7 @@ class WebServerTestCase(unittest.TestCase):
         print(res.json())
 
     def test_04_delete(self):
-        addr = f'{self.addr}/agent/1'
+        addr = f'{self.addr}/api/db/agent/1'
         res = requests.delete(addr)
         self.assertTrue(res.ok)
         self.assertEqual(res.json()['code'], 0)

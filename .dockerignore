@@ -1,0 +1,40 @@
+# git files
+.git/
+
+# pycache
+__pycache__/
+
+# editor files
+.idea/
+.vscode/
+
+# misc files
+misc/
+
+# temp files
+tmp/
+temp/
+tmp.*
+temp.*
+
+# log files
+logs/
+
+# data files
+data/
+
+# sdk packages
+sdk/
+
+# example files
+example/
+
+# test files
+tests/
+
+# tool scripts
+tools/
+
+# task files
+task/
+task.ipynb

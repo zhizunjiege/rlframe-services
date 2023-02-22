@@ -9,9 +9,9 @@ mimetypes.add_type('application/javascript', '.js')
 
 app = Flask(__name__, static_url_path='', static_folder='static')
 
-db = 'store/db.sqlite3'
+db = 'data/db.sqlite3'
 need_init = not os.path.exists(db)
-con = sqlite3.connect('store/db.sqlite3', check_same_thread=False)
+con = sqlite3.connect(db, check_same_thread=False)
 cur = con.cursor()
 if need_init:
     with open('store/main.sql') as f:
@@ -30,7 +30,7 @@ structs = {}
 for table in ['simenv', 'agent', 'task']:
     cur.execute(f'PRAGMA TABLE_INFO({table})')
     rst = cur.fetchall()
-    structs[table] = {el[1]: {'type': el[2], 'notnull': el[3], 'dflt': el[4], 'pk': el[5]} for el in rst}
+    structs[table] = {el[1]: {'type': el[2].upper(), 'notnull': bool(el[3]), 'dflt': el[4], 'pk': bool(el[5])} for el in rst}
 
 
 def response(code=0, msg='', data=None):
@@ -59,8 +59,8 @@ def check_types(table, data):
 def check_null(table, data):
     for key in structs[table]:
         field = structs[table][key]
-        if (key not in data or data[key] is None) and field['pk'] == 0 and field['notnull'] == 1 and field['dflt'] is None:
-            return response(code=2, msg=f'Column {key} can not be null')
+        if (key not in data or data[key] is None) and not field['pk'] and field['notnull'] and field['dflt'] is None:
+            return response(code=2, msg=f'Column {key} can not be NULL')
     return None
 
 

@@ -7,9 +7,14 @@ class SimEngineBase(ABC):
     """Abstract base class for all simulation engines."""
 
     @abstractmethod
-    def __init__(self) -> None:
+    def __init__(self):
         """Init engine."""
         self._state = 'uninited'
+
+    @abstractmethod
+    def __del__(self):
+        """Close engine."""
+        ...
 
     @abstractmethod
     def control(
@@ -35,15 +40,6 @@ class SimEngineBase(ABC):
         Returns:
             Data of simulation process.
             Logs of simulation engine.
-        """
-        ...
-
-    @abstractmethod
-    def close(self) -> bool:
-        """Close engine.
-
-        Returns:
-            True if success.
         """
         ...
 

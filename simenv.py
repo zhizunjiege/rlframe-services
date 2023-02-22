@@ -1,6 +1,7 @@
 import argparse
 from concurrent import futures
 import json
+import signal
 
 import grpc
 
@@ -28,8 +29,6 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
             context.abort(grpc.StatusCode.FAILED_PRECONDITION, 'Service not inited')
 
     def ResetService(self, request, context):
-        if self.engine is not None:
-            self.engine.close()
         self.reset()
         return types_pb2.CommonResponse()
 
@@ -41,9 +40,6 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
         return self.configs
 
     def SetSimenvConfig(self, request, context):
-        if self.engine is not None:
-            self.engine.close()
-
         args = json.loads(request.args)
         self.engine = SimEngines[request.type](**args)
 
@@ -84,17 +80,22 @@ def simenv_server(ip, port, max_workers, max_msg_len):
     port = server.add_insecure_port(f'{ip}:{port}')
     server.start()
     print(f'Simenv server started at {ip}:{port}')
-    try:
-        server.wait_for_termination()
-    except KeyboardInterrupt:
-        ...
+
+    def grace_exit(*_):
+        evt = server.stop(0)
+        evt.wait(1)
+
+    signal.signal(signal.SIGINT, grace_exit)
+    signal.signal(signal.SIGTERM, grace_exit)
+    server.wait_for_termination()
+    print('Simenv server stopped.')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run an simenv service.')
     parser.add_argument('-i', '--ip', type=str, default='0.0.0.0', help='IP address to listen on.')
     parser.add_argument('-p', '--port', type=int, default=0, help='Port to listen on.')
-    parser.add_argument('-w', '--work', type=int, default=10, help='Max workers in thread pool.')
+    parser.add_argument('-w', '--worker', type=int, default=10, help='Max workers in thread pool.')
     parser.add_argument('-m', '--msglen', type=int, default=4, help='Max message length in MB.')
     args = parser.parse_args()
-    simenv_server(args.ip, args.port, args.work, args.msglen)
+    simenv_server(args.ip, args.port, args.worker, args.msglen)

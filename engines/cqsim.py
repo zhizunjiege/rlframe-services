@@ -59,6 +59,11 @@ class CQSim(SimEngineBase):
         self.cwd = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'res/cqsim/tmp')
         os.makedirs(self.cwd, exist_ok=True)
 
+    def __del__(self):
+        """Close CQSim engine."""
+        self.join_threads()
+        self.channel.close()
+
     def control(
         self,
         cmd: Literal['init', 'start', 'pause', 'step', 'resume', 'stop', 'episode', 'param'],
@@ -143,16 +148,6 @@ class CQSim(SimEngineBase):
             logs = self.logs_cache.copy()
             self.logs_cache.clear()
         return data, logs
-
-    def close(self) -> bool:
-        """Close CQSim engine.
-
-        Returns:
-            True if success.
-        """
-        self.join_threads()
-        self.channel.close()
-        return True
 
     def call(self, str_data: str, bin_data: bytes) -> Tuple[str, bytes]:
         """Any method can be called.

@@ -7,13 +7,18 @@ class RLModelBase(ABC):
     """Abstract base class for all reinforcement learning models."""
 
     @abstractmethod
-    def __init__(self, training: bool) -> None:
+    def __init__(self, training: bool):
         """Init model.
 
         Args:
             training: Whether the model is in training mode.
         """
         self._training = training
+
+    @abstractmethod
+    def __del__(self):
+        """Close model."""
+        ...
 
     @abstractmethod
     def react(self, states: Any) -> Any:
@@ -52,15 +57,6 @@ class RLModelBase(ABC):
     @abstractmethod
     def train(self) -> Any:
         """Train model."""
-        ...
-
-    @abstractmethod
-    def close(self) -> bool:
-        """Close model.
-
-        Returns:
-            True if success.
-        """
         ...
 
     @abstractmethod

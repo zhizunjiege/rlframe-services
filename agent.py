@@ -2,6 +2,7 @@ import argparse
 from concurrent import futures
 import json
 import pickle
+import signal
 
 from google.protobuf import json_format
 import grpc
@@ -35,8 +36,6 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             context.abort(grpc.StatusCode.FAILED_PRECONDITION, 'Service not inited')
 
     def ResetService(self, request, context):
-        if self.model is not None:
-            self.model.close()
         self.reset()
         return types_pb2.CommonResponse()
 
@@ -48,9 +47,6 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         return self.configs
 
     def SetAgentConfig(self, request, context):
-        if self.model is not None:
-            self.model.close()
-
         sifunc_src = request.states_inputs_func + '\ninputs = func(states)'
         self.sifunc = compile(sifunc_src, '', 'exec')
         oafunc_src = request.outputs_actions_func + '\nactions = func(outputs)'
@@ -240,17 +236,22 @@ def agent_server(ip, port, max_workers, max_msg_len):
     port = server.add_insecure_port(f'{ip}:{port}')
     server.start()
     print(f'Agent server started at {ip}:{port}')
-    try:
-        server.wait_for_termination()
-    except KeyboardInterrupt:
-        ...
+
+    def grace_exit(*_):
+        evt = server.stop(0)
+        evt.wait(1)
+
+    signal.signal(signal.SIGINT, grace_exit)
+    signal.signal(signal.SIGTERM, grace_exit)
+    server.wait_for_termination()
+    print('Agent server stopped.')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run an agent service.')
     parser.add_argument('-i', '--ip', type=str, default='0.0.0.0', help='IP address to listen on.')
     parser.add_argument('-p', '--port', type=int, default=0, help='Port to listen on.')
-    parser.add_argument('-w', '--work', type=int, default=10, help='Max workers in thread pool.')
+    parser.add_argument('-w', '--worker', type=int, default=10, help='Max workers in thread pool.')
     parser.add_argument('-m', '--msglen', type=int, default=256, help='Max message length in MB.')
     args = parser.parse_args()
-    agent_server(args.ip, args.port, args.work, args.msglen)
+    agent_server(args.ip, args.port, args.worker, args.msglen)

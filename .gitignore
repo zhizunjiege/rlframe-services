@@ -133,7 +133,11 @@ dmypy.json
 secrets/
 secrets.*
 
-# Temp file
+# editor files
+.idea/
+.vscode/
+
+# Temp files
 tmp/
 temp/
 tmp.*
@@ -148,8 +152,8 @@ misc/
 # static files
 static/
 
-# database files
-db.sqlite3
+# data files
+data/
 
 # task files
 task/
