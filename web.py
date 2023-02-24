@@ -5,10 +5,6 @@ import sqlite3
 
 from flask import Flask, request, redirect
 
-mimetypes.add_type('application/javascript', '.js')
-
-app = Flask(__name__, static_url_path='', static_folder='static')
-
 db = 'data/db.sqlite3'
 need_init = not os.path.exists(db)
 con = sqlite3.connect(db, check_same_thread=False)
@@ -70,6 +66,11 @@ def bytes_to_b64str(data):
 
 def b64str_to_bytes(data):
     return base64.b64decode(data.encode('utf-8'))
+
+
+mimetypes.add_type('application/javascript', '.js')
+
+app = Flask(__name__, static_url_path='', static_folder='static')
 
 
 @app.route('/')
