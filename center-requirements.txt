@@ -1,2 +1,4 @@
+Flask==2.2.2
 grpcio==1.47.0
 grpcio-tools==1.47.0
+gunicorn==20.1.0
