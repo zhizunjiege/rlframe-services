@@ -87,7 +87,8 @@ def select(table):
     if res is not None:
         return res
 
-    query = f'SELECT {", ".join(columns) if len(columns) > 0 else "*"} FROM {table}'
+    columns = columns if len(columns) > 0 else structs[table].keys()
+    query = f'SELECT {", ".join(columns)} FROM {table}'
     if 'id' in args:
         query += ' WHERE id = ?'
         params = (int(args['id']),)
@@ -100,12 +101,15 @@ def select(table):
     try:
         cur.execute(query, params)
         rst = cur.fetchall()
+        data = []
         for row in rst:
+            record = {}
             for i, col in enumerate(row):
                 if type(col) == types['BLOB']:
                     row[i] = bytes_to_b64str(col)
-        rst = [list(el) for el in rst]
-        return response(data=rst)
+                record[columns[i]] = row[i]
+            data.append(record)
+        return response(data=data)
     except sqlite3.Error as e:
         print(f'SQLite3 error: {e.args}')
         print(f'Exception class is: {e.__class__}')
@@ -136,8 +140,8 @@ def insert(table):
     try:
         cur.execute(query, params)
         con.commit()
-        rst = {'rowid': cur.lastrowid}
-        return response(data=rst)
+        data = {'rowid': cur.lastrowid}
+        return response(data=data)
     except sqlite3.Error as e:
         print(f'SQLite3 error: {e.args}')
         print(f'Exception class is: {e.__class__}')
