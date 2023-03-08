@@ -1,23 +1,18 @@
 import json
 import time
 import unittest
-
 import numpy as np
-
 from models.ddpg import DDPG
-from models.utils import default_builder
+
 
 class DDPGModelTestCase(unittest.TestCase):
+
     @classmethod
     def setUpClass(cls):
-        # with open('G:/RL/RLFrame-main/tests/models/test_ddpg_src/hypers.json', 'r') as f1, \
-        #      open('G:/RL/RLFrame-main/tests/models/test_ddpg_src/structs.json', 'r') as f2:
-        #     hypers = json.load(f1)
-        #     structs = json.load(f2)
-        # cls.model = DDPG(training=True, networks=default_builder(structs), **hypers['hypers'])
         with open('tests/models/test_ddpg_src/hypers.json', 'r') as f:
             hypers = json.load(f)
         cls.model = DDPG(training=True, **hypers['hypers'])
+
     # @classmethod
     # def tearDownClass(cls):
     #     cls.model.close()

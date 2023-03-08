@@ -11,7 +11,10 @@ import tensorflow as tf
 # from NetworkOptimizer import ACTIVATE_FUNC, INITIALIZER, OPTIMIZER
 from .base import RLModelBase
 from .replay.complex_replay import ComplexReplay
+
+
 class NormalNoise:
+
     def __init__(self, mu, sigma):
         self.mu = mu
         self.sigma = sigma
@@ -21,6 +24,7 @@ class NormalNoise:
 
     def reset(self):
         pass
+
 
 class MADDPG(RLModelBase):
 
@@ -43,7 +47,7 @@ class MADDPG(RLModelBase):
         seed: Optional[int] = None,
         tau=0.001,
         agent_num: int = 4,
-        noise_range: float = 0.1
+        noise_range: float = 0.1,
     ):
         super().__init__(training)
 
@@ -83,23 +87,27 @@ class MADDPG(RLModelBase):
                 self.__actor_target_list.append(self.actor_net_builder('actor_target', obs_dim, hidden_layers, act_num))
                 self.__actor_optimizer_list.append(tf.keras.optimizers.Adam(lr))
 
-                self.__update_target_weights(self.__actor_list[agent_index], self.__actor_target_list[agent_index], self.tau)
+                self.__update_target_weights(self.__actor_list[agent_index], self.__actor_target_list[agent_index],
+                                             self.tau)
 
                 # self.__critic_list.append(networks['critic'])
                 # self.__critic_target_list.append(networks['critic_target'])
-                self.__critic_list.append(self.critic_net_builder('critic', self.agent_num*(obs_dim+act_num), hidden_layers, 1))
-                self.__critic_target_list.append(self.critic_net_builder('critic_target', self.agent_num*(obs_dim+act_num), hidden_layers, 1))
+                self.__critic_list.append(
+                    self.critic_net_builder('critic', self.agent_num * (obs_dim + act_num), hidden_layers, 1))
+                self.__critic_target_list.append(
+                    self.critic_net_builder('critic_target', self.agent_num * (obs_dim + act_num), hidden_layers, 1))
                 # self.__critic_optimizer_list.append(tf.keras.optimizers.Adam(lr))
                 self.__critic_optimizer = tf.keras.optimizers.Adam(lr)
-                self.__update_target_weights(self.__critic_list[agent_index], self.__critic_target_list[agent_index], self.tau)
-
+                self.__update_target_weights(self.__critic_list[agent_index], self.__critic_target_list[agent_index],
+                                             self.tau)
 
             # self.__nobs = self.__actor_list[0].layers[0].input_shape[0][1]
             # self.__nact = self.__actor_list[0].layers[-1].output_shape[1]
 
             # self.optimizer = tf.keras.optimizers.Adam(lr)
             for agent_index in range(self.agent_num):
-                self.replay_buffer_list.append(ComplexReplay(self.__nobs, self.__nact, self.replay_size, dtype=np.float32))
+                self.replay_buffer_list.append(
+                    ComplexReplay(self.__nobs, self.__nact, self.replay_size, dtype=np.float32))
 
             log_dir = f'logs/gradient_tape/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
             self.summary_writer = tf.summary.create_file_writer(log_dir)
@@ -108,7 +116,7 @@ class MADDPG(RLModelBase):
             for agent_index in range(self.agent_num):
                 self.__actor_list.append(self.actor_net_builder('actor', obs_dim, hidden_layers, act_num))
                 self.__actor_target_list = \
-                self.__critic_target_list = self.__critic_list= None
+                    self.__critic_target_list = self.__critic_list = None
                 self.replay_buffer_list = None
             # self.replay_buffer = None
 
@@ -116,7 +124,6 @@ class MADDPG(RLModelBase):
         action_n = {}
         if self.training:
             for agent_index in range(self.agent_num):
-
                 s = states[agent_index][np.newaxis, :]
                 logits = self.__actor_list[agent_index](s, training=False)
                 # u = tfp.distributions.Normal(logits[0], self.noise_range)
@@ -133,7 +140,7 @@ class MADDPG(RLModelBase):
                 s = states[agent_index][np.newaxis, :]
                 logits = self.__actor_list[agent_index](s, training=False)
                 action = logits[0]
-                action_n[agent_index] = np.squeeze(action,axis=0)
+                action_n[agent_index] = np.squeeze(action, axis=0)
             self._react_steps += 1
         return action_n
 
@@ -141,15 +148,15 @@ class MADDPG(RLModelBase):
         self,
         states: Dict[int, np.ndarray],
         # states: np.ndarray,
-        actions,#
+        actions,  #
         next_states: Dict[int, np.ndarray],
         reward: Dict[int, float],
         terminated: bool,
         truncated: bool,
     ):
         for agent_index in range(self.agent_num):
-            self.replay_buffer_list[agent_index].store(states[agent_index], actions[agent_index],reward[agent_index],
-                                                             next_states[agent_index], terminated)
+            self.replay_buffer_list[agent_index].store(states[agent_index], actions[agent_index], reward[agent_index],
+                                                       next_states[agent_index], terminated)
 
     def __del__(self):
         """Close model."""
@@ -174,12 +181,15 @@ class MADDPG(RLModelBase):
                 #         tf.summary.scalar('actor_loss', actor_loss, step=self._train_steps)
                 #         tf.summary.scalar('critic_loss', critic_loss, step=self._train_steps)
                 #         tf.summary.scalar('td_error', tf.reduce_mean(tf.abs(td_errors)), step=self._train_steps)
+
     def get_weights(self):
         weights = {
-            'actor': [self.__actor_list[agent_index].get_weights()for agent_index in range(self.agent_num)],
+            'actor': [self.__actor_list[agent_index].get_weights() for agent_index in range(self.agent_num)],
         }
         if self.training:
-            weights['actor_target'] = [self.__actor_target_list[agent_index].get_weights()for agent_index in range(self.agent_num)]
+            weights['actor_target'] = [
+                self.__actor_target_list[agent_index].get_weights() for agent_index in range(self.agent_num)
+            ]
         return weights
 
     def set_weights(self, weights):
@@ -246,8 +256,6 @@ class MADDPG(RLModelBase):
         target_weights = target_model.weights
         [a.assign(a * (1 - tau) + b * tau) for a, b in zip(target_weights, weights)]
 
-
-
     @tf.function
     def __apply_gradients(self, exp_n):
         with tf.GradientTape(persistent=True) as tape:
@@ -274,7 +282,6 @@ class MADDPG(RLModelBase):
                     all_obs_ = tf.concat([all_obs_, obs_], axis=-1)
                     all_action_ = tf.concat([all_action_, action_], axis=-1)
 
-
             for agent_index in range(self.agent_num):
                 actor_pred = self.__actor_list[agent_index]
                 critic_pred = self.__critic_list[agent_index]
@@ -282,15 +289,15 @@ class MADDPG(RLModelBase):
 
                 reward = exp_n[agent_index]['rews']
                 terminated = exp_n[agent_index]['term']
-                current_q = critic_pred(tf.concat((all_obs, all_action),axis=1)) #
-                target_q = reward + self.gamma * critic_target(tf.concat((all_obs_, all_action_),axis=1))*(1-terminated)
+                current_q = critic_pred(tf.concat((all_obs, all_action), axis=1))  #
+                target_q = reward + self.gamma * critic_target(tf.concat((all_obs_, all_action_), axis=1)) * (
+                    1 - terminated)
                 td_errors = tf.stop_gradient(target_q) - current_q
                 critic_loss = tf.reduce_mean(tf.math.square(td_errors))
                 # critic_loss = tf.keras.losses.mse(target_q, current_q)
                 # critic_loss = tf.reduce_mean(critic_loss)
                 # with tf.GradientTape() as tape:
                 critic_gradients = tape.gradient(critic_loss, critic_pred.trainable_variables)
-                # self.__critic_optimizer_list[agent_index].apply_gradients(zip(critic_gradients, critic_pred.trainable_variables))
                 self.__critic_optimizer.apply_gradients(zip(critic_gradients, critic_pred.trainable_variables))
 
                 sample_action = actor_pred(obs)  #
@@ -304,15 +311,17 @@ class MADDPG(RLModelBase):
                     else:
                         all_sample_action = tf.concat([all_sample_action, action_list[sample_index]], axis=-1)
 
-                sample_q = critic_pred(tf.concat((all_obs, all_sample_action),axis=1))
-                actor_loss = - tf.reduce_mean(sample_q)
+                sample_q = critic_pred(tf.concat((all_obs, all_sample_action), axis=1))
+                actor_loss = -tf.reduce_mean(sample_q)
                 # with tf.GradientTape() as tape:
                 gradients = tape.gradient(actor_loss, actor_pred.trainable_variables)
                 self.__actor_optimizer_list[agent_index].apply_gradients(zip(gradients, actor_pred.trainable_variables))
 
         for agent_index in range(self.agent_num):
-            self.__update_target_weights(self.__actor_list[agent_index], self.__actor_target_list[agent_index], self.tau)
-            self.__update_target_weights(self.__critic_list[agent_index], self.__critic_target_list[agent_index], self.tau)
+            self.__update_target_weights(self.__actor_list[agent_index], self.__actor_target_list[agent_index],
+                                         self.tau)
+            self.__update_target_weights(self.__critic_list[agent_index], self.__critic_target_list[agent_index],
+                                         self.tau)
         # return actor_loss, critic_loss, td_errors
 
     def get_buffer(self) -> Dict[str, Union[int, Dict[str, np.ndarray]]]:

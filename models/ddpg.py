@@ -11,7 +11,9 @@ import tensorflow_probability as tfp
 # from NetworkOptimizer import ACTIVATE_FUNC, INITIALIZER, OPTIMIZER
 from .base import RLModelBase
 
+
 class NormalNoise:
+
     def __init__(self, mu, sigma=0.15):
         self.mu = mu
         self.sigma = sigma
@@ -21,6 +23,7 @@ class NormalNoise:
 
     def reset(self):
         pass
+
 
 class DDPG(RLModelBase):
 
@@ -42,7 +45,7 @@ class DDPG(RLModelBase):
         update_target_every: int = 200,
         seed: Optional[int] = None,
         tau=0.001,
-        noise_range = 0.1
+        noise_range=0.1,
     ):
         super().__init__(training)
 
@@ -75,8 +78,8 @@ class DDPG(RLModelBase):
             self.__actor_optimizer = tf.keras.optimizers.Adam(lr)
             self.__update_target_weights(self.__actor, self.__actor_target, self.tau)
 
-            self.__critic = self.critic_net_builder('critic', (obs_dim+act_num), hidden_layers, 1)
-            self.__critic_target = self.critic_net_builder('critic_target', (obs_dim+act_num), hidden_layers, 1)
+            self.__critic = self.critic_net_builder('critic', (obs_dim + act_num), hidden_layers, 1)
+            self.__critic_target = self.critic_net_builder('critic_target', (obs_dim + act_num), hidden_layers, 1)
             self.__critic_optimizer = tf.keras.optimizers.Adam(lr)
             self.__update_target_weights(self.__critic, self.__critic_target, self.tau)
 
@@ -103,7 +106,7 @@ class DDPG(RLModelBase):
 
             u = tfp.distributions.Normal(logits[0], 0.1)
             # action = tf.squeeze(u.sample(1), axis=0)[0] #
-            action = u.sample(1) #
+            action = u.sample(1)  #
             # states = np.expand_dims(states, axis=0).astype(np.float32)
             # a = self.__actor.predict(states)
             # a += self.noise()
@@ -118,6 +121,7 @@ class DDPG(RLModelBase):
             self._react_steps += 1
         return np.squeeze(action, axis=0)
         # return action
+
     def store(
         self,
         states: np.ndarray,
@@ -153,12 +157,11 @@ class DDPG(RLModelBase):
                         tf.summary.scalar('critic_loss', critic_loss, step=self._train_steps)
                         tf.summary.scalar('td_error', tf.reduce_mean(tf.abs(td_errors)), step=self._train_steps)
 
-
     def get_weights(self):
         weights = {
             'actor': self.__actor.get_weights(),
         }
-        if self.training  is not None:
+        if self.training is not None:
             weights['actor_target'] = self.__actor_target.get_weights()
         return weights
 

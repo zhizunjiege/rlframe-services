@@ -1,24 +1,18 @@
 import json
 import time
 import unittest
-from typing import Union,Dict, Optional
-
 import numpy as np
-
 from models.maddpg import MADDPG
-from models.utils import default_builder
+
 
 class MADDPGModelTestCase(unittest.TestCase):
+
     @classmethod
     def setUpClass(cls):
-        # with open('G:/RL/RLFrame-main/tests/models/test_maddpg_src/hypers.json', 'r') as f1, \
-        #      open('G:/RL/RLFrame-main/tests/models/test_maddpg_src/structs.json', 'r') as f2:
-        #     hypers = json.load(f1)
-        #     structs = json.load(f2)
-        # cls.model = MADDPG(training=True, networks=default_builder(structs), **hypers['hypers'])
         with open('tests/models/test_maddpg_src/hypers.json', 'r') as f:
             hypers = json.load(f)
         cls.model = MADDPG(training=True, **hypers['hypers'])
+
     # @classmethod
     # def tearDownClass(cls):
     #     cls.model.close()

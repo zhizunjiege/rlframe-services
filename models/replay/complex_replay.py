@@ -3,6 +3,7 @@ from typing import Dict, Union
 import numpy as np
 import random
 
+
 class ComplexReplay:
     """A simple experience replay buffer.
 
