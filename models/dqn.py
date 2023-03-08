@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, Optional, Union
+from typing import Dict, List, Optional
 
 import numpy as np
 import tensorflow as tf
@@ -14,8 +14,10 @@ class DQN(RLModelBase):
     def __init__(
         self,
         training: bool,
-        networks: Dict[str, tf.keras.Model],
         *,
+        obs_dim: int = 4,
+        act_num: int = 2,
+        hidden_layers: List[int] = [64, 64],
         lr: float = 0.001,
         gamma: float = 0.95,
         replay_size: int = 1000000,
@@ -33,8 +35,10 @@ class DQN(RLModelBase):
 
         Args:
             training: Whether the model is in training mode.
-            networks: Networks of model.
 
+            obs_dim: Dimension of observation.
+            act_num: Number of actions.
+            hidden_layers: Units of hidden layers.
             lr: Learning rate.
             gamma: Discount factor.
             replay_size: Maximum size of replay buffer.
@@ -54,6 +58,9 @@ class DQN(RLModelBase):
         """
         super().__init__(training)
 
+        self.obs_dim = obs_dim
+        self.act_num = act_num
+        self.hidden_layers = hidden_layers
         self.lr = lr
         self.gamma = gamma
         self.replay_size = replay_size
@@ -71,27 +78,23 @@ class DQN(RLModelBase):
             tf.random.set_seed(seed)
             np.random.seed(seed)
 
-            self.online_net = networks['online']
-            self.target_net = networks['target']
+            self.online_net = self.net_builder('online', obs_dim, hidden_layers, act_num)
+            self.target_net = self.net_builder('target', obs_dim, hidden_layers, act_num)
             self.update_target()
 
             self._epsilon = epsilon_max
             self._react_steps = 0
             self._train_steps = 0
-            self._states_dim = self.online_net.layers[0].input_shape[0][1]
-            self._actions_num = self.online_net.layers[-1].output_shape[1]
 
             self.optimizer = tf.keras.optimizers.Adam(lr)
-            self.replay_buffer = SimpleReplay(self._states_dim, 1, replay_size, dtype=np.float32)
+            self.replay_buffer = SimpleReplay(obs_dim, 1, replay_size, dtype=np.float32)
 
             self.log_dir = f'logs/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
             self.summary_writer = tf.summary.create_file_writer(self.log_dir)
             self._graph_exported = False
             tf.summary.trace_on(graph=True, profiler=False)
         else:
-            self.online_net = networks['online']
-            self.target_net = None
-            self.replay_buffer = None
+            self.online_net = self.net_builder('online', obs_dim, hidden_layers, act_num)
 
     def __del__(self):
         """Close DQN model."""
@@ -108,7 +111,7 @@ class DQN(RLModelBase):
         """
         if self.training:
             if self._react_steps < self.start_steps or np.random.random() < self._epsilon:
-                action = np.random.randint(0, self._actions_num)
+                action = np.random.randint(0, self.act_num)
             else:
                 states = states[np.newaxis, :]
                 logits = self.online_net(states, training=False)
@@ -147,7 +150,7 @@ class DQN(RLModelBase):
         if self.replay_buffer.size >= self.update_after and self._react_steps % self.update_online_every == 0:
             for _ in range(self.update_online_every):
                 batch = self.replay_buffer.sample(self.batch_size)
-                grads, loss, td_errors = self.calc_grads(
+                grads, loss, td_errors = self.apply_grads(
                     batch['obs1'],
                     batch['acts'].astype(np.int32).squeeze(axis=1),
                     batch['obs2'],
@@ -165,11 +168,19 @@ class DQN(RLModelBase):
                 if self._train_steps % self.update_target_every == 0:
                     self.update_target()
 
+    def net_builder(self, name, input_dim, hidden_layers, output_dim):
+        inputs = tf.keras.Input(shape=(input_dim,))
+        outputs = inputs
+        for layer in hidden_layers:
+            outputs = tf.keras.layers.Dense(units=layer, activation='relu')(outputs)
+        outputs = tf.keras.layers.Dense(units=output_dim, activation='linear')(outputs)
+        return tf.keras.Model(inputs=inputs, outputs=outputs, name=name)
+
     @tf.function
-    def calc_grads(self, states, actions, next_states, rewards, terminated):
+    def apply_grads(self, states, actions, next_states, rewards, terminated):
         with tf.GradientTape() as tape:
             logits = self.online_net(states, training=True)
-            q_values = tf.math.reduce_sum(logits * tf.one_hot(actions, self._actions_num), axis=1)
+            q_values = tf.math.reduce_sum(logits * tf.one_hot(actions, self.act_num), axis=1)
             next_logits = self.target_net(next_states, training=True)
             next_q_values = tf.math.reduce_max(next_logits, axis=1)
             target_q_values = rewards + self.gamma * (1 - terminated) * next_q_values
@@ -204,7 +215,7 @@ class DQN(RLModelBase):
         if self.training and 'target' in weights:
             self.target_net.set_weights(weights['target'])
 
-    def get_buffer(self) -> Dict[str, Union[int, Dict[str, np.ndarray]]]:
+    def get_buffer(self) -> Dict[str, int | Dict[str, np.ndarray]]:
         """Get buffer of experience replay.
 
         Returns:
@@ -212,7 +223,7 @@ class DQN(RLModelBase):
         """
         return self.replay_buffer.get()
 
-    def set_buffer(self, buffer: Dict[str, Union[int, Dict[str, np.ndarray]]]) -> None:
+    def set_buffer(self, buffer: Dict[str, int | Dict[str, np.ndarray]]) -> None:
         """Set buffer of experience replay.
 
         Args:

@@ -12,7 +12,6 @@ from protos import agent_pb2_grpc
 from protos import types_pb2
 
 from models import RLModels
-from models.utils import default_builder
 
 
 class AgentServicer(agent_pb2_grpc.AgentServicer):
@@ -58,15 +57,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             self.rfunc = compile(rfunc_src, '', 'exec')
 
         hypers = json.loads(request.hypers)
-        if request.builder:
-            result = {}
-            builder_src = request.builder + '\nnetworks = func()'
-            exec(builder_src, result)
-            networks = result['networks']
-        else:
-            structs = json.loads(request.structs)
-            networks = default_builder(structs)
-        self.model = RLModels[request.type](training=request.training, networks=networks, **hypers)
+        self.model = RLModels[request.type](training=request.training, **hypers)
 
         self.state = types_pb2.ServiceState.State.INITED
         self.configs = request

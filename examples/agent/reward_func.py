@@ -5,14 +5,14 @@ import numpy as np
 
 def func(
     states: Dict[str, List[Dict[str, Any]]],
-    inputs: np.ndarray,
+    inputs: np.ndarray | Dict[str | int, np.ndarray],
     actions: Dict[str, List[Dict[str, Any]]],
-    outputs: np.ndarray,
+    outputs: np.ndarray | Dict[str | int, np.ndarray],
     next_states: Dict[str, List[Dict[str, Any]]],
-    next_inputs: np.ndarray,
+    next_inputs: np.ndarray | Dict[str | int, np.ndarray],
     terminated: bool,
     truncated: bool,
-) -> float:
+) -> float | Dict[str | int, float]:
     """Calculate the reward for the current step."""
     if terminated:
         return 1.0

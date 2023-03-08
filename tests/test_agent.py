@@ -38,18 +38,14 @@ class AgentServiceTestCase(unittest.TestCase):
         with open('examples/agent/states_inputs_func.py', 'r') as f1, \
              open('examples/agent/outputs_actions_func.py', 'r') as f2, \
              open('examples/agent/reward_func.py', 'r') as f3, \
-             open('examples/agent/hypers.json', 'r') as f4, \
-             open('examples/agent/structs.json', 'r') as f5, \
-             open('examples/agent/builder.py', 'r') as f6:
-            req.training = False
+             open('examples/agent/hypers.json', 'r') as f4:
+            req.training = True
             req.states_inputs_func = f1.read()
             req.outputs_actions_func = f2.read()
             req.reward_func = f3.read()
             hypers = json.load(f4)
             req.type = hypers['type']
             req.hypers = json.dumps(hypers['hypers'])
-            req.structs = f5.read()
-            req.builder = f6.read()
 
         res = self.stub.SetAgentConfig(req)
         self.assertEqual(res.code, 0)
@@ -59,13 +55,6 @@ class AgentServiceTestCase(unittest.TestCase):
 
         res = self.stub.GetAgentConfig(types_pb2.CommonRequest())
         self.assertEqual(res.type, hypers['type'])
-
-        self.stub.ResetService(types_pb2.CommonRequest())
-
-        req.training = True
-        req.builder = ''
-        res = self.stub.SetAgentConfig(req)
-        self.assertEqual(res.code, 0)
 
     def test_02_agentmode(self):
         res = self.stub.GetAgentMode(types_pb2.CommonRequest())

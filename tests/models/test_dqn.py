@@ -5,26 +5,24 @@ import unittest
 import numpy as np
 
 from models.dqn import DQN
-from models.utils import default_builder
 
 
 class DQNModelTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with open('examples/agent/hypers.json', 'r') as f1, \
-             open('examples/agent/structs.json', 'r') as f2:
-            hypers = json.load(f1)
-            structs = json.load(f2)
-        cls.model = DQN(training=True, networks=default_builder(structs), **hypers['hypers'])
+        with open('examples/agent/hypers.json', 'r') as f:
+            hypers = json.load(f)
+        cls.model = DQN(training=True, **hypers['hypers'])
 
     @classmethod
     def tearDownClass(cls):
-        cls.model.close()
         cls.model = None
 
     def test_00_init(self):
         self.assertTrue(self.model.training)
+        self.assertEqual(self.model.obs_dim, 12)
+        self.assertEqual(self.model.act_num, 8)
 
     def test_01_react(self):
         states = np.random.random((12,))
@@ -71,5 +69,3 @@ class DQNModelTestCase(unittest.TestCase):
         self.model.set_status(status)
         self.assertEqual(status['react_steps'], 5000)
         self.assertEqual(status['train_steps'], 5000)
-        self.assertEqual(status['states_dim'], 12)
-        self.assertEqual(status['actions_num'], 8)

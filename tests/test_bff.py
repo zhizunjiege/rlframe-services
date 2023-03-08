@@ -27,7 +27,7 @@ class BFFServicerTestCase(unittest.TestCase):
     def test_00_registerservice(self):
         with open('examples/services.json', 'r') as f:
             services = json.load(f)
-        services = [bff_pb2.ServiceInfo(**service) for service in services]
+        services = [bff_pb2.ServiceInfo(**service) for service in services.values()]
 
         res = self.stub.RegisterService(bff_pb2.ServiceInfoList(services=services))
         self.assertEqual(len(res.ids), 2)
@@ -70,9 +70,7 @@ class BFFServicerTestCase(unittest.TestCase):
         with open('examples/agent/states_inputs_func.py', 'r') as f1, \
              open('examples/agent/outputs_actions_func.py', 'r') as f2, \
              open('examples/agent/reward_func.py', 'r') as f3, \
-             open('examples/agent/hypers.json', 'r') as f4, \
-             open('examples/agent/structs.json', 'r') as f5, \
-             open('examples/agent/builder.py', 'r') as f6:
+             open('examples/agent/hypers.json', 'r') as f4:
             req.configs[self.ids[1]].training = True
             req.configs[self.ids[1]].states_inputs_func = f1.read()
             req.configs[self.ids[1]].outputs_actions_func = f2.read()
@@ -80,8 +78,6 @@ class BFFServicerTestCase(unittest.TestCase):
             hypers = json.load(f4)
             req.configs[self.ids[1]].type = hypers['type']
             req.configs[self.ids[1]].hypers = json.dumps(hypers['hypers'])
-            req.configs[self.ids[1]].structs = f5.read()
-            req.configs[self.ids[1]].builder = f6.read()
 
         res = self.stub.SetAgentConfig(req)
         self.assertEqual(res.code, 0)

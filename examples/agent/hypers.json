@@ -1,6 +1,12 @@
 {
   "type": "DQN",
   "hypers": {
+    "obs_dim": 12,
+    "act_num": 8,
+    "hidden_layers": [
+      256,
+      256
+    ],
     "lr": 0.001,
     "gamma": 0.95,
     "replay_size": 10000,

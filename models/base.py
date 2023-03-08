@@ -38,7 +38,7 @@ class RLModelBase(ABC):
         states: Any,
         actions: Any,
         next_states: Any,
-        reward: float,
+        reward: Any,
         terminated: bool,
         truncated: bool,
     ) -> Any:

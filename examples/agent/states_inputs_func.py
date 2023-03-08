@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 import numpy as np
 
 
-def func(states: Dict[str, List[Dict[str, Any]]]) -> np.ndarray:
+def func(states: Dict[str, List[Dict[str, Any]]]) -> np.ndarray | Dict[str | int, np.ndarray]:
     """Convert `states` to `inputs` for model inferecing."""
     uav, sub = states['example_uav'][0], states['example_sub'][0]
     return np.array([
