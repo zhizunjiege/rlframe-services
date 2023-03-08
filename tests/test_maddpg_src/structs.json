@@ -1,0 +1,78 @@
+[
+  {
+    "name": "actor",
+    "struct": {
+      "layers": [
+        {
+          "type": "input",
+          "params": {
+            "shape": 12
+          }
+        },
+        {
+          "type": "dense",
+          "params": {
+            "units": 256,
+            "activation": "relu"
+          }
+        },
+        {
+          "type": "dense",
+          "params": {
+            "units": 256,
+            "activation": "relu"
+          }
+        },
+        {
+          "type": "dense",
+          "params": {
+            "units": 8,
+            "activation": "relu"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "actor_target",
+    "struct": "actor"
+  },
+  {
+    "name": "critic",
+    "struct": {
+      "layers": [
+        {
+          "type": "input",
+          "params": {
+            "shape": 80
+          }
+        },
+        {
+          "type": "dense",
+          "params": {
+            "units": 256,
+            "activation": "relu"
+          }
+        },
+        {
+          "type": "dense",
+          "params": {
+            "units": 256,
+            "activation": "relu"
+          }
+        },
+        {
+          "type": "dense",
+          "params": {
+            "units": 1,
+            "activation": "linear"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "critic_target",
+    "struct": "critic"
+  }
+]
