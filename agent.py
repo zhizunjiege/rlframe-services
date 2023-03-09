@@ -105,8 +105,9 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
 
     def GetAction(self, request_iterator, context):
         self.check_state(context)
-        sifunc_args = {'states': None, 'inputs': None}
-        oafunc_args = {'outputs': None, 'actions': None}
+        global_caches = {}
+        sifunc_args = {'states': None, 'inputs': None, 'caches': global_caches}
+        oafunc_args = {'outputs': None, 'actions': None, 'caches': global_caches}
         rfunc_args = {
             'states': None,
             'inputs': None,
