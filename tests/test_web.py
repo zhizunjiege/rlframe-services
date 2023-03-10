@@ -29,9 +29,8 @@ class WebServerTestCase(unittest.TestCase):
                 'id': 1,
             },
         )
-        self.assertTrue(res.ok)
-        self.assertEqual(res.json()['code'], 1)
-        print(res.json())
+        self.assertEqual(res.status_code, 404)
+        print(res.text)
 
         addr = f'{self.addr}/api/db/agent'
         res = requests.get(
@@ -43,7 +42,6 @@ class WebServerTestCase(unittest.TestCase):
             },
         )
         self.assertTrue(res.ok)
-        self.assertEqual(res.json()['code'], 0)
         print(res.json())
 
         addr = f'{self.addr}/api/db/task'
@@ -54,7 +52,6 @@ class WebServerTestCase(unittest.TestCase):
             },
         )
         self.assertTrue(res.ok)
-        self.assertEqual(res.json()['code'], 0)
         print(res.json())
 
     def test_02_insert(self):
@@ -67,23 +64,18 @@ class WebServerTestCase(unittest.TestCase):
                 'time': 0,
             },
         )
-        self.assertTrue(res.ok)
-        self.assertEqual(res.json()['code'], 1)
-        print(res.json())
+        self.assertEqual(res.status_code, 404)
+        print(res.text)
 
         addr = f'{self.addr}/api/db/agent'
         with open('examples/agent/states_inputs_func.py', 'r') as f1, \
              open('examples/agent/outputs_actions_func.py', 'r') as f2, \
              open('examples/agent/reward_func.py', 'r') as f3, \
-             open('examples/agent/hypers.json', 'r') as f4, \
-             open('examples/agent/structs.json', 'r') as f5, \
-             open('examples/agent/builder.py', 'r') as f6:
+             open('examples/agent/hypers.json', 'r') as f4:
             states_inputs_func = f1.read()
             outputs_actions_func = f2.read()
             reward_func = f3.read()
             hypers = json.load(f4)
-            structs = f5.read()
-            builder = f6.read()
         res = requests.post(
             addr,
             json={
@@ -91,16 +83,13 @@ class WebServerTestCase(unittest.TestCase):
                 'description': 'test',
                 'type': hypers['type'],
                 'hypers': json.dumps(hypers['hypers']),
-                'structs': structs,
-                'builder': builder,
                 'states_inputs_func': states_inputs_func,
                 'outputs_actions_func': outputs_actions_func,
                 'reward_func': reward_func,
-                'weights': base64.b64encode(b'Hello World!').decode('utf-8'),
+                'weights': base64.b64encode(b'Helloworld!').decode('utf-8'),
             },
         )
         self.assertTrue(res.ok)
-        self.assertEqual(res.json()['code'], 0)
         print(res.json())
 
         addr = f'{self.addr}/api/db/task'
@@ -111,9 +100,8 @@ class WebServerTestCase(unittest.TestCase):
                 'description': 'test',
             },
         )
-        self.assertTrue(res.ok)
-        self.assertEqual(res.json()['code'], 2)
-        print(res.json())
+        self.assertEqual(res.status_code, 400)
+        print(res.text)
 
     def test_03_update(self):
         addr = f'{self.addr}/api/db/simenv/1'
@@ -123,9 +111,8 @@ class WebServerTestCase(unittest.TestCase):
                 'time': 0,
             },
         )
-        self.assertTrue(res.ok)
-        self.assertEqual(res.json()['code'], 1)
-        print(res.json())
+        self.assertEqual(res.status_code, 404)
+        print(res.text)
 
         addr = f'{self.addr}/api/db/agent/1'
         res = requests.put(
@@ -135,8 +122,7 @@ class WebServerTestCase(unittest.TestCase):
             },
         )
         self.assertTrue(res.ok)
-        self.assertEqual(res.json()['code'], 0)
-        print(res.json())
+        print(res.text)
 
         addr = f'{self.addr}/api/db/task/1'
         res = requests.put(
@@ -145,13 +131,11 @@ class WebServerTestCase(unittest.TestCase):
                 'services': 0,
             },
         )
-        self.assertTrue(res.ok)
-        self.assertEqual(res.json()['code'], 2)
-        print(res.json())
+        self.assertEqual(res.status_code, 400)
+        print(res.text)
 
     def test_04_delete(self):
         addr = f'{self.addr}/api/db/agent/1'
         res = requests.delete(addr)
         self.assertTrue(res.ok)
-        self.assertEqual(res.json()['code'], 0)
-        print(res.json())
+        print(res.text)

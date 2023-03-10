@@ -15,49 +15,17 @@ if need_init:
     cur.executescript(script)
     con.commit()
 
+tables = {}
+for table in ['simenv', 'agent', 'task']:
+    cur.execute(f'PRAGMA TABLE_INFO({table})')
+    rst = cur.fetchall()
+    tables[table] = {el[1]: {'type': el[2].upper(), 'notnull': el[3] and el[4] is None and not el[5]} for el in rst}
 types = {
     'INTEGER': int,
     'REAL': float,
     'TEXT': str,
     'BLOB': bytes,
 }
-
-structs = {}
-for table in ['simenv', 'agent', 'task']:
-    cur.execute(f'PRAGMA TABLE_INFO({table})')
-    rst = cur.fetchall()
-    structs[table] = {el[1]: {'type': el[2].upper(), 'notnull': bool(el[3]), 'dflt': el[4], 'pk': bool(el[5])} for el in rst}
-
-
-def response(code=0, msg='', data=None):
-    return {
-        'code': code,
-        'msg': msg,
-        'data': data,
-    }
-
-
-def check_exists(table, columns):
-    for column in columns:
-        if column not in structs[table]:
-            return response(code=1, msg=f'Column {column} not found in table {table}')
-    return None
-
-
-def check_types(table, data):
-    for key in data:
-        field = structs[table][key]
-        if not isinstance(data[key], types[field['type']]):
-            return response(code=2, msg=f'Column {key} should be a {field["type"]}')
-    return None
-
-
-def check_null(table, data):
-    for key in structs[table]:
-        field = structs[table][key]
-        if (key not in data or data[key] is None) and not field['pk'] and field['notnull'] and field['dflt'] is None:
-            return response(code=2, msg=f'Column {key} can not be NULL')
-    return None
 
 
 def bytes_to_b64str(data):
@@ -78,16 +46,24 @@ def index():
     return redirect('/index.html')
 
 
+@app.route('/api/db')
+def info():
+    return tables
+
+
 @app.get('/api/db/<string:table>')
 def select(table):
     args = request.args
     columns = args.getlist('columns')
 
-    res = check_exists(table, columns)
-    if res is not None:
-        return res
+    if table not in tables:
+        return f'Table {table} not found', 404
+    else:
+        for col in columns:
+            if col not in tables[table]:
+                return f'Column {col} not found in table {table}', 404
 
-    columns = columns if len(columns) > 0 else structs[table].keys()
+    columns = columns if len(columns) > 0 else tables[table].keys()
     query = f'SELECT {", ".join(columns)} FROM {table}'
     if 'id' in args:
         query += ' WHERE id = ?'
@@ -109,30 +85,33 @@ def select(table):
                     row[i] = bytes_to_b64str(col)
                 record[columns[i]] = row[i]
             data.append(record)
-        return response(data=data)
+        return data
     except sqlite3.Error as e:
         print(f'SQLite3 error: {e.args}')
         print(f'Exception class is: {e.__class__}')
-        return response(code=3, msg='Unknown error')
+        return 'Unknown error', 500
 
 
 @app.post('/api/db/<string:table>')
 def insert(table):
     data = request.json
 
-    for key, val in structs[table].items():
-        if key in data and val['type'] == 'BLOB':
-            data[key] = b64str_to_bytes(data[key])
-
-    res = check_exists(table, data.keys())
-    if res is not None:
-        return res
-    res = check_types(table, data)
-    if res is not None:
-        return res
-    res = check_null(table, data)
-    if res is not None:
-        return res
+    if table not in tables:
+        return f'Table {table} not found', 404
+    for col in data.keys():
+        if col not in tables[table]:
+            return f'Column {col} not found in table {table}', 404
+        col_type = tables[table][col]['type']
+        if col_type == 'BLOB':
+            try:
+                data[col] = b64str_to_bytes(data[col])
+            except Exception:
+                return f'Column {col} is not a valid base64 string', 400
+        elif not isinstance(data[col], types[col_type]):
+            return f'Column {col} should be a {col_type}', 400
+    for col in tables[table]:
+        if tables[table][col]['notnull'] and (col not in data or data[col] is None):
+            return f'Column {col} can not be NULL', 400
 
     query = f'INSERT INTO {table} ({", ".join(data.keys())}) VALUES ({", ".join(["?" for _ in data])})'
     params = tuple(data.values())
@@ -141,27 +120,30 @@ def insert(table):
         cur.execute(query, params)
         con.commit()
         data = {'rowid': cur.lastrowid}
-        return response(data=data)
+        return data
     except sqlite3.Error as e:
         print(f'SQLite3 error: {e.args}')
         print(f'Exception class is: {e.__class__}')
-        return response(code=3, msg='Unknown error')
+        return 'Unknown error', 500
 
 
 @app.put('/api/db/<string:table>/<int:id>')
 def update(table, id):
     data = request.json
 
-    for key, val in structs[table].items():
-        if key in data and val['type'] == 'BLOB':
-            data[key] = b64str_to_bytes(data[key])
-
-    res = check_exists(table, data.keys())
-    if res is not None:
-        return res
-    res = check_types(table, data)
-    if res is not None:
-        return res
+    if table not in tables:
+        return f'Table {table} not found', 404
+    for col in data.keys():
+        if col not in tables[table]:
+            return f'Column {col} not found in table {table}', 404
+        col_type = tables[table][col]['type']
+        if col_type == 'BLOB':
+            try:
+                data[col] = b64str_to_bytes(data[col])
+            except Exception:
+                return f'Column {col} is not a valid base64 string', 400
+        elif not isinstance(data[col], types[col_type]):
+            return f'Column {col} should be a {col_type}', 400
 
     query = f'UPDATE {table} SET {", ".join([f"{key} = ?" for key in data.keys()])} WHERE id = ?'
     params = tuple(data.values()) + (id,)
@@ -169,11 +151,11 @@ def update(table, id):
     try:
         cur.execute(query, params)
         con.commit()
-        return response()
+        return '', 204
     except sqlite3.Error as e:
         print(f'SQLite3 error: {e.args}')
         print(f'Exception class is: {e.__class__}')
-        return response(code=3, msg='Unknown error')
+        return 'Unknown error', 500
 
 
 @app.delete('/api/db/<string:table>/<int:id>')
@@ -184,8 +166,8 @@ def delete(table, id):
     try:
         cur.execute(query, params)
         con.commit()
-        return response()
+        return '', 204
     except sqlite3.Error as e:
         print(f'SQLite3 error: {e.args}')
         print(f'Exception class is: {e.__class__}')
-        return response(code=3, msg='Unknown error')
+        return 'Unknown error', 500
