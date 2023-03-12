@@ -46,18 +46,26 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         return self.configs
 
     def SetAgentConfig(self, request, context):
-        sifunc_src = request.states_inputs_func + '\ninputs = func(states)'
-        self.sifunc = compile(sifunc_src, '', 'exec')
-        oafunc_src = request.outputs_actions_func + '\nactions = func(outputs)'
-        self.oafunc = compile(oafunc_src, '', 'exec')
-        if request.training:
-            rfunc_src = request.reward_func + '\nreward = func(states, inputs, actions, outputs,\
-                 next_states, next_inputs, terminated, truncated)'
+        try:
+            sifunc_src = request.sifunc + '\ninputs = func(states)'
+            self.sifunc = compile(sifunc_src, 'states_to_inputs', 'exec')
+            oafunc_src = request.oafunc + '\nactions = func(outputs)'
+            self.oafunc = compile(oafunc_src, 'outputs_to_actions', 'exec')
+            if request.training:
+                rfunc_src = request.rewfunc + '\nreward = func(states, inputs, actions, outputs,\
+                    next_states, next_inputs, terminated, truncated)'
 
-            self.rfunc = compile(rfunc_src, '', 'exec')
+                self.rfunc = compile(rfunc_src, 'reward', 'exec')
+        except SyntaxError as e:
+            message = f'Invalid {e.filename} function, error in line {e.lineno}, column {e.offset}, {e.text}'
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
 
-        hypers = json.loads(request.hypers)
-        self.model = RLModels[request.type](training=request.training, **hypers)
+        try:
+            hypers = json.loads(request.hypers)
+            self.model = RLModels[request.type](training=request.training, **hypers)
+        except Exception as e:
+            message = f'Invalid hypers for {request.type} model, info: {e}'
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
 
         self.state = types_pb2.ServiceState.State.INITED
         self.configs = request
@@ -70,6 +78,9 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
 
     def SetAgentMode(self, request, context):
         self.check_state(context)
+        if not self.configs.training:
+            message = 'Cannot change training mode when training is initially set to False'
+            context.abort(grpc.StatusCode.FAILED_PRECONDITION, message)
         self.model.training = request.training
         return types_pb2.CommonResponse()
 
@@ -80,7 +91,11 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
 
     def SetModelWeights(self, request, context):
         self.check_state(context)
-        self.model.set_weights(pickle.loads(request.weights))
+        try:
+            self.model.set_weights(pickle.loads(request.weights))
+        except Exception as e:
+            message = f'Invalid weights for {self.configs.type} model, info: {e}'
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
         return types_pb2.CommonResponse()
 
     def GetModelBuffer(self, request, context):
@@ -90,7 +105,11 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
 
     def SetModelBuffer(self, request, context):
         self.check_state(context)
-        self.model.set_buffer(pickle.loads(request.buffer))
+        try:
+            self.model.set_buffer(pickle.loads(request.buffer))
+        except Exception as e:
+            message = f'Invalid buffer for {self.configs.type} model, info: {e}'
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
         return types_pb2.CommonResponse()
 
     def GetModelStatus(self, request, context):
@@ -100,7 +119,11 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
 
     def SetModelStatus(self, request, context):
         self.check_state(context)
-        self.model.set_status(json.loads(request.status))
+        try:
+            self.model.set_status(json.loads(request.status))
+        except Exception as e:
+            message = f'Invalid status for {self.configs.type} model, info: {e}'
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
         return types_pb2.CommonResponse()
 
     def GetAction(self, request_iterator, context):
@@ -115,7 +138,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             'outputs': None,
             'next_states': None,
             'next_inputs': None,
-            'reward': 0,
+            'reward': None,
             'terminated': False,
             'truncated': False,
         }
@@ -212,11 +235,11 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
 
     def Call(self, request, context):
         self.check_state(context)
-        str_data, bin_data = self.model.call(str_data=request.str_data, bin_data=request.bin_data)
-        return types_pb2.CallData(str_data=str_data, bin_data=bin_data)
+        identity, str_data, bin_data = self.model.call(request.identity, request.str_data, request.bin_data)
+        return types_pb2.CallData(identity=identity, str_data=str_data, bin_data=bin_data)
 
 
-def agent_server(ip, port, max_workers, max_msg_len):
+def agent_server(host, port, max_workers, max_msg_len):
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=max_workers),
         options=[
@@ -225,11 +248,12 @@ def agent_server(ip, port, max_workers, max_msg_len):
         ],
     )
     agent_pb2_grpc.add_AgentServicer_to_server(AgentServicer(), server)
-    port = server.add_insecure_port(f'{ip}:{port}')
+    port = server.add_insecure_port(f'{host}:{port}')
     server.start()
-    print(f'Agent server started at {ip}:{port}')
+    print(f'Agent server started at {host}:{port}')
 
     def grace_exit(*_):
+        print('Agent service stopping...')
         evt = server.stop(0)
         evt.wait(1)
 
@@ -241,9 +265,9 @@ def agent_server(ip, port, max_workers, max_msg_len):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run an agent service.')
-    parser.add_argument('-i', '--ip', type=str, default='0.0.0.0', help='IP address to listen on.')
+    parser.add_argument('-i', '--host', type=str, default='0.0.0.0', help='Host to listen on.')
     parser.add_argument('-p', '--port', type=int, default=0, help='Port to listen on.')
     parser.add_argument('-w', '--worker', type=int, default=10, help='Max workers in thread pool.')
     parser.add_argument('-m', '--msglen', type=int, default=256, help='Max message length in MB.')
     args = parser.parse_args()
-    agent_server(args.ip, args.port, args.worker, args.msglen)
+    agent_server(args.host, args.port, args.worker, args.msglen)

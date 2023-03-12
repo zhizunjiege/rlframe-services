@@ -34,14 +34,14 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
     def RegisterService(self, request, context):
         ids = []
         for service in request.services:
-            id = f'{service.ip}:{service.port}'
+            id = f'{service.host}:{service.port}'
             self.services[id] = service
             ids.append(id)
             if service.type == 'simenv':
-                channel = grpc.insecure_channel(f'{service.ip}:{service.port}')
+                channel = grpc.insecure_channel(f'{service.host}:{service.port}')
                 self.simenvs[id] = simenv_pb2_grpc.SimenvStub(channel)
             elif service.type == 'agent':
-                channel = grpc.insecure_channel(f'{service.ip}:{service.port}')
+                channel = grpc.insecure_channel(f'{service.host}:{service.port}')
                 self.agents[id] = agent_pb2_grpc.AgentStub(channel)
             else:
                 context.abort(grpc.StatusCode.INVALID_ARGUMENT, f'Unknown service type: {service.type}')
@@ -243,7 +243,7 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
         return bff_pb2.CallDataMap(data=data)
 
 
-def bff_server(ip, port, max_workers, max_msg_len):
+def bff_server(host, port, max_workers, max_msg_len):
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=max_workers),
         options=[
@@ -252,11 +252,12 @@ def bff_server(ip, port, max_workers, max_msg_len):
         ],
     )
     bff_pb2_grpc.add_BFFServicer_to_server(BFFServicer(), server)
-    port = server.add_insecure_port(f'{ip}:{port}')
+    port = server.add_insecure_port(f'{host}:{port}')
     server.start()
-    print(f'BFF server started at {ip}:{port}')
+    print(f'BFF server started at {host}:{port}')
 
     def grace_exit(*_):
+        print('BFF server stopping...')
         evt = server.stop(0)
         evt.wait(1)
 
@@ -268,9 +269,9 @@ def bff_server(ip, port, max_workers, max_msg_len):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run an bff service.')
-    parser.add_argument('-i', '--ip', type=str, default='0.0.0.0', help='IP address to listen on.')
+    parser.add_argument('-i', '--host', type=str, default='0.0.0.0', help='Host to listen on.')
     parser.add_argument('-p', '--port', type=int, default=0, help='Port to listen on.')
     parser.add_argument('-w', '--worker', type=int, default=10, help='Max workers in thread pool.')
     parser.add_argument('-m', '--msglen', type=int, default=256, help='Max message length in MB.')
     args = parser.parse_args()
-    bff_server(args.ip, args.port, args.worker, args.msglen)
+    bff_server(args.host, args.port, args.worker, args.msglen)

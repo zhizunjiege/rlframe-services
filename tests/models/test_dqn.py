@@ -12,8 +12,8 @@ class DQNModelTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         with open('tests/models/test_dqn_src/hypers.json', 'r') as f:
-            hypers = json.load(f)
-        cls.model = DQN(training=True, **hypers['hypers'])
+            cls.hypers = json.load(f)
+        cls.model = DQN(training=True, **cls.hypers)
 
     @classmethod
     def tearDownClass(cls):

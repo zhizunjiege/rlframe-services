@@ -89,7 +89,7 @@ class DDPG(RLModelBase):
             # self.optimizer = tf.keras.optimizers.Adam(lr)
             self.replay_buffer = SimpleReplay(self.__nobs, self.__nact, self.replay_size, dtype=np.float32)
 
-            log_dir = f'logs/gradient_tape/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
+            log_dir = f'data/logs/gradient_tape/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
             self.summary_writer = tf.summary.create_file_writer(log_dir)
             tf.summary.trace_on(graph=True, profiler=True)
         else:

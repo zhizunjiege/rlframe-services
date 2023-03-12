@@ -35,20 +35,18 @@ class AgentServiceTestCase(unittest.TestCase):
             self.assertEqual(e.code(), grpc.StatusCode.FAILED_PRECONDITION)
 
         req = agent_pb2.AgentConfig()
-        with open('examples/agent/states_inputs_func.py', 'r') as f1, \
-             open('examples/agent/outputs_actions_func.py', 'r') as f2, \
-             open('examples/agent/reward_func.py', 'r') as f3, \
-             open('examples/agent/hypers.json', 'r') as f4:
+        with open('examples/agent/hypers.json', 'r') as f1, \
+             open('examples/agent/states_inputs_func.py', 'r') as f2, \
+             open('examples/agent/outputs_actions_func.py', 'r') as f3, \
+             open('examples/agent/reward_func.py', 'r') as f4:
             req.training = True
-            req.states_inputs_func = f1.read()
-            req.outputs_actions_func = f2.read()
-            req.reward_func = f3.read()
-            hypers = json.load(f4)
+            hypers = json.load(f1)
             req.type = hypers['type']
             req.hypers = json.dumps(hypers['hypers'])
-
-        res = self.stub.SetAgentConfig(req)
-        self.assertEqual(res.code, 0)
+            req.sifunc = f2.read()
+            req.oafunc = f3.read()
+            req.rewfunc = f4.read()
+        self.stub.SetAgentConfig(req)
 
         res = self.stub.QueryService(types_pb2.CommonRequest())
         self.assertEqual(res.state, types_pb2.ServiceState.State.INITED)
@@ -60,8 +58,7 @@ class AgentServiceTestCase(unittest.TestCase):
         res = self.stub.GetAgentMode(types_pb2.CommonRequest())
         self.assertTrue(res.training)
 
-        res = self.stub.SetAgentMode(agent_pb2.AgentMode(training=True))
-        self.assertEqual(res.code, 0)
+        self.stub.SetAgentMode(agent_pb2.AgentMode(training=True))
 
     def test_03_modelweights(self):
         res = self.stub.GetModelWeights(types_pb2.CommonRequest())
@@ -69,8 +66,7 @@ class AgentServiceTestCase(unittest.TestCase):
         self.assertTrue('online' in weights)
         self.assertTrue('target' in weights)
 
-        res = self.stub.SetModelWeights(agent_pb2.ModelWeights(weights=res.weights))
-        self.assertEqual(res.code, 0)
+        self.stub.SetModelWeights(agent_pb2.ModelWeights(weights=res.weights))
 
     def test_04_modelbuffer(self):
         res = self.stub.GetModelBuffer(types_pb2.CommonRequest())
@@ -78,8 +74,7 @@ class AgentServiceTestCase(unittest.TestCase):
         self.assertEqual(buffer['size'], 0)
         self.assertEqual(buffer['data']['acts_buf'].shape, (0, 1))
 
-        res = self.stub.SetModelBuffer(agent_pb2.ModelBuffer(buffer=res.buffer))
-        self.assertEqual(res.code, 0)
+        self.stub.SetModelBuffer(agent_pb2.ModelBuffer(buffer=res.buffer))
 
     def test_05_modelstatus(self):
         res = self.stub.GetModelStatus(types_pb2.CommonRequest())
@@ -87,8 +82,7 @@ class AgentServiceTestCase(unittest.TestCase):
         self.assertEqual(status['react_steps'], 0)
         self.assertEqual(status['train_steps'], 0)
 
-        res = self.stub.SetModelStatus(agent_pb2.ModelStatus(status=res.status))
-        self.assertEqual(res.code, 0)
+        self.stub.SetModelStatus(agent_pb2.ModelStatus(status=res.status))
 
     def test_06_getaction(self):
         info = {

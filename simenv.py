@@ -40,8 +40,12 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
         return self.configs
 
     def SetSimenvConfig(self, request, context):
-        args = json.loads(request.args)
-        self.engine = SimEngines[request.type](**args)
+        try:
+            args = json.loads(request.args)
+            self.engine = SimEngines[request.type](**args)
+        except Exception as e:
+            message = f'Invalid args for {request.type} engine, info: {e}'
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
 
         self.state = types_pb2.ServiceState.State.INITED
         self.configs = request
@@ -50,9 +54,13 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
 
     def SimControl(self, request, context):
         self.check_state(context)
-        cmd = request.type
-        params = json.loads(request.params)
-        self.engine.control(cmd=cmd, params=params)
+        try:
+            cmd = request.type
+            params = json.loads(request.params)
+            self.engine.control(cmd=cmd, params=params)
+        except Exception as e:
+            message = f'Invalid command {cmd} with its params, info: {e}'
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
         return types_pb2.CommonResponse()
 
     def SimMonitor(self, request, context):
@@ -64,11 +72,11 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
 
     def Call(self, request, context):
         self.check_state(context)
-        str_data, bin_data = self.engine.call(str_data=request.str_data, bin_data=request.bin_data)
-        return types_pb2.CallData(str_data=str_data, bin_data=bin_data)
+        identity, str_data, bin_data = self.engine.call(request.identity, request.str_data, request.bin_data)
+        return types_pb2.CallData(identity=identity, str_data=str_data, bin_data=bin_data)
 
 
-def simenv_server(ip, port, max_workers, max_msg_len):
+def simenv_server(host, port, max_workers, max_msg_len):
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=max_workers),
         options=[
@@ -77,11 +85,12 @@ def simenv_server(ip, port, max_workers, max_msg_len):
         ],
     )
     simenv_pb2_grpc.add_SimenvServicer_to_server(SimenvServicer(), server)
-    port = server.add_insecure_port(f'{ip}:{port}')
+    port = server.add_insecure_port(f'{host}:{port}')
     server.start()
-    print(f'Simenv server started at {ip}:{port}')
+    print(f'Simenv server started at {host}:{port}')
 
     def grace_exit(*_):
+        print('Simenv service stopping...')
         evt = server.stop(0)
         evt.wait(1)
 
@@ -93,9 +102,9 @@ def simenv_server(ip, port, max_workers, max_msg_len):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run an simenv service.')
-    parser.add_argument('-i', '--ip', type=str, default='0.0.0.0', help='IP address to listen on.')
+    parser.add_argument('-i', '--host', type=str, default='0.0.0.0', help='Host to listen on.')
     parser.add_argument('-p', '--port', type=int, default=0, help='Port to listen on.')
     parser.add_argument('-w', '--worker', type=int, default=10, help='Max workers in thread pool.')
     parser.add_argument('-m', '--msglen', type=int, default=4, help='Max message length in MB.')
     args = parser.parse_args()
-    simenv_server(args.ip, args.port, args.worker, args.msglen)
+    simenv_server(args.host, args.port, args.worker, args.msglen)

@@ -19,11 +19,10 @@ class CQSimTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         with open('tests/engines/test_cqsim_src/args.json', 'r') as f1, \
-                open('tests/engines/test_cqsim_src/configs.json', 'r') as f2, \
-                open('tests/engines/test_cqsim_src/sim_term_func.cc', 'r') as f3:
-            cls.engine = CQSim(**json.load(f1)['args'])
-            cls.sim_params = json.load(f2)
-            cls.sim_params['proxy']['sim_term_func'] = f3.read()
+             open('tests/engines/test_cqsim_src/sim_term_func.cpp', 'r') as f2:
+            cls.args = json.load(f1)
+            cls.args['proxy']['sim_term_func'] = f2.read()
+        cls.engine = CQSim(**cls.args)
         cls.timer = RepeatTimer(1, cls.print_monitor)
         cls.timer.start()
 
@@ -34,11 +33,10 @@ class CQSimTestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.timer.cancel()
-        cls.engine.close()
         cls.engine = None
 
     def test_00_onesample(self):
-        self.engine.control('init', self.sim_params)
+        self.engine.control('init')
         self.engine.control('start')
         time.sleep(3)
         self.engine.control('pause')
@@ -51,11 +49,11 @@ class CQSimTestCase(unittest.TestCase):
         self.engine.control('stop')
 
     def test_01_multisample(self):
-        self.sim_params['task']['exp_design_id'] = 28
-        self.sim_params['task']['exp_sample_num'] = 3
-        self.sim_params['task']['repeat_times'] = 2
+        self.args['task']['exp_design_id'] = 28
+        self.args['task']['exp_sample_num'] = 3
+        self.args['task']['repeat_times'] = 2
 
-        self.engine.control('init', self.sim_params)
+        self.engine.control('init')
         self.engine.control('start')
         time.sleep(3)
         self.engine.control('pause')

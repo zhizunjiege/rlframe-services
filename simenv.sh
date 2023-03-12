@@ -25,7 +25,7 @@ function grace_exit() {
   exit 0
 }
 
-trap "grace_exit envoy gunicorn python" INT TERM
+trap "grace_exit python" INT TERM
 
 # mkdir for logs
 mkdir -p data/logs
@@ -33,17 +33,9 @@ mkdir -p data/logs
 # get current time
 time=$(TZ=UTC-8 date +"%Y-%m-%d %H-%M-%S")
 
-# run envoy in background
-echo "starting envoy..."
-func-e run -c envoy.yaml -l error </dev/null >/dev/null 2>&1 &
-
-# run gunicorn in background
-echo "starting gunicorn..."
-gunicorn web:app -w 4 -b 0.0.0.0:8080 --log-level error -D
-
 # run python in background
 echo "starting python..."
-python -u bff.py -p 10000 -w ${workers:-10} -m ${msglen:-256} </dev/null >"data/logs/$time.bff.log" 2>&1 &
+python -u simenv.py -p 10001 -w ${workers:-10} -m ${msglen:-4} </dev/null >"data/logs/$time.simenv.log" 2>&1 &
 
 # wait for subprocess
 wait

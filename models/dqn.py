@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import tensorflow as tf
@@ -89,7 +89,7 @@ class DQN(RLModelBase):
             self.optimizer = tf.keras.optimizers.Adam(lr)
             self.replay_buffer = SimpleReplay(obs_dim, 1, replay_size, dtype=np.float32)
 
-            self.log_dir = f'logs/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
+            self.log_dir = f'data/logs/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
             self.summary_writer = tf.summary.create_file_writer(self.log_dir)
             self._graph_exported = False
             tf.summary.trace_on(graph=True, profiler=False)
@@ -215,7 +215,7 @@ class DQN(RLModelBase):
         if self.training and 'target' in weights:
             self.target_net.set_weights(weights['target'])
 
-    def get_buffer(self) -> Dict[str, int | Dict[str, np.ndarray]]:
+    def get_buffer(self) -> Dict[str, Union[int, Dict[str, np.ndarray]]]:
         """Get buffer of experience replay.
 
         Returns:
@@ -223,7 +223,7 @@ class DQN(RLModelBase):
         """
         return self.replay_buffer.get()
 
-    def set_buffer(self, buffer: Dict[str, int | Dict[str, np.ndarray]]) -> None:
+    def set_buffer(self, buffer: Dict[str, Union[int, Dict[str, np.ndarray]]]) -> None:
         """Set buffer of experience replay.
 
         Args:
