@@ -83,9 +83,9 @@ class WebServerTestCase(unittest.TestCase):
                 'description': 'test',
                 'type': hypers['type'],
                 'hypers': json.dumps(hypers['hypers']),
-                'states_inputs_func': states_inputs_func,
-                'outputs_actions_func': outputs_actions_func,
-                'reward_func': reward_func,
+                'sifunc': states_inputs_func,
+                'oafunc': outputs_actions_func,
+                'rewfunc': reward_func,
                 'weights': base64.b64encode(b'Helloworld!').decode('utf-8'),
             },
         )
