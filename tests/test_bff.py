@@ -27,7 +27,7 @@ class BFFServicerTestCase(unittest.TestCase):
     def test_00_registerservice(self):
         with open('examples/services.json', 'r') as f:
             services = json.load(f)
-        services = [bff_pb2.ServiceInfo(**service) for service in services.values()]
+        services = [bff_pb2.ServiceInfo(**service) for service in services]
 
         res = self.stub.RegisterService(bff_pb2.ServiceInfoList(services=services))
         self.assertEqual(len(res.ids), 2)
