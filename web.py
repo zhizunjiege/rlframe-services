@@ -1,31 +1,45 @@
 import base64
 import mimetypes
-import os.path
+import pathlib
 import sqlite3
 
 from flask import Flask, request, redirect
 
-db = 'data/db.sqlite3'
-need_init = not os.path.exists(db)
+db = pathlib.Path('data/db.sqlite3')
+need_init = not db.exists()
 con = sqlite3.connect(db, check_same_thread=False)
 cur = con.cursor()
 if need_init:
-    with open('store/main.sql') as f:
+    with open('store/main.sql', 'r') as f:
         script = f.read()
     cur.executescript(script)
     con.commit()
 
-tables = {}
-for table in ['simenv', 'agent', 'task']:
-    cur.execute(f'PRAGMA TABLE_INFO({table})')
-    rst = cur.fetchall()
-    tables[table] = {el[1]: {'type': el[2].upper(), 'notnull': el[3] and el[4] is None and not el[5]} for el in rst}
 types = {
     'INTEGER': int,
     'REAL': float,
     'TEXT': str,
     'BLOB': bytes,
+    'JSON': str,
 }
+jsons = {
+    'simenv': ['args', 'params'],
+    'agent': ['hypers', 'status'],
+    'task': ['services', 'routes'],
+}
+tables = {}
+for table in ['simenv', 'agent', 'task']:
+    tables[table] = {}
+    cur.execute(f'PRAGMA TABLE_INFO({table})')
+    rows = cur.fetchall()
+    for col in rows:
+        col = list(col)
+        if table in jsons and col[1] in jsons[table]:
+            col[2] = 'JSON'
+        tables[table][col[1]] = {
+            'type': col[2].upper(),
+            'notnull': col[3] and col[4] is None and not col[5],
+        }
 
 
 def bytes_to_b64str(data):
@@ -47,13 +61,16 @@ def index():
 
 
 @app.route('/api/db')
-def info():
+def meta():
     return tables
 
 
 @app.get('/api/db/<string:table>')
 def select(table):
     args = request.args
+    id = args.get('id')
+    limit = args.get('limit')
+    offset = args.get('offset')
     columns = args.getlist('columns')
 
     if table not in tables:
@@ -65,25 +82,25 @@ def select(table):
 
     columns = columns if len(columns) > 0 else tables[table].keys()
     query = f'SELECT {", ".join(columns)} FROM {table}'
-    if 'id' in args:
+    if id is not None:
         query += ' WHERE id = ?'
-        params = (int(args['id']),)
-    elif 'limit' in args and 'offset' in args:
+        params = (int(id),)
+    elif limit is not None and offset is not None:
         query += ' ORDER BY id DESC LIMIT ? OFFSET ?'
-        params = (int(args['limit']), int(args['offset']))
+        params = (int(limit), int(offset))
     else:
         params = ()
 
     try:
         cur.execute(query, params)
-        rst = cur.fetchall()
+        rows = cur.fetchall()
         data = []
-        for row in rst:
+        for row in rows:
             record = {}
             for i, col in enumerate(row):
                 if type(col) == types['BLOB']:
-                    row[i] = bytes_to_b64str(col)
-                record[columns[i]] = row[i]
+                    col = bytes_to_b64str(col)
+                record[columns[i]] = col
             data.append(record)
         return data
     except sqlite3.Error as e:
@@ -119,7 +136,7 @@ def insert(table):
     try:
         cur.execute(query, params)
         con.commit()
-        data = {'rowid': cur.lastrowid}
+        data = {'lastrowid': cur.lastrowid}
         return data
     except sqlite3.Error as e:
         print(f'SQLite3 error: {e.args}')
@@ -151,7 +168,8 @@ def update(table, id):
     try:
         cur.execute(query, params)
         con.commit()
-        return '', 204
+        data = {'rowcount': cur.rowcount}
+        return data
     except sqlite3.Error as e:
         print(f'SQLite3 error: {e.args}')
         print(f'Exception class is: {e.__class__}')
@@ -160,13 +178,17 @@ def update(table, id):
 
 @app.delete('/api/db/<string:table>/<int:id>')
 def delete(table, id):
+    if table not in tables:
+        return f'Table {table} not found', 404
+
     query = f'DELETE FROM {table} WHERE id = ?'
     params = (id,)
 
     try:
         cur.execute(query, params)
         con.commit()
-        return '', 204
+        data = {'rowcount': cur.rowcount}
+        return data
     except sqlite3.Error as e:
         print(f'SQLite3 error: {e.args}')
         print(f'Exception class is: {e.__class__}')

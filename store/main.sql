@@ -10,7 +10,7 @@
  Target Server Version : 3030001
  File Encoding         : 65001
 
- Date: 21/02/2023 12:53:42
+ Date: 15/03/2023 00:00:00
 */
 
 PRAGMA foreign_keys = false;
@@ -25,6 +25,7 @@ CREATE TABLE "agent" (
   "description" text NOT NULL,
   "create_time" text,
   "update_time" text,
+  "training" integer NOT NULL,
   "type" text NOT NULL,
   "hypers" text NOT NULL,
   "sifunc" text NOT NULL,
@@ -78,7 +79,7 @@ BEGIN
 	UPDATE agent SET create_time=DATETIME('now','localtime') WHERE id=new.id;
 END;
 CREATE TRIGGER "on_update_agent"
-AFTER UPDATE OF "name", "description", "create_time", "type", "hypers", "sifunc", "oafunc", "rewfunc", "weights", "buffer", "status"
+AFTER UPDATE OF "name", "description", "create_time", "training", "type", "hypers", "sifunc", "oafunc", "rewfunc", "weights", "buffer", "status"
 ON "agent"
 BEGIN
 	UPDATE agent SET update_time=DATETIME('now','localtime') WHERE id=new.id;
