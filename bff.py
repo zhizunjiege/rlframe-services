@@ -19,10 +19,10 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
     def reset(self):
         self.services = {}
 
-        self.route_config = None
-
         self.agents = {}
         self.simenvs = {}
+
+        self.route_config = None
 
     def unknown_id(self, id, context):
         context.abort(grpc.StatusCode.INVALID_ARGUMENT, f'Unknown service id: {id}')
@@ -32,11 +32,8 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
         return types_pb2.CommonResponse()
 
     def RegisterService(self, request, context):
-        ids = []
-        for service in request.services:
-            id = f'{service.host}:{service.port}'
+        for id, service in request.services.items():
             self.services[id] = service
-            ids.append(id)
             if service.type == 'simenv':
                 channel = grpc.insecure_channel(f'{service.host}:{service.port}')
                 self.simenvs[id] = simenv_pb2_grpc.SimenvStub(channel)
@@ -45,7 +42,7 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
                 self.agents[id] = agent_pb2_grpc.AgentStub(channel)
             else:
                 context.abort(grpc.StatusCode.INVALID_ARGUMENT, f'Unknown service type: {service.type}')
-        return bff_pb2.ServiceIdList(ids=ids)
+        return types_pb2.CommonResponse()
 
     def UnRegisterService(self, request, context):
         ids = request.ids if len(request.ids) > 0 else list(self.services.keys())
