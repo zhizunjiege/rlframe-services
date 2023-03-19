@@ -98,7 +98,8 @@ def select(table):
         for row in rows:
             record = {}
             for i, col in enumerate(row):
-                if type(col) == types['BLOB']:
+                col_type = tables[table][columns[i]]['type']
+                if col_type == 'BLOB' and col is not None:
                     col = bytes_to_b64str(col)
                 record[columns[i]] = col
             data.append(record)
