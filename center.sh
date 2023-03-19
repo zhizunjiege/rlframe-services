@@ -39,7 +39,7 @@ func-e run -c envoy.yaml -l error </dev/null >/dev/null 2>&1 &
 
 # run gunicorn in background
 echo "starting gunicorn..."
-gunicorn web:app -w 4 -b 0.0.0.0:8080 --log-level error -D
+gunicorn -w 4 -b 0.0.0.0:8080 --log-level info --log-file "data/logs/$time.web.log" -D web:app
 
 # run python in background
 echo "starting python..."

@@ -68,10 +68,13 @@ def meta():
 @app.get('/api/db/<string:table>')
 def select(table):
     args = request.args
-    id = args.get('id')
-    limit = args.get('limit')
-    offset = args.get('offset')
-    columns = args.getlist('columns')
+    try:
+        id = args.get('id', type=int)
+        limit = args.get('limit', type=int)
+        offset = args.get('offset', type=int)
+        columns = args.getlist('columns')
+    except Exception:
+        return 'Invalid query parameters', 400
 
     if table not in tables:
         return f'Table {table} not found', 404
@@ -80,14 +83,14 @@ def select(table):
             if col not in tables[table]:
                 return f'Column {col} not found in table {table}', 404
 
-    columns = columns if len(columns) > 0 else tables[table].keys()
+    columns = columns if len(columns) > 0 else list(tables[table].keys())
     query = f'SELECT {", ".join(columns)} FROM {table}'
     if id is not None:
         query += ' WHERE id = ?'
-        params = (int(id),)
+        params = (id,)
     elif limit is not None and offset is not None:
         query += ' ORDER BY id DESC LIMIT ? OFFSET ?'
-        params = (int(limit), int(offset))
+        params = (limit, offset)
     else:
         params = ()
 
@@ -98,9 +101,10 @@ def select(table):
         for row in rows:
             record = {}
             for i, col in enumerate(row):
-                col_type = tables[table][columns[i]]['type']
-                if col_type == 'BLOB' and col is not None:
-                    col = bytes_to_b64str(col)
+                if col is not None:
+                    col_type = tables[table][columns[i]]['type']
+                    if col_type == 'BLOB':
+                        col = bytes_to_b64str(col)
                 record[columns[i]] = col
             data.append(record)
         return data
@@ -119,14 +123,15 @@ def insert(table):
     for col in data.keys():
         if col not in tables[table]:
             return f'Column {col} not found in table {table}', 404
-        col_type = tables[table][col]['type']
-        if col_type == 'BLOB':
-            try:
-                data[col] = b64str_to_bytes(data[col])
-            except Exception:
-                return f'Column {col} is not a valid base64 string', 400
-        elif not isinstance(data[col], types[col_type]):
-            return f'Column {col} should be a {col_type}', 400
+        if data[col] is not None:
+            col_type = tables[table][col]['type']
+            if col_type == 'BLOB':
+                try:
+                    data[col] = b64str_to_bytes(data[col])
+                except Exception:
+                    return f'Column {col} is not a valid base64 string', 400
+            elif not isinstance(data[col], types[col_type]):
+                return f'Column {col} should be a {col_type}', 400
     for col in tables[table]:
         if tables[table][col]['notnull'] and (col not in data or data[col] is None):
             return f'Column {col} can not be NULL', 400
@@ -154,14 +159,15 @@ def update(table, id):
     for col in data.keys():
         if col not in tables[table]:
             return f'Column {col} not found in table {table}', 404
-        col_type = tables[table][col]['type']
-        if col_type == 'BLOB':
-            try:
-                data[col] = b64str_to_bytes(data[col])
-            except Exception:
-                return f'Column {col} is not a valid base64 string', 400
-        elif not isinstance(data[col], types[col_type]):
-            return f'Column {col} should be a {col_type}', 400
+        if data[col] is not None:
+            col_type = tables[table][col]['type']
+            if col_type == 'BLOB':
+                try:
+                    data[col] = b64str_to_bytes(data[col])
+                except Exception:
+                    return f'Column {col} is not a valid base64 string', 400
+            elif not isinstance(data[col], types[col_type]):
+                return f'Column {col} should be a {col_type}', 400
 
     query = f'UPDATE {table} SET {", ".join([f"{key} = ?" for key in data.keys()])} WHERE id = ?'
     params = tuple(data.values()) + (id,)
