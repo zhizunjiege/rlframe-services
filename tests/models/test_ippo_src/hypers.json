@@ -1,0 +1,24 @@
+{
+  "type": "MADDPG",
+  "hypers": {
+    "obs_dim": 12,
+    "act_num": 8,
+    "hidden_layers": [
+      256,
+      256
+    ],
+    "lr": 0.001,
+    "gamma": 0.95,
+    "replay_size": 10000,
+    "batch_size": 32,
+    "start_steps": 0,
+    "update_after": 200,
+    "update_online_every": 1,
+    "update_target_every": 200,
+    "seed": null,
+    "agent_num": 4,
+    "noise_range": 0.1,
+    "action_bound": 0.5,
+    "epsilon": 0.2
+  }
+}

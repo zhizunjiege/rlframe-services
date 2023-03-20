@@ -3,17 +3,16 @@ from typing import Union, Dict, Optional, List
 
 import numpy as np
 import tensorflow as tf
-from .replay.simple_replay import SimpleReplay
+from replay.simple_replay import SimpleReplay
 import tensorflow_probability as tfp
 # import NetworkOptimizer.optimizer_pb2 as pb2
 #
 # from NetworkOptimizer.NeutralNetwork import NeutralNetwork
 # from NetworkOptimizer import ACTIVATE_FUNC, INITIALIZER, OPTIMIZER
-from .base import RLModelBase
+from base import RLModelBase
 
 
 class NormalNoise:
-
     def __init__(self, mu, sigma=0.15):
         self.mu = mu
         self.sigma = sigma
@@ -45,7 +44,7 @@ class DDPG(RLModelBase):
         update_target_every: int = 200,
         seed: Optional[int] = None,
         tau=0.001,
-        noise_range=0.1,
+        noise_range=0.1
     ):
         super().__init__(training)
 
@@ -89,7 +88,7 @@ class DDPG(RLModelBase):
             # self.optimizer = tf.keras.optimizers.Adam(lr)
             self.replay_buffer = SimpleReplay(self.__nobs, self.__nact, self.replay_size, dtype=np.float32)
 
-            log_dir = f'data/logs/gradient_tape/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
+            log_dir = f'logs/gradient_tape/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
             self.summary_writer = tf.summary.create_file_writer(log_dir)
             tf.summary.trace_on(graph=True, profiler=True)
         else:
@@ -227,6 +226,16 @@ class DDPG(RLModelBase):
         target_weights = target_model.weights
         [a.assign(a * (1 - tau) + b * tau) for a, b in zip(target_weights, weights)]
 
+    def update_actor_target_weights(self):
+        weights = self.__actor.weights
+        target_weights = self.__actor_target.weights
+        [a.assign(a * (1 - self.tau) + b * self.tau) for a, b in zip(target_weights, weights)]
+
+    def update_critic_target_weights(self):
+        weights = self.__critic.weights
+        target_weights = self.__critic_target.weights
+        [a.assign(a * (1 - self.tau) + b * self.tau) for a, b in zip(target_weights, weights)]
+
     @tf.function
     def __apply_gradients(self, obs, act, next_obs, rew, terminated):
         with tf.GradientTape() as tape:
@@ -265,3 +274,68 @@ class DDPG(RLModelBase):
         """
         self.replay_buffer.set(buffer)
         self.replay_size = buffer['max_size']
+
+
+import gym
+import time
+import matplotlib.pyplot as plt
+
+if __name__ == '__main__':
+    ENV_NAME = 'Pendulum-v0'
+    env = gym.make(ENV_NAME).unwrapped
+
+    env.seed(0)
+    # np.random.seed(0)
+    # tf.random.set_seed(0)
+
+    agent = DDPG(
+        training=True,
+        obs_dim=env.observation_space.shape[0],
+        act_num=env.action_space.shape[0],
+        hidden_layers=[256, 256],
+        lr=0.001,
+        gamma=0.9,
+        replay_size=10000,
+        batch_size=32,
+        start_steps=0,
+        update_after=200,
+        update_online_every=1,
+        update_target_every=200,
+        seed=0,
+        tau=0.001,
+        noise_range=0.1,
+    )
+
+    all_ep_r = []
+
+    for episode in range(1000):
+        state = env.reset()
+        buffer_s, buffer_a, buffer_r = [], [], []
+        episode_reward = 0
+        t0 = time.time()
+        terminated = False
+        truncated = False
+        for t in range(1000):
+            # env.render()
+            action = agent.react(state)
+            state_, reward, done, _ = env.step(action)
+            agent.store(state, action, state_, reward, terminated, truncated)
+            state = state_
+            episode_reward += reward
+
+            if (t + 1) % 32 == 0 or t == 200 - 1:
+                agent.train()
+                agent.update_actor_target_weights()
+                agent.update_critic_target_weights()
+
+        if episode == 0:
+            all_ep_r.append(episode_reward)
+        else:
+            all_ep_r.append(all_ep_r[-1] * 0.9 + episode_reward * 0.1)
+        print(
+            'Episode: {}/{}  | Episode Reward: {:.4f}  | Running Time: {:.4f}'.format(
+                episode, 1000, episode_reward,
+                time.time() - t0
+            )
+        )
+    plt.plot(all_ep_r)
