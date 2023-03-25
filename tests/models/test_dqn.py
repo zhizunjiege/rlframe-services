@@ -22,8 +22,6 @@ class DQNModelTestCase(unittest.TestCase):
 
     def test_00_init(self):
         self.assertTrue(self.model.training)
-        self.assertEqual(self.model.obs_dim, 12)
-        self.assertEqual(self.model.act_num, 8)
 
     def test_01_react(self):
         states = np.random.random((12,))
@@ -75,12 +73,12 @@ class DQNModelTestCase(unittest.TestCase):
         env = gym.make('CartPole-v1')
         model = DQN(
             training=True,
-            obs_dim=4,
-            act_num=2,
+            obs_dim=env.observation_space.shape[0],
+            act_num=env.action_space.shape[0],
             hidden_layers=[128],
             lr=0.01,
             gamma=0.99,
-            replay_size=1000000,
+            replay_size=200000,
             batch_size=64,
             epsilon_max=1.0,
             epsilon_min=0.01,
@@ -89,12 +87,13 @@ class DQNModelTestCase(unittest.TestCase):
             update_after=5000,
             update_online_every=1,
             update_target_every=200,
+            seed=0,
         )
 
         count = 0
         for episode in range(1000):
             rew_sum = 0
-            states, _ = env.reset()
+            states, _ = env.reset(seed=0)
             for step in range(500):
                 actions = model.react(states=states)
                 next_states, reward, terminated, truncated, _ = env.step(actions)

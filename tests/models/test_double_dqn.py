@@ -5,16 +5,16 @@ import unittest
 import gymnasium as gym
 import numpy as np
 
-from models.ddpg import DDPG
+from models.double_dqn import DoubleDQN
 
 
-class DDPGModelTestCase(unittest.TestCase):
+class DoubleDQNModelTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with open('tests/models/test_ddpg_src/hypers.json', 'r') as f:
-            hypers = json.load(f)
-        cls.model = DDPG(training=True, **hypers)
+        with open('tests/models/test_dqn_src/hypers.json', 'r') as f:
+            cls.hypers = json.load(f)
+        cls.model = DoubleDQN(training=True, **cls.hypers)
 
     @classmethod
     def tearDownClass(cls):
@@ -27,15 +27,14 @@ class DDPGModelTestCase(unittest.TestCase):
         states = np.random.random((12,))
         t1 = time.time()
         for _ in range(5000):
-            actions = self.model.react(states)
+            action = self.model.react(states)
         t2 = time.time()
         print(f'12x256x256x8 nn 5000 react time: {t2 - t1:.2f}s')
-        self.assertIsInstance(actions, np.ndarray)
-        self.assertEqual(actions.shape[0], 8)
+        self.assertIsInstance(action, int)
 
     def test_02_store(self):
         states = np.random.random((12,))
-        action = np.random.random((8,))
+        action = 0
         next_states = np.random.random((12,))
         reward = 0.0
         terminated = False
@@ -55,16 +54,14 @@ class DDPGModelTestCase(unittest.TestCase):
     def test_04_weights(self):
         weights = self.model.get_weights()
         self.model.set_weights(weights)
-        self.assertTrue('actor' in weights)
-        self.assertTrue('critic' in weights)
-        self.assertTrue('actor_target' in weights)
-        self.assertTrue('critic_target' in weights)
+        self.assertTrue('online' in weights)
+        self.assertTrue('target' in weights)
 
     def test_05_buffer(self):
         buffer = self.model.get_buffer()
         self.model.set_buffer(buffer)
         self.assertEqual(buffer['size'], 1000)
-        self.assertEqual(buffer['data']['acts_buf'].shape, (1000, 8))
+        self.assertEqual(buffer['data']['acts_buf'].shape, (1000, 1))
 
     def test_06_status(self):
         status = self.model.get_status()
@@ -73,25 +70,23 @@ class DDPGModelTestCase(unittest.TestCase):
         self.assertEqual(status['train_steps'], 5000)
 
     def test_07_gymnasium(self):
-        env = gym.make('Pendulum-v1')
-        model = DDPG(
+        env = gym.make('CartPole-v1')
+        model = DoubleDQN(
             training=True,
             obs_dim=env.observation_space.shape[0],
-            act_dim=env.action_space.shape[0],
-            hidden_layers=[256, 256],
-            lr_actor=0.0001,
-            lr_critic=0.001,
-            gamma=0.9,
-            tau=0.001,
-            replay_size=10000,
-            batch_size=32,
-            noise_type='normal',
-            noise_sigma=0.1,
-            noise_max=1.0,
-            noise_min=0.1,
-            noise_decay=0.9999,
-            update_after=200,
+            act_num=env.action_space.shape[0],
+            hidden_layers=[128],
+            lr=0.01,
+            gamma=0.99,
+            replay_size=200000,
+            batch_size=64,
+            epsilon_max=1.0,
+            epsilon_min=0.01,
+            epsilon_decay=0.9999,
+            start_steps=5000,
+            update_after=5000,
             update_online_every=1,
+            update_target_every=200,
             seed=0,
         )
 
@@ -99,8 +94,8 @@ class DDPGModelTestCase(unittest.TestCase):
         for episode in range(1000):
             rew_sum = 0
             states, _ = env.reset(seed=0)
-            for step in range(200):
-                actions = 2 * model.react(states=states)
+            for step in range(500):
+                actions = model.react(states=states)
                 next_states, reward, terminated, truncated, _ = env.step(actions)
                 model.store(
                     states=states,
@@ -121,7 +116,7 @@ class DDPGModelTestCase(unittest.TestCase):
 
             print(f'Episode {episode} finished after {step+1} steps with reward {rew_sum:.2f}')
 
-            if rew_sum >= -150:
+            if rew_sum >= 450:
                 count += 1
             else:
                 count = max(count - 1, 0)

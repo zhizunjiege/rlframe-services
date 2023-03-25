@@ -8,8 +8,8 @@ from .base import RLModelBase
 from .replay.simple_replay import SimpleReplay
 
 
-class DQN(RLModelBase):
-    """Deep Q-learning Network model."""
+class DoubleDQN(RLModelBase):
+    """Double Deep Q-learning Network model."""
 
     def __init__(
         self,
@@ -188,8 +188,9 @@ class DQN(RLModelBase):
         with tf.GradientTape() as tape:
             logits = self.online_net(states, training=True)
             q_values = tf.math.reduce_sum(logits * tf.one_hot(actions, self.act_num), axis=1)
+            qmax_acts = tf.argmax(self.online_net(next_states, training=True), axis=1)
             next_logits = self.target_net(next_states, training=True)
-            next_q_values = tf.math.reduce_max(next_logits, axis=1)
+            next_q_values = tf.reduce_sum(next_logits * tf.one_hot(qmax_acts, self.act_num), axis=1)
             target_q_values = rewards + self.gamma * (1 - terminated) * next_q_values
             td_errors = tf.stop_gradient(target_q_values) - q_values
             loss = tf.math.reduce_mean(tf.math.square(td_errors))
