@@ -13,7 +13,8 @@ from protos import types_pb2
 
 class BFFServicer(bff_pb2_grpc.BFFServicer):
 
-    def __init__(self):
+    def __init__(self, options=None):
+        self.options = options
         self.reset()
 
     def reset(self):
@@ -34,11 +35,10 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
     def RegisterService(self, request, context):
         for id, service in request.services.items():
             self.services[id] = service
+            channel = grpc.insecure_channel(f'{service.host}:{service.port}', options=self.options)
             if service.type == 'simenv':
-                channel = grpc.insecure_channel(f'{service.host}:{service.port}')
                 self.simenvs[id] = simenv_pb2_grpc.SimenvStub(channel)
             elif service.type == 'agent':
-                channel = grpc.insecure_channel(f'{service.host}:{service.port}')
                 self.agents[id] = agent_pb2_grpc.AgentStub(channel)
             else:
                 context.abort(grpc.StatusCode.INVALID_ARGUMENT, f'Unknown service type: {service.type}')
@@ -241,14 +241,12 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
 
 
 def bff_server(host, port, max_workers, max_msg_len):
-    server = grpc.server(
-        futures.ThreadPoolExecutor(max_workers=max_workers),
-        options=[
-            ('grpc.max_send_message_length', max_msg_len * 1024 * 1024),
-            ('grpc.max_receive_message_length', max_msg_len * 1024 * 1024),
-        ],
-    )
-    bff_pb2_grpc.add_BFFServicer_to_server(BFFServicer(), server)
+    options = [
+        ('grpc.max_send_message_length', max_msg_len * 1024 * 1024),
+        ('grpc.max_receive_message_length', max_msg_len * 1024 * 1024),
+    ]
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=max_workers), options=options)
+    bff_pb2_grpc.add_BFFServicer_to_server(BFFServicer(options=options), server)
     port = server.add_insecure_port(f'{host}:{port}')
     server.start()
     print(f'BFF server started at {host}:{port}')
