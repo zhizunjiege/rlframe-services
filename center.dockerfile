@@ -6,7 +6,7 @@ RUN apt-get update \
   && curl https://func-e.io/install.sh | bash -s -- -b /usr/local/bin \
   && pip install -i https://mirrors.aliyun.com/pypi/simple --no-cache-dir -r center-requirements.txt \
   && chmod +x center.sh
-EXPOSE 8080 9999 10000
+EXPOSE 8888 9999 10000
 VOLUME [ "/app/data" ]
 ENTRYPOINT [ "./center.sh" ]
 CMD [ "-w", "10", "-m", "256" ]

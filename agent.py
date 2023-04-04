@@ -81,7 +81,8 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         if not self.configs.training:
             message = 'Cannot change training mode when training is initially set to False'
             context.abort(grpc.StatusCode.FAILED_PRECONDITION, message)
-        self.model.training = request.training
+        # self.model.training = request.training
+        self.pending_training = request.training
         return types_pb2.CommonResponse()
 
     def GetModelWeights(self, request, context):
@@ -128,6 +129,11 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
 
     def GetAction(self, request_iterator, context):
         self.check_state(context)
+
+        if self.pending_training is not None:
+            self.model.training = self.pending_training
+            self.pending_training = None
+
         global_caches = {}
         sifunc_args = {'states': None, 'inputs': None, 'caches': global_caches}
         oafunc_args = {'outputs': None, 'actions': None, 'caches': global_caches}
