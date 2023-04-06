@@ -31,7 +31,7 @@ trap "grace_exit python" INT TERM
 mkdir -p data/logs
 
 # get current time
-time=$(TZ=UTC-8 date +"%Y-%m-%d %H-%M-%S")
+time=$(date +"%Y-%m-%d %H-%M-%S")
 
 # run python in background
 echo "starting python..."

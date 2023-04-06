@@ -31,7 +31,7 @@ trap "grace_exit envoy gunicorn python" INT TERM
 mkdir -p data/logs
 
 # get current time
-time=$(TZ=UTC-8 date +"%Y-%m-%d %H-%M-%S")
+time=$(date +"%Y-%m-%d %H-%M-%S")
 
 # run envoy in background
 echo "starting envoy..."
@@ -39,7 +39,7 @@ func-e run -c envoy.yaml -l error </dev/null >/dev/null 2>&1 &
 
 # run gunicorn in background
 echo "starting gunicorn..."
-gunicorn -w 4 -b 0.0.0.0:8888 --log-level info --log-file "data/logs/$time.web.log" -D web:app
+gunicorn -b 0.0.0.0:8888 --log-level info --log-file "data/logs/$time.web.log" -D web:app
 
 # run python in background
 echo "starting python..."

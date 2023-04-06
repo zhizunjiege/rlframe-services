@@ -5,9 +5,16 @@ import sqlite3
 
 from flask import Flask, request, redirect
 
+
+def dict_factory(cursor, row):
+    fields = [column[0] for column in cursor.description]
+    return {key: value for key, value in zip(fields, row)}
+
+
 db = pathlib.Path('data/db.sqlite3')
 need_init = not db.exists()
-con = sqlite3.connect(db, check_same_thread=False)
+con = sqlite3.connect(db)
+con.row_factory = dict_factory
 cur = con.cursor()
 if need_init:
     with open('store/main.sql', 'r') as f:
@@ -32,13 +39,12 @@ for table in ['simenv', 'agent', 'task']:
     tables[table] = {}
     cur.execute(f'PRAGMA TABLE_INFO({table})')
     rows = cur.fetchall()
-    for col in rows:
-        col = list(col)
-        if table in jsons and col[1] in jsons[table]:
-            col[2] = 'JSON'
-        tables[table][col[1]] = {
-            'type': col[2].upper(),
-            'notnull': col[3] and col[4] is None and not col[5],
+    for row in rows:
+        if table in jsons and row['name'] in jsons[table]:
+            row['type'] = 'JSON'
+        tables[table][row['name']] = {
+            'type': row['type'].upper(),
+            'notnull': row['notnull'] and row['dflt_value'] is None and not row['pk'],
         }
 
 
@@ -99,14 +105,11 @@ def select(table):
         rows = cur.fetchall()
         data = []
         for row in rows:
-            record = {}
-            for i, col in enumerate(row):
-                if col is not None:
-                    col_type = tables[table][columns[i]]['type']
+            for col in row:
+                if row[col] is not None:
+                    col_type = tables[table][col]['type']
                     if col_type == 'BLOB':
-                        col = bytes_to_b64str(col)
-                record[columns[i]] = col
-            data.append(record)
+                        row[col] = bytes_to_b64str(row[col])
         return data
     except sqlite3.Error as e:
         print(f'SQLite3 error: {e.args}')

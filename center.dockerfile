@@ -1,6 +1,7 @@
 FROM python:3.10.4-slim
 WORKDIR /app
 COPY . .
+ENV TZ=Asia/Shanghai
 RUN apt-get update \
   && apt-get -y install curl procps \
   && curl https://func-e.io/install.sh | bash -s -- -b /usr/local/bin \

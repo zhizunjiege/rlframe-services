@@ -1,6 +1,7 @@
 FROM tensorflow/tensorflow:2.9.1-gpu
 WORKDIR /app
 COPY . .
+ENV TZ=Asia/Shanghai
 RUN apt-get update \
   && apt-get -y install procps \
   && pip install -i https://mirrors.aliyun.com/pypi/simple --no-cache-dir -r agent-requirements.txt \
