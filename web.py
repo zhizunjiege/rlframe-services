@@ -11,11 +11,16 @@ def dict_factory(cursor, row):
     return {key: value for key, value in zip(fields, row)}
 
 
-db = pathlib.Path('data/db.sqlite3')
-need_init = not db.exists()
-con = sqlite3.connect(db)
-con.row_factory = dict_factory
-cur = con.cursor()
+def get_db(db_path):
+    con = sqlite3.connect(db_path)
+    con.row_factory = dict_factory
+    cur = con.cursor()
+    return con, cur
+
+
+db_path = pathlib.Path('data/db.sqlite3')
+need_init = not db_path.exists()
+con, cur = get_db(db_path)
 if need_init:
     with open('store/main.sql', 'r') as f:
         script = f.read()
@@ -101,6 +106,7 @@ def select(table):
         params = ()
 
     try:
+        _, cur = get_db(db_path)
         cur.execute(query, params)
         rows = cur.fetchall()
         data = []
@@ -145,6 +151,7 @@ def insert(table):
     params = tuple(data.values())
 
     try:
+        con, cur = get_db(db_path)
         cur.execute(query, params)
         con.commit()
         data = {'lastrowid': cur.lastrowid}
@@ -183,6 +190,7 @@ def update(table):
     params = tuple(data.values()) + (id,)
 
     try:
+        con, cur = get_db(db_path)
         cur.execute(query, params)
         con.commit()
         data = {'rowcount': cur.rowcount}
@@ -210,6 +218,7 @@ def delete(table):
     params = ()
 
     try:
+        con, cur = get_db(db_path)
         cur.execute(query, params)
         con.commit()
         data = {'rowcount': cur.rowcount}
