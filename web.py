@@ -120,6 +120,8 @@ def insert(table):
 
     if table not in tables:
         return f'Table {table} not found', 404
+    if 'id' in data:
+        del data['id']
     for col in data.keys():
         if col not in tables[table]:
             return f'Column {col} not found in table {table}', 404
@@ -150,12 +152,17 @@ def insert(table):
         return 'Unknown error', 500
 
 
-@app.put('/api/db/<string:table>/<int:id>')
-def update(table, id):
+@app.put('/api/db/<string:table>')
+def update(table):
     data = request.json
 
     if table not in tables:
         return f'Table {table} not found', 404
+    if 'id' not in data:
+        return 'Missing id', 400
+    else:
+        id = data['id']
+        del data['id']
     for col in data.keys():
         if col not in tables[table]:
             return f'Column {col} not found in table {table}', 404
@@ -183,13 +190,21 @@ def update(table, id):
         return 'Unknown error', 500
 
 
-@app.delete('/api/db/<string:table>/<int:id>')
-def delete(table, id):
+@app.delete('/api/db/<string:table>')
+def delete(table):
+    data = request.json
+
     if table not in tables:
         return f'Table {table} not found', 404
+    if 'ids' not in data:
+        return 'Missing ids', 400
+    elif not isinstance(data['ids'], list):
+        return 'Data ids should be a list', 400
+    else:
+        ids = data['ids']
 
-    query = f'DELETE FROM {table} WHERE id = ?'
-    params = (id,)
+    query = f'DELETE FROM {table} WHERE id in ({", ".join([str(id) for id in ids])})'
+    params = ()
 
     try:
         cur.execute(query, params)

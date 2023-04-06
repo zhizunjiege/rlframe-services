@@ -63,6 +63,7 @@ class WebServerTestCase(unittest.TestCase):
         res = requests.post(
             addr,
             json={
+                'id': -1,
                 'name': 'test',
                 'description': 'test',
                 'training': 1,
@@ -84,33 +85,35 @@ class WebServerTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 400)
 
     def test_03_update(self):
-        addr = f'{self.addr}/api/db/simenvs/1'
+        addr = f'{self.addr}/api/db/simenvs'
         res = requests.put(addr, json={
+            'id': 1,
             'params': '{}',
         })
         self.assertEqual(res.status_code, 404)
 
-        addr = f'{self.addr}/api/db/agent/1'
+        addr = f'{self.addr}/api/db/agent'
         res = requests.put(addr, json={
+            'id': 1,
             'buffer': base64.b64encode(b'Hello World!').decode('utf-8'),
         })
         self.assertTrue(res.ok)
 
-        addr = f'{self.addr}/api/db/task/1'
+        addr = f'{self.addr}/api/db/task'
         res = requests.put(addr, json={
             'services': '',
         })
-        self.assertTrue(res.ok)
+        self.assertEqual(res.status_code, 400)
 
     def test_04_delete(self):
-        addr = f'{self.addr}/api/db/simenv/1'
+        addr = f'{self.addr}/api/db/simenv'
         res = requests.delete(addr)
+        self.assertEqual(res.status_code, 400)
+
+        addr = f'{self.addr}/api/db/agent'
+        res = requests.delete(addr, json={'ids': [1]})
         self.assertTrue(res.ok)
 
-        addr = f'{self.addr}/api/db/agent/1'
-        res = requests.delete(addr)
-        self.assertTrue(res.ok)
-
-        addr = f'{self.addr}/api/db/task/1'
-        res = requests.delete(addr)
-        self.assertTrue(res.ok)
+        addr = f'{self.addr}/api/db/task'
+        res = requests.delete(addr, json={'ids': 1})
+        self.assertEqual(res.status_code, 400)
