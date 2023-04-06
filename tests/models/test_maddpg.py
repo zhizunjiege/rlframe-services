@@ -1,22 +1,30 @@
 import json
 import time
 import unittest
+import tensorflow as tf
+from typing import Union, Dict, Optional
+from matplotlib import pyplot as plt
 import numpy as np
+from models.mpe_env import mpe_env
 from models.maddpg import MADDPG
 
 
 class MADDPGModelTestCase(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
+        # with open('G:/RL/RLFrame-main/tests/models/test_maddpg_src/hypers.json', 'r') as f1, \
+        #      open('G:/RL/RLFrame-main/tests/models/test_maddpg_src/structs.json', 'r') as f2:
+        #     hypers = json.load(f1)
+        #     structs = json.load(f2)
+        # cls.model = MADDPG(training=True, networks=default_builder(structs), **hypers['hypers'])
         with open('tests/models/test_maddpg_src/hypers.json', 'r') as f:
             hypers = json.load(f)
         cls.model = MADDPG(training=True, **hypers['hypers'])
 
-    # @classmethod
-    # def tearDownClass(cls):
-    #     cls.model.close()
-    #     cls.model = None
+    @classmethod
+    def tearDownClass(cls):
+        cls.model.close()
+        cls.model = None
 
     def test_00_init(self):
         self.assertTrue(self.model.training)
@@ -33,7 +41,7 @@ class MADDPGModelTestCase(unittest.TestCase):
         t2 = time.time()
         print(f'12x256x256x8 nn 1000 react time: {t2 - t1:.2f}s')
         print(states[0].shape)
-        # self.assertIsInstance(action_n[0],np.ndarray)
+        self.assertIsInstance(action_n[0], tf.Tensor)
         print(action_n[0].shape)
         self.assertEqual(action_n[0].shape[0], 8)
 
@@ -72,6 +80,69 @@ class MADDPGModelTestCase(unittest.TestCase):
         self.model.set_buffer(buffer)
         self.assertEqual(buffer['size'], 1000)
         self.assertEqual(buffer['data']['acts_buf'].shape, (1000, 8))
+
+    def test_06_gymnasium(self):
+        SEED = 65535
+        env = mpe_env('simple_spread', seed=SEED)
+        obs_dim, action_dim = env.get_space()
+        agent_number = env.get_agent_number()
+        # policy初始化
+        maddpg_agents = MADDPG(
+            training=True,
+            obs_dim=obs_dim,
+            act_num=action_dim,
+            hidden_layers=[64, 64],
+            actor_lr=0.01,
+            critic_lr=0.01,
+            gamma=0.95,
+            replay_size=10000,
+            batch_size=256,
+            start_steps=0,
+            update_after=20,
+            update_online_every=1,
+            update_target_every=20,
+            seed=SEED,
+            agent_num=agent_number,
+            noise_range=0.1,
+            tau=0.01,
+        )
+        score = []
+        avg_score = []
+        terminated = False
+        truncated = False
+        writer = tf.summary.create_file_writer('board/maddpg_logs')
+        for i_episode in range(800):
+            obs_n = env.mpe_env.reset()
+            score_one_episode = 0
+            # 20是单个回合内的步数
+            for t in range(20):
+                env.mpe_env.render()
+                action_n = maddpg_agents.react(obs_n)
+                # action_n = [np.array([0, 0, 0, 1, 0]), np.array([0, 0, 0, 1, 0]), np.array([0, 0, 0, 1, 0])]
+                new_obs_n, reward_n, done_n, info_n = env.mpe_env.step(list(action_n.values()))
+                # new_obs_n, reward_n, done_n, info_n = env.mpe_env.step(action_n)
+                rew_n = {}
+                for idx in range(agent_number):
+                    rew_n[idx] = reward_n[idx][0]
+                maddpg_agents.store(obs_n, action_n, new_obs_n, rew_n, terminated, truncated)
+                actor_loss = maddpg_agents.train()
+                # for agent_index in range(agent_number):
+                #     score_one_episode += reward_n[agent_index][0]
+                score_one_episode += reward_n[0][0]
+                obs_n = new_obs_n
+            print(actor_loss)
+            with writer.as_default():
+                tf.summary.scalar("score", score_one_episode, 20 * (i_episode + 1))
+            if (i_episode + 1) % 10 == 0:
+                plt.plot(score)  # 绘制波形
+                plt.plot(avg_score)  # 绘制波形
+                # plt.show()
+            score.append(score_one_episode)
+            avg = np.mean(score[-100:])
+            avg_score.append(avg)
+            print(f"i_episode is {i_episode},score_one_episode is {score_one_episode},avg_score is {avg}")
+        plt.show()
+        env.mpe_env.close()
 
     # def test_06_status(self):
     #     status = self.model.get_status()
