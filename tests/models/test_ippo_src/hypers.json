@@ -1,5 +1,5 @@
 {
-  "type": "MADDPG",
+  "type": "IPPO",
   "hypers": {
     "obs_dim": 12,
     "act_num": 8,
@@ -7,7 +7,8 @@
       256,
       256
     ],
-    "lr": 0.001,
+    "actor_lr": 0.001,
+    "critic_lr": 0.001,
     "gamma": 0.95,
     "replay_size": 10000,
     "batch_size": 32,

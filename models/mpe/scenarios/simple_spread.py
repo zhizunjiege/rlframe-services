@@ -1,6 +1,6 @@
 import numpy as np
-from mpe.core import World, Agent, Landmark
-from mpe.scenario import BaseScenario
+from models.mpe.core import World, Agent, Landmark
+from models.mpe.scenario import BaseScenario
 
 
 class Scenario(BaseScenario):

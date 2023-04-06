@@ -4,11 +4,7 @@ from typing import Union, Dict, Optional, List
 import numpy as np
 import tensorflow as tf
 # from .replay.simple_replay import SimpleReplay
-# import tensorflow_probability as tfp
-# import NetworkOptimizer.optimizer_pb2 as pb2
-#
-# from NetworkOptimizer.NeutralNetwork import NeutralNetwork
-# from NetworkOptimizer import ACTIVATE_FUNC, INITIALIZER, OPTIMIZER
+import tensorflow_probability as tfp
 from .base import RLModelBase
 from .replay.simple_replay import SimpleReplay
 
@@ -30,12 +26,12 @@ class IPPO(RLModelBase):
     def __init__(
         self,
         training: bool,
-        # networks: Dict[str, tf.keras.Model],
         *,
         obs_dim: int = 4,
         act_num: int = 2,
         hidden_layers: List[int] = [64, 64],
-        lr: float = 0.001,
+        actor_lr: float = 0.001,
+        critic_lr: float = 0.001,
         gamma: float = 0.9,
         replay_size: int = 1000000,
         batch_size: int = 32,
@@ -49,9 +45,30 @@ class IPPO(RLModelBase):
         action_bound: float = 0.5,
         epsilon: float = 0.2,
     ):
+        """Init a IPPO model.
+                Args:
+                    training: Whether the model is in training mode.
+                    obs_dim: Dimension of observation.
+                    act_num: Number of actions.
+                    hidden_layers: Units of hidden layers.
+                    actor_lr: Actor's learning rate.
+                    critic_lr: Critic's learning rate.
+                    gamma: Discount factor.
+                    replay_size: Maximum size of replay buffer.
+                    batch_size: Size of batch.
+                    start_steps: Number of steps for uniform-random action selection before running real policy.
+                    update_after: Number of env interactions to collect before starting to do gradient descent updates.
+                    update_online_every: Number of env interactions that should elapse between gradient descent updates.
+                    update_target_every: Number of env interactions that should elapse between target network updates.
+                    seed: Seed for random number generators.
+                    agent_num: numbers of agents
+                    noise_range: Noise range that agents act in
+                    action_bound: Allowed range for agent's action
+                    epsilon: Hyper parameter for PPO-cilp
+                """
         super().__init__(training)
-
-        self.lr = lr
+        self.actor_lr = actor_lr
+        self.critic_lr = critic_lr
         self.gamma = gamma
         self.replay_size = replay_size
         self.batch_size = batch_size
@@ -84,17 +101,17 @@ class IPPO(RLModelBase):
             for agent_index in range(self.agent_num):
                 self.__actor_list.append(self.actor_net_builder('actor', obs_dim, hidden_layers, act_num))
                 self.__actor_old_list.append(self.actor_net_builder('actor_old', obs_dim, hidden_layers, act_num))
-                self.__actor_optimizer_list.append(tf.keras.optimizers.Adam(lr))
+                self.__actor_optimizer_list.append(tf.keras.optimizers.Adam(actor_lr))
                 self.__critic_list.append(self.critic_net_builder('critic', obs_dim, hidden_layers, 1))
-                self.__critic_optimizer = tf.keras.optimizers.Adam(lr)
+                self.__critic_optimizer = tf.keras.optimizers.Adam(critic_lr)
                 self.cumulative_reward_buffer[agent_index] = []
             for agent_index in range(self.agent_num):
                 self.replay_buffer_list.append(
                     SimpleReplay(self.__nobs, self.__nact, self.replay_size, dtype=np.float32))
 
-            log_dir = f'logs/gradient_tape/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
-            self.summary_writer = tf.summary.create_file_writer(log_dir)
-            tf.summary.trace_on(graph=True, profiler=True)
+            # log_dir = f'logs/gradient_tape/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
+            # self.summary_writer = tf.summary.create_file_writer(log_dir)
+            # tf.summary.trace_on(graph=True, profiler=True)
         else:
             for agent_index in range(self.agent_num):
                 self.__actor_list.append(self.actor_net_builder('actor', obs_dim, hidden_layers, act_num))
@@ -158,11 +175,11 @@ class IPPO(RLModelBase):
                     self.cal_v_s_(exp_n, v_s_, agent_index)
                     cumulative_reward = self.cumulative_reward_buffer[agent_index]
                     r = np.array(cumulative_reward, np.float32)
-                    # print(r.shape)
                     adv.append(self.cal_adv(exp_n, agent_index, r))
-                self.__apply_gradients(exp_n, adv)
+                loss = self.__apply_gradients(exp_n, adv)
                 # self.__apply_gradients()
                 self._train_steps += 1
+                return loss
                 # tf.Graph().finalize()
                 # with self.summary_writer.as_default():
                 #     with tf.summary.record_if(self._train_steps % 20 == 0):
@@ -210,7 +227,7 @@ class IPPO(RLModelBase):
         outputs = inputs
         for layer in hidden_layers:
             outputs = tf.keras.layers.Dense(units=layer, activation='relu')(outputs)
-        outputs = tf.keras.layers.Dense(units=output_dim, activation='linear')(outputs)
+        outputs = tf.keras.layers.Dense(units=output_dim)(outputs)
         return tf.keras.Model(inputs=inputs, outputs=outputs, name=name)
 
     @tf.function()
@@ -239,9 +256,8 @@ class IPPO(RLModelBase):
                 mu_old, sigma_old = self.__actor_old_list[agent_index](state)
                 # oldpi = tfp.distributions.Normal(mu_old, sigma_old)
                 oldpi = tf.compat.v1.distributions.Normal(mu_old, sigma_old)
-                # ratio = pi.prob(action) / (oldpi.prob(action) + 1e-8)
-                ratio = tf.exp(pi.prob(action) - oldpi.prob(action))
-                # print(ratio.shape, adv[agent_index].shape)
+                ratio = pi.prob(action) / (oldpi.prob(action) + 1e-8)
+                # ratio = tf.exp(pi.prob(action) - oldpi.prob(action))
                 surr = ratio * adv[agent_index]
                 # tf.print(surr.shape)
                 actor_loss = -tf.reduce_mean(
@@ -266,7 +282,7 @@ class IPPO(RLModelBase):
             # discounted_r.reverse()
             # discounted_r = np.array(discounted_r)[:, np.newaxis]
             # self.cumulative_reward_buffer[agent_index].extend(discounted_r)
-
+        return loss
     # return actor_loss, critic_loss, td_errors
 
     def cal_adv(self, exp_n, agent_index, r):
@@ -284,9 +300,7 @@ class IPPO(RLModelBase):
             v_s_ = rew + self.gamma * v_s_
             discounted_r.append(v_s_)
         discounted_r.reverse()
-        # print(discounted_r[0].shape)
         discounted_r = np.array(discounted_r)[:, np.newaxis]
-        # print(discounted_r.shape)
         self.cumulative_reward_buffer[agent_index] = discounted_r
 
     def get_buffer(self) -> Dict[str, Union[int, Dict[str, np.ndarray]]]:

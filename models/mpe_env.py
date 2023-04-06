@@ -3,9 +3,9 @@
 # @Author :  wangshulei
 # @FileName: mpe_env.py
 # @Software: PyCharm
-from mpe.environment import MultiAgentEnv
-import mpe.scenarios as scenarios
-from utils import space_n_to_shape_n
+from models.mpe.environment import MultiAgentEnv
+import models.mpe.scenarios as scenarios
+from models.utils import space_n_to_shape_n
 
 
 class mpe_env:
