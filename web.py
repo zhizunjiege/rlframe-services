@@ -109,14 +109,13 @@ def select(table):
         _, cur = get_db(db_path)
         cur.execute(query, params)
         rows = cur.fetchall()
-        data = []
         for row in rows:
             for col in row:
                 if row[col] is not None:
                     col_type = tables[table][col]['type']
                     if col_type == 'BLOB':
                         row[col] = bytes_to_b64str(row[col])
-        return data
+        return rows
     except sqlite3.Error as e:
         print(f'SQLite3 error: {e.args}')
         print(f'Exception class is: {e.__class__}')
