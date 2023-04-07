@@ -6,7 +6,7 @@ import tensorflow as tf
 # from .replay.simple_replay import SimpleReplay
 import tensorflow_probability as tfp
 from .base import RLModelBase
-from .replay.simple_replay import SimpleReplay
+from .replay.single_replay import SingleReplay
 
 
 class NormalNoise:
@@ -107,7 +107,7 @@ class IPPO(RLModelBase):
                 self.cumulative_reward_buffer[agent_index] = []
             for agent_index in range(self.agent_num):
                 self.replay_buffer_list.append(
-                    SimpleReplay(self.__nobs, self.__nact, self.replay_size, dtype=np.float32))
+                    SingleReplay(self.__nobs, self.__nact, self.replay_size, dtype=np.float32))
 
             # log_dir = f'logs/gradient_tape/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
             # self.summary_writer = tf.summary.create_file_writer(log_dir)
@@ -155,8 +155,8 @@ class IPPO(RLModelBase):
         truncated: bool,
     ):
         for agent_index in range(self.agent_num):
-            self.replay_buffer_list[agent_index].store(states[agent_index], actions[agent_index], reward[agent_index],
-                                                       next_states[agent_index], terminated)
+            self.replay_buffer_list[agent_index].store(states[agent_index], actions[agent_index], next_states[agent_index],
+                                                       reward[agent_index], terminated)
 
     def __del__(self):
         """Close model."""

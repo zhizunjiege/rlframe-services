@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 
 from .base import RLModelBase
-from .replay.simple_replay import SimpleReplay
+from .replay.single_replay import SingleReplay
 
 
 class DoubleDQN(RLModelBase):
@@ -30,6 +30,7 @@ class DoubleDQN(RLModelBase):
         update_online_every: int = 1,
         update_target_every: int = 200,
         seed: Optional[int] = None,
+        dtype: str = 'float32',
     ):
         """Init a DQN model.
 
@@ -55,6 +56,7 @@ class DoubleDQN(RLModelBase):
                 Note: Regardless of how long you wait between updates, the ratio of env steps to gradient steps is locked to 1.
             update_target_every: Number of env interactions that should elapse between target network updates.
             seed: Seed for random number generators.
+            dtype: Data type of model.
         """
         super().__init__(training)
 
@@ -73,6 +75,7 @@ class DoubleDQN(RLModelBase):
         self.update_online_every = update_online_every
         self.update_target_every = update_target_every
         self.seed = seed
+        self.dtype = dtype
 
         if training:
             tf.random.set_seed(seed)
@@ -83,7 +86,7 @@ class DoubleDQN(RLModelBase):
             self.update_target()
 
             self.optimizer = tf.keras.optimizers.Adam(lr)
-            self.replay_buffer = SimpleReplay(obs_dim, 1, replay_size, dtype=np.float32)
+            self.replay_buffer = SingleReplay(obs_dim, 1, replay_size, dtype=dtype)
 
             self.log_dir = f'data/logs/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
             self.summary_writer = tf.summary.create_file_writer(self.log_dir)
@@ -134,7 +137,7 @@ class DoubleDQN(RLModelBase):
         reward: float,
         terminated: bool,
         truncated: bool,
-    ) -> None:
+    ):
         """Store experience repplay data.
 
         Args:
@@ -145,7 +148,7 @@ class DoubleDQN(RLModelBase):
             terminated: Whether a `terminal state` (as defined under the MDP of the task) is reached.
             truncated: Whether a truncation condition outside the scope of the MDP is satisfied.
         """
-        self.replay_buffer.store(states, actions, reward, next_states, terminated)
+        self.replay_buffer.store(states, actions, next_states, reward, terminated)
 
         self._episode_rewards += reward
         if terminated or truncated:
@@ -154,7 +157,7 @@ class DoubleDQN(RLModelBase):
                 tf.summary.scalar('episode_rewards', self._episode_rewards, step=self._episode)
             self._episode_rewards = 0
 
-    def train(self) -> None:
+    def train(self):
         """Train model."""
         if self.replay_buffer.size >= self.update_after and self._react_steps % self.update_online_every == 0:
             for _ in range(self.update_online_every):
@@ -214,7 +217,7 @@ class DoubleDQN(RLModelBase):
             weights['target'] = self.target_net.get_weights()
         return weights
 
-    def set_weights(self, weights: Dict[str, np.ndarray]) -> None:
+    def set_weights(self, weights: Dict[str, np.ndarray]):
         """Set weights of neural networks.
 
         Args:
@@ -234,7 +237,7 @@ class DoubleDQN(RLModelBase):
         """
         return self.replay_buffer.get()
 
-    def set_buffer(self, buffer: Dict[str, Union[int, Dict[str, np.ndarray]]]) -> None:
+    def set_buffer(self, buffer: Dict[str, Union[int, Dict[str, np.ndarray]]]):
         """Set buffer of experience replay.
 
         Args:

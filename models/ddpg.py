@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 
 from .base import RLModelBase
-from .replay.simple_replay import SimpleReplay
+from .replay.single_replay import SingleReplay
 
 
 class NormalNoise:
@@ -74,6 +74,7 @@ class DDPG(RLModelBase):
         update_after: int = 64,
         update_online_every: int = 1,
         seed: Optional[int] = None,
+        dtype: str = 'float32',
     ):
         super().__init__(training)
 
@@ -96,6 +97,7 @@ class DDPG(RLModelBase):
         self.update_after = update_after
         self.update_online_every = update_online_every
         self.seed = seed
+        self.dtype = dtype
 
         if training:
             tf.random.set_seed(self.seed)
@@ -111,7 +113,7 @@ class DDPG(RLModelBase):
             self.critic_optimizer = tf.keras.optimizers.Adam(lr_critic)
             self.update_target_weights(self.critic, self.critic_target, 1)
 
-            self.replay_buffer = SimpleReplay(obs_dim, act_dim, replay_size, dtype=np.float32)
+            self.replay_buffer = SingleReplay(obs_dim, act_dim, replay_size, dtype=dtype)
 
             if noise_type == 'normal':
                 self.noise = NormalNoise(sigma=noise_sigma, shape=(act_dim,))
@@ -154,7 +156,7 @@ class DDPG(RLModelBase):
         terminated: bool,
         truncated: bool,
     ):
-        self.replay_buffer.store(states, actions, reward, next_states, terminated)
+        self.replay_buffer.store(states, actions, next_states, reward, terminated)
 
         self._episode_rewards += reward
         if terminated or truncated:
@@ -255,7 +257,7 @@ class DDPG(RLModelBase):
         """
         return self.replay_buffer.get()
 
-    def set_buffer(self, buffer: Dict[str, Union[int, Dict[str, np.ndarray]]]) -> None:
+    def set_buffer(self, buffer: Dict[str, Union[int, Dict[str, np.ndarray]]]):
         """Set buffer of experience replay.
 
         Args:
