@@ -88,7 +88,7 @@ class MultiReplay:
             term=self.term_buf[idxs],
         )
 
-    def get(self) -> Dict[str, Union[int, Dict[str, Union[np.ndarray, List[np.ndarray]]]]]:
+    def get(self) -> Dict[str, Union[int, str, Dict[str, Union[np.ndarray, List[np.ndarray]]]]]:
         """Get the internal state of the replay buffer.
 
         Returns:
@@ -112,7 +112,7 @@ class MultiReplay:
         }
         return state
 
-    def set(self, state: Dict[str, Union[int, Dict[str, Union[np.ndarray, List[np.ndarray]]]]]):
+    def set(self, state: Dict[str, Union[int, str, Dict[str, Union[np.ndarray, List[np.ndarray]]]]]):
         """Set the internal state of the replay buffer.
 
         Args:

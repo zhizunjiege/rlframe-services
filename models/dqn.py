@@ -102,7 +102,7 @@ class DQN(RLModelBase):
             self.online_net = self.net_builder('online', obs_dim, hidden_layers, act_num)
 
     def __del__(self):
-        """Close DQN model."""
+        """Close model."""
         ...
 
     def react(self, states: np.ndarray) -> int:
@@ -203,7 +203,7 @@ class DQN(RLModelBase):
     def update_target(self):
         self.target_net.set_weights(self.online_net.get_weights())
 
-    def get_weights(self) -> Dict[str, np.ndarray]:
+    def get_weights(self) -> Dict[str, List[np.ndarray]]:
         """Get weights of neural networks.
 
         Returns:
@@ -216,7 +216,7 @@ class DQN(RLModelBase):
             weights['target'] = self.target_net.get_weights()
         return weights
 
-    def set_weights(self, weights: Dict[str, np.ndarray]):
+    def set_weights(self, weights: Dict[str, List[np.ndarray]]):
         """Set weights of neural networks.
 
         Args:
@@ -228,7 +228,7 @@ class DQN(RLModelBase):
             if 'target' in weights:
                 self.target_net.set_weights(weights['target'])
 
-    def get_buffer(self) -> Dict[str, Union[int, Dict[str, np.ndarray]]]:
+    def get_buffer(self) -> Dict[str, Union[int, str, Dict[str, np.ndarray]]]:
         """Get buffer of experience replay.
 
         Returns:
@@ -236,7 +236,7 @@ class DQN(RLModelBase):
         """
         return self.replay_buffer.get()
 
-    def set_buffer(self, buffer: Dict[str, Union[int, Dict[str, np.ndarray]]]):
+    def set_buffer(self, buffer: Dict[str, Union[int, str, Dict[str, np.ndarray]]]):
         """Set buffer of experience replay.
 
         Args:

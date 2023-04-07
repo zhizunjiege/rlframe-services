@@ -69,7 +69,7 @@ class SingleReplay:
             term=self.term_buf[idxs],
         )
 
-    def get(self) -> Dict[str, Union[int, Dict[str, np.ndarray]]]:
+    def get(self) -> Dict[str, Union[int, str, Dict[str, np.ndarray]]]:
         """Get the internal state of the replay buffer.
 
         Returns:
@@ -92,7 +92,7 @@ class SingleReplay:
         }
         return state
 
-    def set(self, state: Dict[str, Union[int, Dict[str, np.ndarray]]]):
+    def set(self, state: Dict[str, Union[int, str, Dict[str, np.ndarray]]]):
         """Set the internal state of the replay buffer.
 
         Args:

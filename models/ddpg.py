@@ -76,6 +76,35 @@ class DDPG(RLModelBase):
         seed: Optional[int] = None,
         dtype: str = 'float32',
     ):
+        """Init a DDPG model.
+
+        Args:
+            training: Whether the model is in training mode.
+
+            obs_dim: Dimension of observation.
+            act_dim: Dimension of actions.
+            hidden_layers: Units of hidden layers.
+            lr_actor: Learning rate of actor network.
+            lr_critic: Learning rate of critic network.
+            gamma: Discount factor.
+            tau: Soft update factor.
+            replay_size: Maximum size of replay buffer.
+            batch_size: Size of batch.
+            noise_type: Type of noise, `normal` or `ou`.
+            noise_sigma: Sigma of noise.
+            noise_theta: Theta of noise, `ou` only.
+            noise_dt: Delta time of noise, `ou` only.
+            noise_max: Maximum value of noise.
+            noise_min: Minimum value of noise.
+            noise_decay: Decay rate of noise.
+                Note: Noise decayed exponentially, so always between 0 and 1.
+            update_after: Number of env interactions to collect before starting to do gradient descent updates.
+                Note: Ensures replay buffer is full enough for useful updates.
+            update_online_every: Number of env interactions that should elapse between gradient descent updates.
+                Note: Regardless of how long you wait between updates, the ratio of env steps to gradient steps is locked to 1.
+            seed: Seed for random number generators.
+            dtype: Data type of model.
+        """
         super().__init__(training)
 
         self.obs_dim = obs_dim
@@ -137,7 +166,7 @@ class DDPG(RLModelBase):
         """Close model."""
         ...
 
-    def react(self, states: np.ndarray):
+    def react(self, states: np.ndarray) -> np.ndarray:
         states = states[np.newaxis, :]
         logits = self.actor(states, training=False)
         actions = logits[0]
@@ -150,7 +179,7 @@ class DDPG(RLModelBase):
     def store(
         self,
         states: np.ndarray,
-        actions,
+        actions: np.ndarray,
         next_states: np.ndarray,
         reward: float,
         terminated: bool,
@@ -228,7 +257,7 @@ class DDPG(RLModelBase):
         self.update_target_weights(self.critic, self.critic_target, self.tau)
         return actor_loss, critic_loss
 
-    def get_weights(self):
+    def get_weights(self) -> Dict[str, List[np.ndarray]]:
         weights = {
             'actor': self.actor.get_weights(),
         }
@@ -238,7 +267,7 @@ class DDPG(RLModelBase):
             weights['critic_target'] = self.critic_target.get_weights()
         return weights
 
-    def set_weights(self, weights):
+    def set_weights(self, weights: Dict[str, List[np.ndarray]]):
         if 'actor' in weights:
             self.actor.set_weights(weights['actor'])
         if self.training:
@@ -249,7 +278,7 @@ class DDPG(RLModelBase):
             if 'critic_target' in weights:
                 self.critic_target.set_weights(weights['critic_target'])
 
-    def get_buffer(self) -> Dict[str, Union[int, Dict[str, np.ndarray]]]:
+    def get_buffer(self) -> Dict[str, Union[int, str, Dict[str, np.ndarray]]]:
         """Get buffer of experience replay.
 
         Returns:
@@ -257,7 +286,7 @@ class DDPG(RLModelBase):
         """
         return self.replay_buffer.get()
 
-    def set_buffer(self, buffer: Dict[str, Union[int, Dict[str, np.ndarray]]]):
+    def set_buffer(self, buffer: Dict[str, Union[int, str, Dict[str, np.ndarray]]]):
         """Set buffer of experience replay.
 
         Args:
