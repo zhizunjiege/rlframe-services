@@ -74,7 +74,7 @@ class DQNModelTestCase(unittest.TestCase):
         model = DQN(
             training=True,
             obs_dim=env.observation_space.shape[0],
-            act_num=env.action_space.shape[0],
+            act_num=env.action_space.n,
             hidden_layers=[128],
             lr=0.01,
             gamma=0.99,
