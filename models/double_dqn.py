@@ -138,13 +138,13 @@ class DoubleDQN(RLModelBase):
         terminated: bool,
         truncated: bool,
     ):
-        """Store experience repplay data.
+        """Store experience replay data.
 
         Args:
             states: States of enviroment.
             actions: Actions of model.
             next_states: Next states of enviroment.
-            reward: Reward.
+            reward: Reward of enviroment.
             terminated: Whether a `terminal state` (as defined under the MDP of the task) is reached.
             truncated: Whether a truncation condition outside the scope of the MDP is satisfied.
         """
@@ -233,7 +233,7 @@ class DoubleDQN(RLModelBase):
         """Get buffer of experience replay.
 
         Returns:
-            Internel state of the simple replay buffer.
+            Internel state of the replay buffer.
         """
         return self.replay_buffer.get()
 
@@ -241,7 +241,7 @@ class DoubleDQN(RLModelBase):
         """Set buffer of experience replay.
 
         Args:
-            buffer: Internel state of the simple replay buffer.
+            buffer: Internel state of the replay buffer.
         """
         self.replay_buffer.set(buffer)
         self.replay_size = buffer['max_size']

@@ -167,6 +167,14 @@ class DDPG(RLModelBase):
         ...
 
     def react(self, states: np.ndarray) -> np.ndarray:
+        """Get action.
+
+        Args:
+            states: States of enviroment.
+
+        Returns:
+            Action.
+        """
         states = states[np.newaxis, :]
         logits = self.actor(states, training=False)
         actions = logits[0]
@@ -185,6 +193,16 @@ class DDPG(RLModelBase):
         terminated: bool,
         truncated: bool,
     ):
+        """Store experience replay data.
+
+        Args:
+            states: States of enviroment.
+            actions: Actions of model.
+            next_states: Next states of enviroment.
+            reward: Reward of enviroment.
+            terminated: Whether a `terminal state` (as defined under the MDP of the task) is reached.
+            truncated: Whether a truncation condition outside the scope of the MDP is satisfied.
+        """
         self.replay_buffer.store(states, actions, next_states, reward, terminated)
 
         self._episode_rewards += reward
@@ -195,6 +213,7 @@ class DDPG(RLModelBase):
             self._episode_rewards = 0
 
     def train(self):
+        """Train model."""
         if self.replay_buffer.size >= self.update_after and self._react_steps % self.update_online_every == 0:
             for _ in range(self.update_online_every):
                 batch = self.replay_buffer.sample(self.batch_size)
@@ -258,6 +277,11 @@ class DDPG(RLModelBase):
         return actor_loss, critic_loss
 
     def get_weights(self) -> Dict[str, List[np.ndarray]]:
+        """Get weights of neural networks.
+
+        Returns:
+            Weights of `actor` and `actor_target/critic/critic_target`(if exists).
+        """
         weights = {
             'actor': self.actor.get_weights(),
         }
@@ -268,6 +292,11 @@ class DDPG(RLModelBase):
         return weights
 
     def set_weights(self, weights: Dict[str, List[np.ndarray]]):
+        """Set weights of neural networks.
+
+        Args:
+            weights: Weights of `actor` and `actor_target/critic/critic_target`(if exists).
+        """
         if 'actor' in weights:
             self.actor.set_weights(weights['actor'])
         if self.training:
@@ -282,7 +311,7 @@ class DDPG(RLModelBase):
         """Get buffer of experience replay.
 
         Returns:
-            Internel state of the simple replay buffer.
+            Internel state of the replay buffer.
         """
         return self.replay_buffer.get()
 
@@ -290,7 +319,7 @@ class DDPG(RLModelBase):
         """Set buffer of experience replay.
 
         Args:
-            buffer: Internel state of the simple replay buffer.
+            buffer: Internel state of the replay buffer.
         """
         self.replay_buffer.set(buffer)
         self.replay_size = buffer['max_size']
