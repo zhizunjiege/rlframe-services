@@ -30,6 +30,8 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         self.oafunc = None
         self.rfunc = None
 
+        self.pending_training = None
+
     def check_state(self, context):
         if self.state == types_pb2.ServiceState.State.UNINITED:
             context.abort(grpc.StatusCode.FAILED_PRECONDITION, 'Service not inited')
