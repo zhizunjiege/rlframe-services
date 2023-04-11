@@ -1,7 +1,11 @@
 {
   "obs_dim": 12,
   "act_dim": 8,
-  "hidden_layers": [
+  "hidden_layers_actor": [
+    256,
+    256
+  ],
+  "hidden_layers_critic": [
     256,
     256
   ],

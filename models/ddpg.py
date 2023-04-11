@@ -57,7 +57,8 @@ class DDPG(RLModelBase):
         *,
         obs_dim: int = 4,
         act_dim: int = 2,
-        hidden_layers: List[int] = [64, 64],
+        hidden_layers_actor: List[int] = [64, 64],
+        hidden_layers_critic: List[int] = [64, 64],
         lr_actor: float = 0.0001,
         lr_critic: float = 0.001,
         gamma: float = 0.99,
@@ -69,8 +70,8 @@ class DDPG(RLModelBase):
         noise_theta: Union[float, Iterable[float]] = 0.15,
         noise_dt: float = 0.01,
         noise_max: float = 1.0,
-        noise_min: float = 0.02,
-        noise_decay: float = 0.9,
+        noise_min: float = 1.0,
+        noise_decay: float = 1.0,
         update_after: int = 64,
         update_online_every: int = 1,
         seed: Optional[int] = None,
@@ -83,7 +84,8 @@ class DDPG(RLModelBase):
 
             obs_dim: Dimension of observation.
             act_dim: Dimension of actions.
-            hidden_layers: Units of hidden layers.
+            hidden_layers_actor: Units of actor hidden layers.
+            hidden_layers_critic: Units of critic hidden layers.
             lr_actor: Learning rate of actor network.
             lr_critic: Learning rate of critic network.
             gamma: Discount factor.
@@ -109,7 +111,8 @@ class DDPG(RLModelBase):
 
         self.obs_dim = obs_dim
         self.act_dim = act_dim
-        self.hidden_layers = hidden_layers
+        self.hidden_layers_actor = hidden_layers_actor
+        self.hidden_layers_critic = hidden_layers_critic
         self.lr_actor = lr_actor
         self.lr_critic = lr_critic
         self.gamma = gamma
@@ -132,15 +135,15 @@ class DDPG(RLModelBase):
             tf.random.set_seed(self.seed)
             np.random.seed(self.seed)
 
-            self.actor = self.actor_net_builder('actor', obs_dim, hidden_layers, act_dim)
-            self.actor_target = self.actor_net_builder('actor_target', obs_dim, hidden_layers, act_dim)
+            self.actor = self.actor_net_builder('actor', obs_dim, hidden_layers_actor, act_dim)
+            self.actor_target = self.actor_net_builder('actor_target', obs_dim, hidden_layers_actor, act_dim)
             self.actor_optimizer = tf.keras.optimizers.Adam(lr_actor)
-            self.update_target_weights(self.actor, self.actor_target, 1)
+            self.update_target_weights(self.actor.weights, self.actor_target.weights, 1)
 
-            self.critic = self.critic_net_builder('critic', obs_dim + act_dim, hidden_layers, 1)
-            self.critic_target = self.critic_net_builder('critic_target', obs_dim + act_dim, hidden_layers, 1)
+            self.critic = self.critic_net_builder('critic', obs_dim + act_dim, hidden_layers_critic, 1)
+            self.critic_target = self.critic_net_builder('critic_target', obs_dim + act_dim, hidden_layers_critic, 1)
             self.critic_optimizer = tf.keras.optimizers.Adam(lr_critic)
-            self.update_target_weights(self.critic, self.critic_target, 1)
+            self.update_target_weights(self.critic.weights, self.critic_target.weights, 1)
 
             self.replay_buffer = SingleReplay(obs_dim, act_dim, replay_size, dtype=dtype)
 
@@ -160,7 +163,7 @@ class DDPG(RLModelBase):
             self._episode_rewards = 0
             self._graph_exported = False
         else:
-            self.actor = self.actor_net_builder('actor', obs_dim, hidden_layers, act_dim)
+            self.actor = self.actor_net_builder('actor', obs_dim, hidden_layers_actor, act_dim)
 
     def __del__(self):
         """Close model."""
@@ -249,9 +252,7 @@ class DDPG(RLModelBase):
         return tf.keras.Model(inputs=inputs, outputs=outputs, name=name)
 
     @tf.function
-    def update_target_weights(self, model, target_model, tau):
-        weights = model.weights
-        target_weights = target_model.weights
+    def update_target_weights(self, weights, target_weights, tau):
         [a.assign(a * (1 - tau) + b * tau) for a, b in zip(target_weights, weights)]
 
     @tf.function
@@ -272,8 +273,8 @@ class DDPG(RLModelBase):
         actor_grads = tape.gradient(actor_loss, self.actor.trainable_variables)
         self.actor_optimizer.apply_gradients(zip(actor_grads, self.actor.trainable_variables))
 
-        self.update_target_weights(self.actor, self.actor_target, self.tau)
-        self.update_target_weights(self.critic, self.critic_target, self.tau)
+        self.update_target_weights(self.actor.weights, self.actor_target.weights, self.tau)
+        self.update_target_weights(self.critic.weights, self.critic_target.weights, self.tau)
         return actor_loss, critic_loss
 
     def get_weights(self) -> Dict[str, List[np.ndarray]]:

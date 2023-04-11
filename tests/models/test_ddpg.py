@@ -78,7 +78,8 @@ class DDPGModelTestCase(unittest.TestCase):
             training=True,
             obs_dim=env.observation_space.shape[0],
             act_dim=env.action_space.shape[0],
-            hidden_layers=[256, 256],
+            hidden_layers_actor=[256, 256],
+            hidden_layers_critic=[256, 256],
             lr_actor=0.0001,
             lr_critic=0.001,
             gamma=0.9,
@@ -100,8 +101,8 @@ class DDPGModelTestCase(unittest.TestCase):
             rew_sum = 0
             states, _ = env.reset(seed=0)
             for step in range(200):
-                actions = 2 * model.react(states=states)
-                next_states, reward, terminated, truncated, _ = env.step(actions)
+                actions = model.react(states=states)
+                next_states, reward, terminated, truncated, _ = env.step(2 * actions)
                 model.store(
                     states=states,
                     actions=actions,
