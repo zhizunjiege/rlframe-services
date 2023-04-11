@@ -1,24 +1,52 @@
 from datetime import datetime
-from typing import Union, Dict, Optional, List
+from typing import Dict, Iterable, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
-# from .replay.simple_replay import SimpleReplay
-# import tensorflow_probability as tfp
+
 from models.base import RLModelBase
-from models.replay.complex_replay import ComplexReplay
+from models.replay.multi_replay import MultiReplay
 
 
 class NormalNoise:
-    def __init__(self, mu, sigma):
+
+    def __init__(
+        self,
+        mu: Union[float, Iterable[float]] = 0.0,
+        sigma: Union[float, Iterable[float]] = 1.0,
+        shape: Optional[Union[int, Tuple[int, ...]]] = None,
+    ):
         self.mu = mu
         self.sigma = sigma
+        self.shape = shape
 
     def __call__(self):
-        return np.random.normal(scale=self.sigma, size=self.mu.shape)
+        return np.random.normal(loc=self.mu, scale=self.sigma, size=self.shape)
 
-    def reset(self):
-        pass
+
+class OrnsteinUhlenbeckNoise:
+
+    def __init__(
+        self,
+        mu: Union[float, Iterable[float]] = 0.0,
+        sigma: Union[float, Iterable[float]] = 0.2,
+        theta: Union[float, Iterable[float]] = 0.15,
+        dt: float = 0.01,
+        shape: Optional[Union[int, Tuple[int, ...]]] = None,
+    ):
+        self.mu = mu
+        self.sigma = sigma
+        self.theta = theta
+        self.dt = dt
+
+        self.x = np.random.normal(loc=mu, scale=sigma, size=shape)
+
+        self.shape = self.x.shape
+
+    def __call__(self):
+        self.x = self.x + self.theta * (self.mu - self.x) * self.dt + self.sigma * np.sqrt(
+            self.dt) * np.random.normal(size=self.shape)
+        return self.x
 
 
 class MADDPG(RLModelBase):
@@ -27,328 +55,333 @@ class MADDPG(RLModelBase):
         self,
         training: bool,
         *,
+        agent_num: int = 2,
         obs_dim: int = 4,
-        act_num: int = 2,
-        hidden_layers: List[int] = [64, 64],
-        actor_lr: float = 0.001,
-        critic_lr: float = 0.001,
+        act_dim: int = 2,
+        hidden_layers_actor: List[int] = [64, 64],
+        hidden_layers_critic: List[int] = [64, 64],
+        lr_actor: float = 0.0001,
+        lr_critic: float = 0.001,
         gamma: float = 0.9,
+        tau: float = 0.001,
         replay_size: int = 1000000,
         batch_size: int = 32,
-        start_steps: int = 0,
+        noise_type: Literal['normal', 'ou'] = 'ou',
+        noise_sigma: Union[float, Iterable[float]] = 0.2,
+        noise_theta: Union[float, Iterable[float]] = 0.15,
+        noise_dt: float = 0.01,
+        noise_max: float = 1.0,
+        noise_min: float = 1.0,
+        noise_decay: float = 1.0,
         update_after: int = 32,
         update_online_every: int = 1,
-        update_target_every: int = 200,
         seed: Optional[int] = None,
-        tau=0.001,
-        agent_num: int = 4,
-        noise_range: float = 0.1,
-        action_span: float = 0.5
+        dtype: str = 'float32',
     ):
         """Init a MADDPG model.
+
         Args:
             training: Whether the model is in training mode.
+
+            agent_num: Number of agents.
             obs_dim: Dimension of observation.
-            act_num: Number of actions.
-            hidden_layers: Units of hidden layers.
-            actor_lr: Actor's learning rate.
-            critic_lr: Critic's learning rate.
+            act_dim: Dimension of actions.
+            hidden_layers_actor: Units of actor hidden layers.
+            hidden_layers_critic: Units of critic hidden layers.
+            lr_actor: Learning rate of actor network.
+            lr_critic: Learning rate of critic network.
             gamma: Discount factor.
+            tau: Soft update factor.
             replay_size: Maximum size of replay buffer.
             batch_size: Size of batch.
-            start_steps: Number of steps for uniform-random action selection before running real policy.
+            noise_type: Type of noise, `normal` or `ou`.
+            noise_sigma: Sigma of noise.
+            noise_theta: Theta of noise, `ou` only.
+            noise_dt: Delta time of noise, `ou` only.
+            noise_max: Maximum value of noise.
+            noise_min: Minimum value of noise.
+            noise_decay: Decay rate of noise.
+                Note: Noise decayed exponentially, so always between 0 and 1.
             update_after: Number of env interactions to collect before starting to do gradient descent updates.
+                Note: Ensures replay buffer is full enough for useful updates.
             update_online_every: Number of env interactions that should elapse between gradient descent updates.
-            update_target_every: Number of env interactions that should elapse between target network updates.
+                Note: Regardless of how long you wait between updates, the ratio of env steps to gradient steps is locked to 1.
             seed: Seed for random number generators.
-            tau: Parameter for soft-update
-            agent_num: numbers of agents
-            noise_range: Noise range that agents act in
-            action_span: Allowed range for agent's action
+            dtype: Data type of model.
         """
         super().__init__(training)
 
-        self.actor_lr = actor_lr
-        self.critic_lr = critic_lr
+        self.agent_num = agent_num
+        self.obs_dim = obs_dim
+        self.act_dim = act_dim
+        self.hidden_layers_actor = hidden_layers_actor
+        self.hidden_layers_critic = hidden_layers_critic
+        self.lr_actor = lr_actor
+        self.lr_critic = lr_critic
         self.gamma = gamma
+        self.tau = tau
         self.replay_size = replay_size
         self.batch_size = batch_size
-        self.start_steps = start_steps
+        self.noise_type = noise_type
+        self.noise_sigma = noise_sigma
+        self.noise_theta = noise_theta
+        self.noise_dt = noise_dt
+        self.noise_max = noise_max
+        self.noise_min = noise_min
+        self.noise_decay = noise_decay
         self.update_after = update_after
         self.update_online_every = update_online_every
-        self.update_target_every = update_target_every
-        self.gamma = gamma
         self.seed = seed
-        self.tau = tau
-        self._react_steps = 0
-        self._train_steps = 0
+        self.dtype = dtype
 
-        self.agent_num = agent_num
-        self.noise_range = noise_range
-        self.__nobs = obs_dim
-        self.__nact = act_num
-        self.__actor_list = []
-        self.__actor_target_list = []
-        self.__critic_list = []
-        self.__critic_target_list = []
-        self.__actor_optimizer_list = []
-        self.__critic_optimizer_list = []
-        self.replay_buffer_list = []
-        self.action_span = action_span
         if training:
             tf.random.set_seed(self.seed)
             np.random.seed(self.seed)
 
-            for agent_index in range(self.agent_num):
-                # self.__actor_list.append(networks['actor'])
-                # self.__actor_target_list.append(networks['actor_target'])
-                self.__actor_list.append(self.actor_net_builder('actor', obs_dim, hidden_layers, act_num,trainable=True))
-                self.__actor_target_list.append(self.actor_net_builder('actor_target', obs_dim, hidden_layers, act_num, trainable=False))
-                self.__actor_optimizer_list.append(tf.keras.optimizers.Adam(self.actor_lr))
+            self.actor_list = []
+            self.actor_target_list = []
+            self.critic_list = []
+            self.critic_target_list = []
+            self.noise_list = []
+            for i in range(agent_num):
+                self.actor_list.append(self.actor_net_builder(f'actor_{i}', trainable=True))
+                self.actor_target_list.append(self.actor_net_builder(f'actor_target_{i}', trainable=False))
+                self.update_target_weights(self.actor_list[i].weights, self.actor_target_list[i].weights, 1)
 
-                self.__update_target_weights(self.__actor_list[agent_index], self.__actor_target_list[agent_index],
-                                             self.tau)
+                self.critic_list.append(self.critic_net_builder(f'critic_{i}', trainable=True))
+                self.critic_target_list.append(self.critic_net_builder(f'critic_target_{i}', trainable=False))
+                self.update_target_weights(self.critic_list[i].weights, self.critic_target_list[i].weights, 1)
 
-                # self.__critic_list.append(networks['critic'])
-                # self.__critic_target_list.append(networks['critic_target'])
-                self.__critic_list.append(
-                    self.critic_net_builder('critic', self.agent_num * (obs_dim + act_num), hidden_layers, 1, trainable=True))
-                self.__critic_target_list.append(
-                    self.critic_net_builder('critic_target', self.agent_num * (obs_dim + act_num), hidden_layers, 1, trainable=False))
-                self.__critic_optimizer = tf.keras.optimizers.Adam(self.critic_lr)
-                self.__update_target_weights(self.__critic_list[agent_index], self.__critic_target_list[agent_index],
-                                             self.tau)
+                if noise_type == 'normal':
+                    self.noise_list.append(NormalNoise(sigma=noise_sigma, shape=(act_dim,)))
+                else:
+                    self.noise_list.append(
+                        OrnsteinUhlenbeckNoise(sigma=noise_sigma, theta=noise_theta, dt=noise_dt, shape=(act_dim,)))
 
-            for agent_index in range(self.agent_num):
-                self.replay_buffer_list.append(
-                    ComplexReplay(self.__nobs, self.__nact, self.replay_size, dtype=np.float32))
+            self.replay_buffer = MultiReplay(agent_num, obs_dim, act_dim, replay_size, dtype=dtype)
 
-            # log_dir = f'logs/gradient_tape/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
-            # self.summary_writer = tf.summary.create_file_writer(log_dir)
-            # self.writer = tf.summary.create_file_writer('board/maddpg_logs')
-            # tf.summary.trace_on(graph=True, profiler=True)
+            self.log_dir = f'data/logs/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
+            self.summary_writer = tf.summary.create_file_writer(self.log_dir)
+            tf.summary.trace_on(graph=True, profiler=False)
 
+            self._noise_level = noise_max
+            self._react_steps = 0
+            self._train_steps = 0
+            self._episode = 0
+            self._episode_rewards = [0] * agent_num
+            self._graph_exported = False
         else:
-            for agent_index in range(self.agent_num):
-                self.__actor_list.append(self.actor_net_builder('actor', obs_dim, hidden_layers, act_num, trainable=True))
-                self.__actor_target_list = \
-                    self.__critic_target_list = self.__critic_list = None
-                self.replay_buffer_list = None
-
-    def react(self, states: Dict[int, np.ndarray]):
-        action_n = {}
-        if self.training:
-            for agent_index in range(self.agent_num):
-                s = states[agent_index][np.newaxis, :]
-                logits = self.__actor_list[agent_index](s)
-                # u = tfp.distributions.Normal(logits[0], self.noise_range)
-                # action = u.sample(1) #
-                # action_n[agent_index] = np.squeeze(action, axis=0)
-                # a = tf.clip_by_value(a, -self.action_bound + self.action_shift, self.action_bound + self.action_shift)
-                noise = NormalNoise(logits[0], self.noise_range)
-                action = logits[0] + noise()
-                action = tf.clip_by_value(action, clip_value_min=-self.action_span, clip_value_max=self.action_span)
-                action_n[agent_index] = action
-
-            self._react_steps += 1
-        else:
-            for agent_index in range(self.agent_num):
-                s = states[agent_index][np.newaxis, :]
-                logits = self.__actor_list[agent_index](s)
-                action = logits[0]
-                action_n[agent_index] = np.squeeze(action, axis=0)
-            self._react_steps += 1
-        return action_n
-
-    def store(
-        self,
-        states: Dict[int, np.ndarray],
-        actions,
-        next_states: Dict[int, np.ndarray],
-        reward: Dict[int, float],
-        terminated: bool,
-        truncated: bool,
-    ):
-        for agent_index in range(self.agent_num):
-            self.replay_buffer_list[agent_index].store(states[agent_index], actions[agent_index], reward[agent_index],
-                                                       next_states[agent_index], terminated)
+            for i in range(agent_num):
+                self.actor_list.append(self.actor_net_builder(f'actor_{i}', trainable=False))
 
     def __del__(self):
         """Close model."""
         ...
 
-    def train(self):
+    def react(self, states: Dict[int, np.ndarray]) -> Dict[int, np.ndarray]:
+        """Get action.
 
-        if self.replay_buffer_list[0].size >= self.update_after and self._react_steps % self.update_online_every == 0:
-            for _ in range(self.update_online_every):
-                exp_n = []
-                idxs = np.random.randint(0, self.replay_buffer_list[0].size, size=self.batch_size)
-                for agent_index in range(self.agent_num):
-                    exp = self.replay_buffer_list[agent_index].sample(idxs)
-                    exp_n.append(exp)
-                # batch = self.agent_list[0].replay_buffer.sample(self.batch_size)
-                actor_loss = self.__apply_gradients(exp_n)
-                self._train_steps += 1
-                # with self.writer.as_default():
-                #     with tf.summary.record_if(self._train_steps % 20 == 0):
-                #         tf.summary.scalar('actor_loss', actor_loss, step=self._train_steps)
-                #         tf.summary.scalar('critic_loss', critic_loss, step=self._train_steps)
-                #         tf.summary.scalar('td_error', tf.reduce_mean(tf.abs(td_errors)), step=self._train_steps)
-                return actor_loss
+        Args:
+            states: Dict of key for agent index and value for states of enviroment.
 
-    def get_weights(self):
-        weights = {
-            'actor': [self.__actor_list[agent_index].get_weights() for agent_index in range(self.agent_num)],
-        }
+        Returns:
+            Dict of key for agent index and value for actions of model.
+        """
+        action_n = {}
         if self.training:
-            weights['actor_target'] = [self.__actor_target_list[agent_index].get_weights() for agent_index in
-                                       range(self.agent_num)]
-        return weights
+            for i in range(self.agent_num):
+                s = states[i][np.newaxis, :]
+                logits = self.actor_list[i](s, training=False)
+                noise = self._noise_level * self.noise_list[i]()
+                action = logits[0] + noise
+                action = np.clip(action, -1, 1)
+                action_n[i] = action
+            self._react_steps += 1
+            self._noise_level = max(self.noise_min, self._noise_level * self.noise_decay)
+        else:
+            for i in range(self.agent_num):
+                s = states[i][np.newaxis, :]
+                logits = self.actor_list[i](s, training=False)
+                action = logits[0]
+                action_n[i] = np.squeeze(action, axis=0)
+        return action_n
 
-    def set_weights(self, weights):
-        for agent_index in range(self.agent_num):
-            self.__actor_list[agent_index].set_weights(weights['actor'][agent_index])
-        if self.training and 'actor_target' in weights:
-            for agent_index in range(self.agent_num):
-                self.__actor_target_list[agent_index].set_weights(weights['actor_target'][agent_index])
+    def sorted_values(self, d):
+        return [v for _, v in sorted(d.items())]
 
-    def actor_net_builder(self, name, input_dim, hidden_layers, output_dim, trainable):
-        inputs = tf.keras.Input(shape=(input_dim,))
+    def store(
+        self,
+        states: Dict[int, np.ndarray],
+        actions: Dict[int, np.ndarray],
+        next_states: Dict[int, np.ndarray],
+        reward: Dict[int, float],
+        terminated: bool,
+        truncated: bool,
+    ):
+        """Store experience replay data.
+
+        Args:
+            states: Dict of key for agent index and value for states of enviroment.
+            actions: Dict of key for agent index and value for actions of model.
+            next_states: Dict of key for agent index and value for next states of enviroment.
+            reward: Dict of key for agent index and value for reward of enviroment.
+            terminated: Whether a `terminal state` (as defined under the MDP of the task) is reached.
+            truncated: Whether a truncation condition outside the scope of the MDP is satisfied.
+        """
+        self.replay_buffer.store(
+            self.sorted_values(states),
+            self.sorted_values(actions),
+            self.sorted_values(next_states),
+            self.sorted_values(reward),
+            terminated,
+        )
+
+        for i in range(self.agent_num):
+            self._episode_rewards[i] += reward[i]
+
+        if terminated or truncated:
+            self._episode += 1
+            with self.summary_writer.as_default():
+                for i in range(self.agent_num):
+                    tf.summary.scalar(
+                        f'episode_rewards_agent_{i}',
+                        self._episode_rewards[i],
+                        step=self._episode,
+                    )
+                tf.summary.scalar(
+                    'episode_rewards_total',
+                    sum(self._episode_rewards),
+                    step=self._episode,
+                )
+            self._episode_rewards = [0] * self.agent_num
+
+    def train(self):
+        """Train model."""
+        if self.replay_buffer.size >= self.update_after and self._react_steps % self.update_online_every == 0:
+            for _ in range(self.update_online_every):
+                batch = self.replay_buffer.sample(self.batch_size)
+                loss_actors, loss_critics = self.apply_gradients(
+                    batch['obs1'],
+                    batch['acts'],
+                    batch['obs2'],
+                    batch['rews'],
+                    batch['term'],
+                )
+                self._train_steps += 1
+                with self.summary_writer.as_default():
+                    for i in range(self.agent_num):
+                        tf.summary.scalar(f'loss_actor_agent_{i}', loss_actors[i], step=self._train_steps)
+                        tf.summary.scalar(f'loss_critic_agent_{i}', loss_critics[i], step=self._train_steps)
+                    if not self._graph_exported:
+                        tf.summary.trace_export(name='model', step=self._train_steps, profiler_outdir=self.log_dir)
+                        self._graph_exported = True
+
+    def actor_net_builder(self, name, trainable):
+        inputs = tf.keras.Input(shape=(self.obs_dim,))
         outputs = inputs
-        for layer in hidden_layers:
+        for layer in self.hidden_layers_actor:
             outputs = tf.keras.layers.Dense(units=layer, activation='relu')(outputs)
-        outputs = tf.keras.layers.Dense(units=output_dim, activation='tanh')(outputs)
-        actor_output = tf.keras.layers.Lambda(lambda x: x * np.array(self.action_span))(outputs)
-        actor_model = tf.keras.Model(inputs=inputs, outputs=actor_output, name=name, trainable=trainable)
-        actor_model.compile(optimizer=tf.keras.optimizers.Adam(self.actor_lr))
-        # return tf.keras.Model(inputs=inputs, outputs=actor_output, name=name, trainable=trainable)
+        outputs = tf.keras.layers.Dense(units=self.act_dim, activation='tanh')(outputs)
+        actor_model = tf.keras.Model(inputs=inputs, outputs=outputs, name=name, trainable=trainable)
+        actor_model.compile(optimizer=tf.keras.optimizers.Adam(self.lr_actor))
         return actor_model
 
-    def critic_net_builder(self, name, input_dim, hidden_layers, output_dim, trainable):
-        # inputs = tf.keras.Input(shape=(input_dim,))
-        input_magent_s = tf.keras.Input(shape=(self.__nobs * self.agent_num,), dtype="float32")
-        input_magent_a = tf.keras.Input(shape=(self.__nact * self.agent_num,), dtype="float32")
-        input_critic = tf.concat([input_magent_s, input_magent_a], axis=-1)
-        outputs = input_critic
-        for layer in hidden_layers:
+    def critic_net_builder(self, name, trainable):
+        input_magent_s = tf.keras.Input(shape=(self.agent_num * self.obs_dim,))
+        input_magent_a = tf.keras.Input(shape=(self.agent_num * self.act_dim,))
+        outputs = tf.concat([input_magent_s, input_magent_a], axis=-1)
+        for layer in self.hidden_layers_critic:
             outputs = tf.keras.layers.Dense(units=layer, activation='relu')(outputs)
-        outputs = tf.keras.layers.Dense(units=output_dim)(outputs)
+        outputs = tf.keras.layers.Dense(units=1, activation='linear')(outputs)
         critic_model = tf.keras.Model(inputs=[input_magent_s, input_magent_a], outputs=outputs, name=name, trainable=trainable)
-        critic_model.compile(optimizer=tf.keras.optimizers.Adam(self.critic_lr))
-        # return tf.keras.Model(inputs=[input_magent_s, input_magent_a], outputs=outputs, name=name, trainable=trainable)
+        critic_model.compile(optimizer=tf.keras.optimizers.Adam(self.lr_critic))
         return critic_model
 
-    def __update_target_weights(self, model, target_model, tau):
-        weights = model.weights
-        target_weights = target_model.weights
+    @tf.function
+    def update_target_weights(self, weights, target_weights, tau):
         [a.assign(a * (1 - tau) + b * tau) for a, b in zip(target_weights, weights)]
 
-
     @tf.function
-    def __apply_gradients(self, exp_n):
+    def apply_gradients(self, obs, act, next_obs, rew, term):
+        n = self.agent_num
+        all_obs = tf.concat(obs, axis=-1)
+        all_act = tf.concat(act, axis=-1)
+        all_next_obs = tf.concat(next_obs, axis=-1)
+
+        loss_actors = tf.TensorArray(tf.float32, size=n)
+        loss_critics = tf.TensorArray(tf.float32, size=n)
         with tf.GradientTape(persistent=True) as tape:
-            # action_list = []
-            for agent_index in range(self.agent_num):
-                obs = exp_n[agent_index]['obs1']
-                # action = exp_n[agent_index]['acts']
-                action = self.__actor_list[agent_index](obs)
-                # action_list.append(action)
-                if agent_index == 0:
-                    all_obs = tf.convert_to_tensor(obs)
-                    all_action = action
-                else:
-                    all_obs = tf.concat([all_obs, obs], axis=-1)
-                    all_action = tf.concat([all_action, action], axis=-1)
-
-            for agent_index in range(self.agent_num):
-                obs_ = exp_n[agent_index]['obs2']  # 得到当前的状态obs --> exp_n[agent_index][1]
-                action_ = self.__actor_target_list[agent_index](obs_)  # 得到当前agent关于自己的obs的动作值
-                if agent_index == 0:
-                    all_obs_ = tf.convert_to_tensor(obs_)
-                    all_action_ = action_
-                else:
-                    all_obs_ = tf.concat([all_obs_, obs_], axis=-1)
-                    all_action_ = tf.concat([all_action_, action_], axis=-1)
-
-            # action = [[] for _ in range(self.batch_size)]
-            # for idx in range(self.batch_size):
-            #     for index in range(self.agent_num):
-            #         action[idx].append(exp_n[index]['acts'][idx])
-            for agent_index in range(self.agent_num):
-                act = exp_n[agent_index]['acts']
-                if agent_index == 0:
-                    action = act
-                else:
-                    action = tf.concat([action, act], axis=-1)
-
-            for agent_index in range(self.agent_num):
-                actor_pred = self.__actor_list[agent_index]
-                critic_pred = self.__critic_list[agent_index]
-                critic_target = self.__critic_target_list[agent_index]
-
-                reward = exp_n[agent_index]['rews']
-                terminated = exp_n[agent_index]['term']
-                # 更新actor,每一个智能体的actor需要他本身的critic_pred，输入状态动作，然后最大化这个值
-                q_pred = critic_pred([all_obs, all_action])
-                actor_pred_loss = - tf.math.reduce_mean(q_pred)
-                gradients = tape.gradient(actor_pred_loss, actor_pred.trainable_variables)
-                # self.__actor_optimizer_list[agent_index].apply_gradients(zip(gradients, actor_pred.trainable_variables))
-                actor_pred.optimizer.apply_gradients(zip(gradients, actor_pred.trainable_variables))
-                # 更新critic网络
-                q_pred_critic = critic_pred([all_obs, action])
-                q_target_critic = reward + self.gamma * critic_target([all_obs_, all_action_])*(1-terminated)
-                loss_critic = tf.keras.losses.mse(q_target_critic, q_pred_critic)
+            all_action = tf.concat([self.actor_list[i](obs[i]) for i in range(n)], axis=-1)
+            all_next_action = tf.concat([self.actor_target_list[i](next_obs[i]) for i in range(n)], axis=-1)
+            for i in range(n):
+                actor_pred = self.actor_list[i]
+                critic_pred = self.critic_list[i]
+                critic_target = self.critic_target_list[i]
+                q_pred_critic = critic_pred([all_obs, all_act])
+                q_target_critic = rew[i] + self.gamma * critic_target([all_next_obs, all_next_action]) * (1 - term)
+                loss_critic = tf.keras.losses.mse(tf.stop_gradient(q_target_critic), q_pred_critic)
                 loss_critic = tf.reduce_mean(loss_critic)
                 critic_gradients = tape.gradient(loss_critic, critic_pred.trainable_variables)
-                # self.__critic_optimizer.apply_gradients(zip(critic_gradients, critic_pred.trainable_variables))
                 critic_pred.optimizer.apply_gradients(zip(critic_gradients, critic_pred.trainable_variables))
+                loss_critics = loss_critics.write(i, loss_critic)
 
-                # current_q = critic_pred(tf.concat((all_obs, all_action), axis=1))  #
-                # target_q = reward + self.gamma * critic_target(tf.concat((all_obs_, all_action_), axis=1)) * (
-                #         1 - terminated)
-                # td_errors = tf.stop_gradient(target_q) - current_q
-                # critic_loss = tf.reduce_mean(tf.math.square(td_errors))
-                # critic_gradients = tape.gradient(critic_loss, critic_pred.trainable_variables)
-                # self.__critic_optimizer.apply_gradients(zip(critic_gradients, critic_pred.trainable_variables))
-                #
-                # sample_action = actor_pred(obs)  #
-                # for sample_index in range(self.agent_num):
-                #     if sample_index == 0 and agent_index == 0:
-                #         all_sample_action = sample_action
-                #     elif sample_index == 0 and agent_index != 0:
-                #         all_sample_action = action_list[0]
-                #     elif sample_index == agent_index:
-                #         all_sample_action = tf.concat([all_sample_action, sample_action], axis=-1)
-                #     else:
-                #         all_sample_action = tf.concat([all_sample_action, action_list[sample_index]], axis=-1)
-                #
-                # sample_q = critic_pred(tf.concat((all_obs, all_sample_action), axis=1))
-                # actor_loss = - tf.reduce_mean(sample_q)
-                # gradients = tape.gradient(actor_loss, actor_pred.trainable_variables)
-                # self.__actor_optimizer_list[agent_index].apply_gradients(zip(gradients, actor_pred.trainable_variables))
+                q_pred = critic_pred([all_obs, all_action])
+                loss_actor = -tf.math.reduce_mean(q_pred)
+                actor_gradients = tape.gradient(loss_actor, actor_pred.trainable_variables)
+                actor_pred.optimizer.apply_gradients(zip(actor_gradients, actor_pred.trainable_variables))
+                loss_actors = loss_actors.write(i, loss_actor)
 
-        for agent_index in range(self.agent_num):
-            self.__update_target_weights(self.__actor_list[agent_index], self.__actor_target_list[agent_index],
-                                         self.tau)
-            self.__update_target_weights(self.__critic_list[agent_index], self.__critic_target_list[agent_index],
-                                         self.tau)
-        return loss_critic
+        for i in range(n):
+            self.update_target_weights(self.actor_list[i].weights, self.actor_target_list[i].weights, self.tau)
+            self.update_target_weights(self.critic_list[i].weights, self.critic_target_list[i].weights, self.tau)
 
-    def get_buffer(self) -> Dict[str, Union[int, Dict[str, np.ndarray]]]:
+        return loss_actors.stack(), loss_critics.stack()
+
+    def get_weights(self) -> Dict[str, List[List[np.ndarray]]]:
+        """Get weights of neural networks.
+
+        Returns:
+            Weights of `actor` and `actor_target/critic/critic_target`(if exists).
+        """
+        weights = {
+            'actor': [self.actor_list[i].get_weights() for i in range(self.agent_num)],
+        }
+        if self.training:
+            weights['critic'] = [self.critic_list[i].get_weights() for i in range(self.agent_num)]
+            weights['actor_target'] = [self.actor_target_list[i].get_weights() for i in range(self.agent_num)]
+            weights['critic_target'] = [self.critic_target_list[i].get_weights() for i in range(self.agent_num)]
+        return weights
+
+    def set_weights(self, weights: Dict[str, List[List[np.ndarray]]]):
+        """Set weights of neural networks.
+
+        Args:
+            weights: Weights of `actor` and `actor_target/critic/critic_target`(if exists).
+        """
+        for i in range(self.agent_num):
+            self.actor_list[i].set_weights(weights['actor'][i])
+        if self.training:
+            for i in range(self.agent_num):
+                if 'critic' in weights:
+                    self.critic_list[i].set_weights(weights['critic'][i])
+                if 'actor_target' in weights:
+                    self.actor_target_list[i].set_weights(weights['actor_target'][i])
+                if 'critic_target' in weights:
+                    self.critic_target_list[i].set_weights(weights['critic_target'][i])
+
+    def get_buffer(self) -> Dict[str, Union[int, str, Dict[str, Union[np.ndarray, List[np.ndarray]]]]]:
         """Get buffer of experience replay.
 
         Returns:
-            Internel state of the simple replay buffer.
+            Internel state of the replay buffer.
         """
-        return self.replay_buffer_list[0].get()
+        return self.replay_buffer.get()
 
-    def set_buffer(self, buffer: Dict[str, Union[int, Dict[str, np.ndarray]]]) -> None:
+    def set_buffer(self, buffer: Dict[str, Union[int, str, Dict[str, Union[np.ndarray, List[np.ndarray]]]]]):
         """Set buffer of experience replay.
 
         Args:
-            buffer: Internel state of the simple replay buffer.
+            buffer: Internel state of the replay buffer.
         """
-        for agent_index in range(self.agent_num):
-            self.replay_buffer_list[agent_index].set(buffer)
+        self.replay_buffer.set(buffer)
         self.replay_size = buffer['max_size']
-
