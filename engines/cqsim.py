@@ -453,7 +453,7 @@ class CQSim(SimEngineBase):
             json.dump(self.sim_params, f1)
             f3.write(f2.read())
             f5.write(self.sim_params['proxy']['sim_term_func'] + f4.read())
-        cmd = 'x86_64-w64-mingw32-g++ -O1 -shared -o sim_term_func.dll -std=c++17 sim_term_func.cpp'
+        cmd = 'x86_64-w64-mingw32-g++ -O1 -static -shared -o sim_term_func.dll -std=c++17 sim_term_func.cpp'
         subprocess.run(cmd, cwd=self.cwd, timeout=10, shell=True, capture_output=True)
 
         scenario_xml = configs['scenario_xml']
