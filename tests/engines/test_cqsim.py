@@ -3,7 +3,7 @@ import threading
 import time
 import unittest
 
-from engines.cqsim import CQSim
+from engines.cqsim import CQSIM
 
 
 class RepeatTimer(threading.Timer):
@@ -14,7 +14,7 @@ class RepeatTimer(threading.Timer):
             self.finished.wait(self.interval)
 
 
-class CQSimTestCase(unittest.TestCase):
+class CQSIMTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -22,7 +22,7 @@ class CQSimTestCase(unittest.TestCase):
              open('tests/engines/test_cqsim_src/sim_term_func.cpp', 'r') as f2:
             cls.args = json.load(f1)
             cls.args['proxy']['sim_term_func'] = f2.read()
-        cls.engine = CQSim(**cls.args)
+        cls.engine = CQSIM(**cls.args)
         cls.timer = RepeatTimer(1, cls.print_monitor)
         cls.timer.start()
 

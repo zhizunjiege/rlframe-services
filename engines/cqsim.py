@@ -17,7 +17,7 @@ from .res.cqsim import engine_pb2
 from .res.cqsim import engine_pb2_grpc
 
 
-class CQSim(SimEngineBase):
+class CQSIM(SimEngineBase):
 
     def __init__(
         self,
@@ -26,11 +26,11 @@ class CQSim(SimEngineBase):
         task: Dict[str, int | float] = {},
         proxy: Dict[str, Any] = {},
     ):
-        """Init CQSim engine.
+        """Init CQSIM engine.
 
         Args:
-            ctrl_addr: Address of CQSim engine controller.
-            res_addr: Address of CQSim resource service.
+            ctrl_addr: Address of CQSIM engine controller.
+            res_addr: Address of CQSIM resource service.
         """
         super().__init__()
 
@@ -59,7 +59,7 @@ class CQSim(SimEngineBase):
         os.makedirs(self.cwd, exist_ok=True)
 
     def __del__(self):
-        """Close CQSim engine."""
+        """Close CQSIM engine."""
         self.join_threads()
         self.channel.close()
 
@@ -68,7 +68,7 @@ class CQSim(SimEngineBase):
         cmd: Literal['init', 'start', 'pause', 'step', 'resume', 'stop', 'episode', 'param'],
         params: Dict[str, Any] = {},
     ) -> bool:
-        """Control CQSim engine.
+        """Control CQSIM engine.
 
         Args:
             cmd: Control command. `episode` means ending current episode, `param` means setting simulation parameters.
@@ -134,11 +134,11 @@ class CQSim(SimEngineBase):
             return False
 
     def monitor(self) -> Tuple[List[Dict[str, Any]], List[str]]:
-        """Monitor CQSim engine.
+        """Monitor CQSIM engine.
 
         Returns:
             Data of simulation process.
-            Logs of CQSim engine.
+            Logs of CQSIM engine.
         """
         with self.data_lock:
             data = self.data_cache.copy()

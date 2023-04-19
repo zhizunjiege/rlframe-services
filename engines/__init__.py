@@ -1,5 +1,5 @@
-from .cqsim import CQSim
+from .cqsim import CQSIM
 
 SimEngines = {
-    'CQSim': CQSim,
+    'CQSIM': CQSIM,
 }
