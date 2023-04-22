@@ -1,5 +1,6 @@
 import json
 import pickle
+import queue
 import time
 import unittest
 
@@ -135,14 +136,21 @@ class AgentServiceTestCase(unittest.TestCase):
         }
         req = json_format.ParseDict(info, types_pb2.SimState())
 
-        def generator():
-            for _ in range(5000):
-                yield req
-            return None
-
+        req_count = 5000
+        req_queue = queue.SimpleQueue()
+        req_queue.put(req)
+        req_count -= 1
         t1 = time.time()
-        for res in self.stub.GetAction(generator()):
+        for res in self.stub.GetAction(iter(req_queue.get, None)):
             res = json_format.MessageToDict(res, preserving_proto_field_name=True)
+            before = time.perf_counter_ns()
+            while time.perf_counter_ns() - before < 10000000:
+                pass
+            if req_count > 0:
+                req_queue.put(req)
+            else:
+                req_queue.put(None)
+            req_count -= 1
         t2 = time.time()
         print(f'Time cost: {t2 - t1} s, FPS: {5000 / (t2 - t1)}')
 
