@@ -23,6 +23,9 @@ class NormalNoise:
     def __call__(self):
         return np.random.normal(loc=self.mu, scale=self.sigma, size=self.shape)
 
+    def reset(self):
+        ...
+
 
 class OrnsteinUhlenbeckNoise:
 
@@ -38,8 +41,9 @@ class OrnsteinUhlenbeckNoise:
         self.sigma = sigma
         self.theta = theta
         self.dt = dt
+        self.shape = shape
 
-        self.x = np.random.normal(loc=mu, scale=sigma, size=shape)
+        self.reset()
 
         self.shape = self.x.shape
 
@@ -47,6 +51,9 @@ class OrnsteinUhlenbeckNoise:
         self.x = self.x + self.theta * (self.mu - self.x) * self.dt + self.sigma * np.sqrt(
             self.dt) * np.random.normal(size=self.shape)
         return self.x
+
+    def reset(self):
+        self.x = np.random.normal(loc=self.mu, scale=self.sigma, size=self.shape)
 
 
 class MADDPG(RLModelBase):
@@ -240,6 +247,9 @@ class MADDPG(RLModelBase):
             self._episode_rewards[i] += reward[i]
 
         if terminated or truncated:
+            for i in range(self.agent_num):
+                self.noise_list[i].reset()
+
             self._episode += 1
             with self.summary_writer.as_default():
                 for i in range(self.agent_num):
