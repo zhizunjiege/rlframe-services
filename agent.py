@@ -62,14 +62,14 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
                 self.rfunc = compile(rfunc_src, 'reward', 'exec')
         except SyntaxError as e:
             message = f'Invalid {e.filename} function, error in line {e.lineno}, column {e.offset}, {e.text}'
-            context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
 
         try:
             hypers = json.loads(request.hypers)
             self.model = RLModels[request.type](training=request.training, **hypers)
         except Exception as e:
             message = f'Invalid hypers for {request.type} model, info: {e}'
-            context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
 
         self.state = types_pb2.ServiceState.State.INITED
         self.configs = request
@@ -84,7 +84,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         await self.check_state(context)
         if not self.configs.training:
             message = 'Cannot change training mode when training is initially set to False'
-            context.abort(grpc.StatusCode.FAILED_PRECONDITION, message)
+            await context.abort(grpc.StatusCode.FAILED_PRECONDITION, message)
         # self.model.training = request.training
         self.pending_training = request.training
         return types_pb2.CommonResponse()
@@ -100,7 +100,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             self.model.set_weights(pickle.loads(request.weights))
         except Exception as e:
             message = f'Invalid weights for {self.configs.type} model, info: {e}'
-            context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
         return types_pb2.CommonResponse()
 
     async def GetModelBuffer(self, request, context):
@@ -114,7 +114,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             self.model.set_buffer(pickle.loads(request.buffer))
         except Exception as e:
             message = f'Invalid buffer for {self.configs.type} model, info: {e}'
-            context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
         return types_pb2.CommonResponse()
 
     async def GetModelStatus(self, request, context):
@@ -128,7 +128,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             self.model.set_status(json.loads(request.status))
         except Exception as e:
             message = f'Invalid status for {self.configs.type} model, info: {e}'
-            context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
         return types_pb2.CommonResponse()
 
     async def GetAction(self, request_iterator, context):
