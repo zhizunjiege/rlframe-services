@@ -23,6 +23,9 @@ class NormalNoise:
     def __call__(self):
         return np.random.normal(loc=self.mu, scale=self.sigma, size=self.shape)
 
+    def reset(self):
+        ...
+
 
 class OrnsteinUhlenbeckNoise:
 
@@ -38,8 +41,9 @@ class OrnsteinUhlenbeckNoise:
         self.sigma = sigma
         self.theta = theta
         self.dt = dt
+        self.shape = shape
 
-        self.x = np.random.normal(loc=mu, scale=sigma, size=shape)
+        self.reset()
 
         self.shape = self.x.shape
 
@@ -47,6 +51,9 @@ class OrnsteinUhlenbeckNoise:
         self.x = self.x + self.theta * (self.mu - self.x) * self.dt + self.sigma * np.sqrt(
             self.dt) * np.random.normal(size=self.shape)
         return self.x
+
+    def reset(self):
+        self.x = np.random.normal(loc=self.mu, scale=self.sigma, size=self.shape)
 
 
 class DDPG(RLModelBase):
@@ -209,7 +216,10 @@ class DDPG(RLModelBase):
         self.replay_buffer.store(states, actions, next_states, reward, terminated)
 
         self._episode_rewards += reward
+
         if terminated or truncated:
+            self.noise.reset()
+
             self._episode += 1
             with self.summary_writer.as_default():
                 tf.summary.scalar('episode_rewards', self._episode_rewards, step=self._episode)
