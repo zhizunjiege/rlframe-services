@@ -185,7 +185,7 @@ class CQSIM(SimEngineBase):
                         if 'exp_design_id' not in p or response.current_sample_id == p['exp_sample_num'] - 1:
                             if self.current_repeat_time < p['repeat_times']:
                                 self.control('stop')
-                                time.sleep(0.5)
+                                time.sleep(1)
                                 self.control('start')
                                 self.current_repeat_time = self.data_cache['current_repeat_time'] + 1
                                 now_state = None
