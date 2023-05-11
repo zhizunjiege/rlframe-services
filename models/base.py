@@ -134,14 +134,15 @@ class RLModelBase(ABC):
         """Setter of training."""
         self._training = value
 
-    def call(self, str_data: str = '', bin_data: bytes = b'') -> Tuple[str, bytes]:
+    def call(self, identity: str, str_data: str = '', bin_data: bytes = b'') -> Tuple[str, str, bytes]:
         """Any method can be called.
 
         Args:
+            identity: Identity of method.
             str_data: String data.
             bin_data: Binary data.
 
         Returns:
-            String data and binary data.
+            Identity of method, string data and binary data.
         """
-        return str_data, bin_data
+        return identity, '', b''

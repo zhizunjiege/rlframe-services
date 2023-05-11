@@ -2,6 +2,7 @@ import json
 import time
 import unittest
 
+import gymnasium as gym
 import numpy as np
 
 from models.dqn import DQN
@@ -11,9 +12,9 @@ class DQNModelTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with open('examples/agent/hypers.json', 'r') as f:
-            hypers = json.load(f)
-        cls.model = DQN(training=True, **hypers['hypers'])
+        with open('tests/models/test_dqn_src/hypers.json', 'r') as f:
+            cls.hypers = json.load(f)
+        cls.model = DQN(training=True, **cls.hypers)
 
     @classmethod
     def tearDownClass(cls):
@@ -21,8 +22,6 @@ class DQNModelTestCase(unittest.TestCase):
 
     def test_00_init(self):
         self.assertTrue(self.model.training)
-        self.assertEqual(self.model.obs_dim, 12)
-        self.assertEqual(self.model.act_num, 8)
 
     def test_01_react(self):
         states = np.random.random((12,))
@@ -69,3 +68,58 @@ class DQNModelTestCase(unittest.TestCase):
         self.model.set_status(status)
         self.assertEqual(status['react_steps'], 5000)
         self.assertEqual(status['train_steps'], 5000)
+
+    def test_07_gymnasium(self):
+        env = gym.make('CartPole-v1')
+        model = DQN(
+            training=True,
+            obs_dim=env.observation_space.shape[0],
+            act_num=env.action_space.n,
+            hidden_layers=[128],
+            lr=0.01,
+            gamma=0.99,
+            replay_size=200000,
+            batch_size=64,
+            epsilon_max=1.0,
+            epsilon_min=0.01,
+            epsilon_decay=0.9999,
+            start_steps=5000,
+            update_after=5000,
+            update_online_every=1,
+            update_target_every=200,
+            seed=0,
+        )
+
+        count = 0
+        for episode in range(1000):
+            rew_sum = 0
+            states, _ = env.reset(seed=0)
+            for step in range(500):
+                actions = model.react(states=states)
+                next_states, reward, terminated, truncated, _ = env.step(actions)
+                model.store(
+                    states=states,
+                    actions=actions,
+                    next_states=next_states,
+                    reward=reward,
+                    terminated=terminated,
+                    truncated=truncated,
+                )
+                model.train()
+
+                rew_sum += reward
+
+                if terminated or truncated:
+                    break
+                else:
+                    states = next_states
+
+            print(f'Episode {episode} finished after {step+1} steps with reward {rew_sum:.2f}')
+
+            if rew_sum >= 450:
+                count += 1
+            else:
+                count = max(count - 1, 0)
+
+            if count >= 10:
+                break

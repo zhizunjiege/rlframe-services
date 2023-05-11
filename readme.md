@@ -1,28 +1,33 @@
-# RLFrame
+# rlframe-services
 
-## 生成
+## Protos
 
-运行以下命令生成 Python 接口文件：
+Use below command to build protos:
 
-```bash
-python -m grpc_tools.protoc --proto_path=. --python_out=. --grpc_python_out=. ./protos/*.proto
-```
-
-运行以下命令生成 C++ 接口文件：
+For Linux:
 
 ```bash
-protoc -I . --grpc_out=. --plugin=protoc-gen-grpc="grpc_cpp_plugin.exe" ./protos/*.proto
-protoc -I . --cpp_out=. ./protos/*.proto
+./tools/build-protos.sh
 ```
 
-或者直接在 VSCode 里运行构建任务.
+For Windows:
 
-## 测试
+```bat
+./tools/build-protos.bat
+```
 
-运行以下命令执行单元测试：
+## Tests
+
+Use below command to run tests:
+
+For Linux:
 
 ```bash
-python -m unittest discover -s tests
+./tools/unittests.sh
 ```
 
-或者在 VSCode 里运行测试任务.
+For Windows:
+
+```bat
+./tools/unittests.bat
+```

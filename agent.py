@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 from concurrent import futures
 import json
 import pickle
@@ -11,6 +12,7 @@ from protos import agent_pb2
 from protos import agent_pb2_grpc
 from protos import types_pb2
 
+from sys import platform
 from models import RLModels
 
 
@@ -30,83 +32,115 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         self.oafunc = None
         self.rfunc = None
 
-    def check_state(self, context):
-        if self.state == types_pb2.ServiceState.State.UNINITED:
-            context.abort(grpc.StatusCode.FAILED_PRECONDITION, 'Service not inited')
+        self.pending_training = None
 
-    def ResetService(self, request, context):
+    async def check_state(self, context):
+        if self.state == types_pb2.ServiceState.State.UNINITED:
+            await context.abort(grpc.StatusCode.FAILED_PRECONDITION, 'Service not inited')
+
+    async def ResetService(self, request, context):
         self.reset()
         return types_pb2.CommonResponse()
 
-    def QueryService(self, request, context):
+    async def QueryService(self, request, context):
         return types_pb2.ServiceState(state=self.state)
 
-    def GetAgentConfig(self, request, context):
-        self.check_state(context)
+    async def GetAgentConfig(self, request, context):
+        await self.check_state(context)
         return self.configs
 
-    def SetAgentConfig(self, request, context):
-        sifunc_src = request.states_inputs_func + '\ninputs = func(states)'
-        self.sifunc = compile(sifunc_src, '', 'exec')
-        oafunc_src = request.outputs_actions_func + '\nactions = func(outputs)'
-        self.oafunc = compile(oafunc_src, '', 'exec')
-        if request.training:
-            rfunc_src = request.reward_func + '\nreward = func(states, inputs, actions, outputs,\
-                 next_states, next_inputs, terminated, truncated)'
+    async def SetAgentConfig(self, request, context):
+        try:
+            sifunc_src = request.sifunc + '\ninputs = func(states)'
+            self.sifunc = compile(sifunc_src, 'states_to_inputs', 'exec')
+            oafunc_src = request.oafunc + '\nactions = func(outputs)'
+            self.oafunc = compile(oafunc_src, 'outputs_to_actions', 'exec')
+            if request.training:
+                rfunc_src = request.rewfunc + '\nreward = func(states, inputs, actions, outputs,\
+                    next_states, next_inputs, terminated, truncated)'
 
-            self.rfunc = compile(rfunc_src, '', 'exec')
+                self.rfunc = compile(rfunc_src, 'reward', 'exec')
+        except SyntaxError as e:
+            message = f'Invalid {e.filename} function, error in line {e.lineno}, column {e.offset}, {e.text}'
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
 
-        hypers = json.loads(request.hypers)
-        self.model = RLModels[request.type](training=request.training, **hypers)
+        try:
+            hypers = json.loads(request.hypers)
+            self.model = RLModels[request.type](training=request.training, **hypers)
+        except Exception as e:
+            message = f'Invalid hypers for {request.type} model, info: {e}'
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
 
         self.state = types_pb2.ServiceState.State.INITED
         self.configs = request
 
         return types_pb2.CommonResponse()
 
-    def GetAgentMode(self, request, context):
-        self.check_state(context)
+    async def GetAgentMode(self, request, context):
+        await self.check_state(context)
         return agent_pb2.AgentMode(training=self.model.training)
 
-    def SetAgentMode(self, request, context):
-        self.check_state(context)
-        self.model.training = request.training
+    async def SetAgentMode(self, request, context):
+        await self.check_state(context)
+        if not self.configs.training:
+            message = 'Cannot change training mode when training is initially set to False'
+            await context.abort(grpc.StatusCode.FAILED_PRECONDITION, message)
+        # self.model.training = request.training
+        self.pending_training = request.training
         return types_pb2.CommonResponse()
 
-    def GetModelWeights(self, request, context):
-        self.check_state(context)
+    async def GetModelWeights(self, request, context):
+        await self.check_state(context)
         weights = pickle.dumps(self.model.get_weights())
         return agent_pb2.ModelWeights(weights=weights)
 
-    def SetModelWeights(self, request, context):
-        self.check_state(context)
-        self.model.set_weights(pickle.loads(request.weights))
+    async def SetModelWeights(self, request, context):
+        await self.check_state(context)
+        try:
+            self.model.set_weights(pickle.loads(request.weights))
+        except Exception as e:
+            message = f'Invalid weights for {self.configs.type} model, info: {e}'
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
         return types_pb2.CommonResponse()
 
-    def GetModelBuffer(self, request, context):
-        self.check_state(context)
+    async def GetModelBuffer(self, request, context):
+        await self.check_state(context)
         buffer = pickle.dumps(self.model.get_buffer())
         return agent_pb2.ModelBuffer(buffer=buffer)
 
-    def SetModelBuffer(self, request, context):
-        self.check_state(context)
-        self.model.set_buffer(pickle.loads(request.buffer))
+    async def SetModelBuffer(self, request, context):
+        await self.check_state(context)
+        try:
+            self.model.set_buffer(pickle.loads(request.buffer))
+        except Exception as e:
+            message = f'Invalid buffer for {self.configs.type} model, info: {e}'
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
         return types_pb2.CommonResponse()
 
-    def GetModelStatus(self, request, context):
-        self.check_state(context)
+    async def GetModelStatus(self, request, context):
+        await self.check_state(context)
         status = json.dumps(self.model.get_status())
         return agent_pb2.ModelStatus(status=status)
 
-    def SetModelStatus(self, request, context):
-        self.check_state(context)
-        self.model.set_status(json.loads(request.status))
+    async def SetModelStatus(self, request, context):
+        await self.check_state(context)
+        try:
+            self.model.set_status(json.loads(request.status))
+        except Exception as e:
+            message = f'Invalid status for {self.configs.type} model, info: {e}'
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
         return types_pb2.CommonResponse()
 
-    def GetAction(self, request_iterator, context):
-        self.check_state(context)
-        sifunc_args = {'states': None, 'inputs': None}
-        oafunc_args = {'outputs': None, 'actions': None}
+    async def GetAction(self, request_iterator, context):
+        await self.check_state(context)
+
+        if self.pending_training is not None:
+            self.model.training = self.pending_training
+            self.pending_training = None
+
+        global_caches = {}
+        sifunc_args = {'states': None, 'inputs': None, 'caches': global_caches}
+        oafunc_args = {'outputs': None, 'actions': None, 'caches': global_caches}
         rfunc_args = {
             'states': None,
             'inputs': None,
@@ -114,11 +148,18 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             'outputs': None,
             'next_states': None,
             'next_inputs': None,
-            'reward': 0,
+            'reward': None,
             'terminated': False,
             'truncated': False,
         }
-        for request in request_iterator:
+
+        task = None
+        loop = asyncio.get_running_loop()
+        async for request in request_iterator:
+            if task is not None:
+                await task
+                task = None
+
             states, terminated, truncated = self.parse_state(request)
 
             sifunc_args['states'] = states
@@ -153,13 +194,15 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
                     rfunc_args['inputs'] = rfunc_args['next_inputs']
                     rfunc_args['actions'] = actions
                     rfunc_args['outputs'] = outputs
-                    self.model.train()
+                    task = asyncio.create_task(self.train(loop))
 
             response = self.wrap_action(actions)
+            yield response
             if terminated or truncated:
-                return response
-            else:
-                yield response
+                break
+
+    async def train(self, loop):
+        await loop.run_in_executor(None, self.model.train)
 
     def parse_param(self, param):
         if 'double_value' in param:
@@ -209,14 +252,17 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
                     actions[k]['entities'][i]['params'][j] = self.wrap_param(actions[k]['entities'][i]['params'][j])
         return json_format.ParseDict({'actions': actions}, types_pb2.SimAction())
 
-    def Call(self, request, context):
-        self.check_state(context)
-        str_data, bin_data = self.model.call(str_data=request.str_data, bin_data=request.bin_data)
-        return types_pb2.CallData(str_data=str_data, bin_data=bin_data)
+    async def Call(self, request, context):
+        await self.check_state(context)
+        identity, str_data, bin_data = self.model.call(request.identity, request.str_data, request.bin_data)
+        return types_pb2.CallData(identity=identity, str_data=str_data, bin_data=bin_data)
 
 
-def agent_server(ip, port, max_workers, max_msg_len):
-    server = grpc.server(
+_cleanup_coroutines = []
+
+
+async def agent_server(host, port, max_workers, max_msg_len):
+    server = grpc.aio.server(
         futures.ThreadPoolExecutor(max_workers=max_workers),
         options=[
             ('grpc.max_send_message_length', max_msg_len * 1024 * 1024),
@@ -224,25 +270,46 @@ def agent_server(ip, port, max_workers, max_msg_len):
         ],
     )
     agent_pb2_grpc.add_AgentServicer_to_server(AgentServicer(), server)
-    port = server.add_insecure_port(f'{ip}:{port}')
-    server.start()
-    print(f'Agent server started at {ip}:{port}')
+    port = server.add_insecure_port(f'{host}:{port}')
+    await server.start()
+    print(f'Agent server started at {host}:{port}')
 
-    def grace_exit(*_):
-        evt = server.stop(0)
-        evt.wait(1)
+    async def grace_exit(*_):
+        print('Agent service stopping...')
+        await server.stop(0)
 
-    signal.signal(signal.SIGINT, grace_exit)
-    signal.signal(signal.SIGTERM, grace_exit)
-    server.wait_for_termination()
+    _cleanup_coroutines.append(grace_exit())
+
+    await server.wait_for_termination()
+
     print('Agent server stopped.')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run an agent service.')
-    parser.add_argument('-i', '--ip', type=str, default='0.0.0.0', help='IP address to listen on.')
+    parser.add_argument('-i', '--host', type=str, default='0.0.0.0', help='Host to listen on.')
     parser.add_argument('-p', '--port', type=int, default=0, help='Port to listen on.')
     parser.add_argument('-w', '--worker', type=int, default=10, help='Max workers in thread pool.')
     parser.add_argument('-m', '--msglen', type=int, default=256, help='Max message length in MB.')
     args = parser.parse_args()
-    agent_server(args.ip, args.port, args.worker, args.msglen)
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    server = agent_server(args.host, args.port, args.worker, args.msglen)
+    if platform == "linux":
+        try:
+            for signame in ('SIGINT', 'SIGTERM'):
+                loop.add_signal_handler(getattr(signal, signame), lambda: asyncio.create_task(_cleanup_coroutines[0]))
+            loop.run_until_complete(server)
+        except (Exception, KeyboardInterrupt):
+            ...
+        finally:
+            loop.close()
+    else:
+        try:
+            loop.run_until_complete(server)
+        except (Exception, KeyboardInterrupt):
+            ...
+            loop.run_until_complete(*_cleanup_coroutines)
+        finally:
+            loop.close()

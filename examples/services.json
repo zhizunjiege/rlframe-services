@@ -1,15 +1,15 @@
 {
-  "localhost:10001": {
+  "simenv-main": {
     "type": "simenv",
     "name": "simenv",
-    "ip": "localhost",
+    "host": "localhost",
     "port": 10001,
     "desc": "simenv service"
   },
-  "localhost:10002": {
+  "agent-main": {
     "type": "agent",
     "name": "agent",
-    "ip": "localhost",
+    "host": "localhost",
     "port": 10002,
     "desc": "agent service"
   }

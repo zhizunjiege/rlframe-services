@@ -32,14 +32,14 @@ class SimenvServiceTestCase(unittest.TestCase):
         except grpc.RpcError as e:
             self.assertEqual(e.code(), grpc.StatusCode.FAILED_PRECONDITION)
 
-        with open('examples/simenv/args.json', 'r') as f:
-            args = json.load(f)
-
         req = simenv_pb2.SimenvConfig()
-        req.type = args['type']
-        req.args = json.dumps(args['args'])
-        res = self.stub.SetSimenvConfig(req)
-        self.assertEqual(res.code, 0)
+        with open('examples/simenv/args.json', 'r') as f1, \
+             open('examples/simenv/sim_term_func.cpp', 'r') as f2:
+            args = json.load(f1)
+            args['args']['proxy']['sim_term_func'] = f2.read()
+            req.type = args['type']
+            req.args = json.dumps(args['args'])
+        self.stub.SetSimenvConfig(req)
 
         res = self.stub.QueryService(types_pb2.CommonRequest())
         self.assertEqual(res.state, types_pb2.ServiceState.State.INITED)
@@ -50,12 +50,8 @@ class SimenvServiceTestCase(unittest.TestCase):
     def test_02_simcontrol(self):
         cmd = simenv_pb2.SimCmd()
 
-        with open('examples/simenv/configs.json', 'r') as f1, open('examples/simenv/sim_term_func.cc', 'r') as f2:
-            sim_params = json.load(f1)
-            sim_params['proxy']['sim_term_func'] = f2.read()
-
         cmd.type = 'init'
-        cmd.params = json.dumps(sim_params)
+        cmd.params = '{}'
         self.stub.SimControl(cmd)
 
         cmd.type = 'start'

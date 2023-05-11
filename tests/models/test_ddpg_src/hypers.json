@@ -1,0 +1,28 @@
+{
+  "obs_dim": 12,
+  "act_dim": 8,
+  "hidden_layers_actor": [
+    256,
+    256
+  ],
+  "hidden_layers_critic": [
+    256,
+    256
+  ],
+  "lr_actor": 0.0001,
+  "lr_critic": 0.001,
+  "gamma": 0.95,
+  "tau": 0.001,
+  "replay_size": 10000,
+  "batch_size": 32,
+  "noise_type": "ou",
+  "noise_sigma": 0.2,
+  "noise_theta": 0.15,
+  "noise_dt": 0.01,
+  "noise_max": 1.0,
+  "noise_min": 1.0,
+  "noise_decay": 1.0,
+  "update_after": 64,
+  "update_online_every": 1,
+  "seed": null
+}

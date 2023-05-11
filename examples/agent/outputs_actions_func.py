@@ -5,6 +5,7 @@ import numpy as np
 
 def func(outputs: np.ndarray | Dict[str | int, np.ndarray]) -> Dict[str, List[Dict[str, Any]]]:
     """Convert `outputs` to `actions` for model simulation."""
+    global caches
     return {
         'example_uav': [{
             'azimuth': float(45 * outputs),

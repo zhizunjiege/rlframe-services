@@ -17,33 +17,31 @@ from .res.cqsim import engine_pb2
 from .res.cqsim import engine_pb2_grpc
 
 
-class CQSim(SimEngineBase):
+class CQSIM(SimEngineBase):
 
     def __init__(
         self,
         *,
-        ctrl_addr: str,
-        res_addr: str,
-        x_token: str,
-        proxy_id: str,
+        platform: Dict[str, str] = {},
+        task: Dict[str, int | float] = {},
+        proxy: Dict[str, Any] = {},
     ):
-        """Init CQSim engine.
+        """Init CQSIM engine.
 
         Args:
-            ctrl_addr: Address of CQSim engine controller.
-            res_addr: Address of CQSim resource service.
+            ctrl_addr: Address of CQSIM engine controller.
+            res_addr: Address of CQSIM resource service.
         """
         super().__init__()
 
-        self.ctrl_addr = ctrl_addr
-        self.res_addr = res_addr
-        self.x_token = x_token
-        self.proxy_id = proxy_id
+        self.ctrl_addr = platform['ctrl_addr']
+        self.res_addr = platform['res_addr']
+        self.x_token = platform['x_token']
+        self.proxy_id = platform['proxy_id']
+        self.sim_params = {'task': task, 'proxy': proxy}
 
-        self.channel = grpc.insecure_channel(ctrl_addr)
+        self.channel = grpc.insecure_channel(self.ctrl_addr)
         self.engine = engine_pb2_grpc.SimControllerStub(channel=self.channel)
-
-        self.sim_params = None
 
         self.current_repeat_time = 1
 
@@ -61,7 +59,7 @@ class CQSim(SimEngineBase):
         os.makedirs(self.cwd, exist_ok=True)
 
     def __del__(self):
-        """Close CQSim engine."""
+        """Close CQSIM engine."""
         self.join_threads()
         self.channel.close()
 
@@ -70,7 +68,7 @@ class CQSim(SimEngineBase):
         cmd: Literal['init', 'start', 'pause', 'step', 'resume', 'stop', 'episode', 'param'],
         params: Dict[str, Any] = {},
     ) -> bool:
-        """Control CQSim engine.
+        """Control CQSIM engine.
 
         Args:
             cmd: Control command. `episode` means ending current episode, `param` means setting simulation parameters.
@@ -80,7 +78,6 @@ class CQSim(SimEngineBase):
             True if success.
         """
         if cmd == 'init':
-            self.sim_params = params
             self.join_threads()
             self.init_threads()
             self.fine_params()
@@ -137,11 +134,11 @@ class CQSim(SimEngineBase):
             return False
 
     def monitor(self) -> Tuple[List[Dict[str, Any]], List[str]]:
-        """Monitor CQSim engine.
+        """Monitor CQSIM engine.
 
         Returns:
             Data of simulation process.
-            Logs of CQSim engine.
+            Logs of CQSIM engine.
         """
         with self.data_lock:
             data = self.data_cache.copy()
@@ -150,19 +147,20 @@ class CQSim(SimEngineBase):
             self.logs_cache.clear()
         return data, logs
 
-    def call(self, str_data: str, bin_data: bytes) -> Tuple[str, bytes]:
+    def call(self, identity: str, str_data: str = '', bin_data: bytes = b'') -> Tuple[str, str, bytes]:
         """Any method can be called.
 
         Args:
-            str_data: String data. `reset-proxy` means resetting proxy enviroment.
+            identity: Identity of method. `reset-proxy` means resetting proxy enviroment.
+            str_data: String data.
             bin_data: Binary data.
 
         Returns:
-            String data and binary data.
+            Identity of method, string data and binary data.
         """
-        if str_data == 'reset-proxy':
+        if identity == 'reset-proxy':
             self.set_configs(self.reset_configs(self.get_configs()))
-        return '', b''
+        return identity, '', b''
 
     def data_callback(self):
         self.data_responses = self.engine.GetSysInfo(engine_pb2.CommonRequest())
@@ -186,10 +184,10 @@ class CQSim(SimEngineBase):
                     if now_state == STOPPED and now_state != prev_state and prev_state is not None:
                         if 'exp_design_id' not in p or response.current_sample_id == p['exp_sample_num'] - 1:
                             if self.current_repeat_time < p['repeat_times']:
-                                time.sleep(0.5)
+                                self.control('stop')
+                                time.sleep(1)
                                 self.control('start')
-                                self.current_repeat_time = self.data_cache['current_repeat_time']
-                                self.current_repeat_time += 1
+                                self.current_repeat_time = self.data_cache['current_repeat_time'] + 1
                                 now_state = None
                     prev_state = now_state
         except grpc.RpcError:
@@ -455,7 +453,7 @@ class CQSim(SimEngineBase):
             json.dump(self.sim_params, f1)
             f3.write(f2.read())
             f5.write(self.sim_params['proxy']['sim_term_func'] + f4.read())
-        cmd = 'x86_64-w64-mingw32-g++ -O1 -shared -o sim_term_func.dll -std=c++17 sim_term_func.cpp'
+        cmd = 'x86_64-w64-mingw32-g++ -O1 -static -shared -o sim_term_func.dll -std=c++17 sim_term_func.cpp'
         subprocess.run(cmd, cwd=self.cwd, timeout=10, shell=True, capture_output=True)
 
         scenario_xml = configs['scenario_xml']

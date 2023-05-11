@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import tensorflow as tf
 
 from .base import RLModelBase
-from .replay.simple_replay import SimpleReplay
+from .replay.single_replay import SingleReplay
 
 
 class DQN(RLModelBase):
@@ -30,6 +30,7 @@ class DQN(RLModelBase):
         update_online_every: int = 1,
         update_target_every: int = 200,
         seed: Optional[int] = None,
+        dtype: str = 'float32',
     ):
         """Init a DQN model.
 
@@ -55,6 +56,7 @@ class DQN(RLModelBase):
                 Note: Regardless of how long you wait between updates, the ratio of env steps to gradient steps is locked to 1.
             update_target_every: Number of env interactions that should elapse between target network updates.
             seed: Seed for random number generators.
+            dtype: Data type of model.
         """
         super().__init__(training)
 
@@ -73,6 +75,7 @@ class DQN(RLModelBase):
         self.update_online_every = update_online_every
         self.update_target_every = update_target_every
         self.seed = seed
+        self.dtype = dtype
 
         if training:
             tf.random.set_seed(seed)
@@ -82,22 +85,24 @@ class DQN(RLModelBase):
             self.target_net = self.net_builder('target', obs_dim, hidden_layers, act_num)
             self.update_target()
 
+            self.optimizer = tf.keras.optimizers.Adam(lr)
+            self.replay_buffer = SingleReplay(obs_dim, 1, replay_size, dtype=dtype)
+
+            self.log_dir = f'data/logs/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
+            self.summary_writer = tf.summary.create_file_writer(self.log_dir)
+            tf.summary.trace_on(graph=True, profiler=False)
+
             self._epsilon = epsilon_max
             self._react_steps = 0
             self._train_steps = 0
-
-            self.optimizer = tf.keras.optimizers.Adam(lr)
-            self.replay_buffer = SimpleReplay(obs_dim, 1, replay_size, dtype=np.float32)
-
-            self.log_dir = f'logs/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
-            self.summary_writer = tf.summary.create_file_writer(self.log_dir)
+            self._episode = 0
+            self._episode_rewards = 0
             self._graph_exported = False
-            tf.summary.trace_on(graph=True, profiler=False)
         else:
             self.online_net = self.net_builder('online', obs_dim, hidden_layers, act_num)
 
     def __del__(self):
-        """Close DQN model."""
+        """Close model."""
         ...
 
     def react(self, states: np.ndarray) -> int:
@@ -132,36 +137,41 @@ class DQN(RLModelBase):
         reward: float,
         terminated: bool,
         truncated: bool,
-    ) -> None:
-        """Store experience repplay data.
+    ):
+        """Store experience replay data.
 
         Args:
             states: States of enviroment.
             actions: Actions of model.
             next_states: Next states of enviroment.
-            reward: Reward.
+            reward: Reward of enviroment.
             terminated: Whether a `terminal state` (as defined under the MDP of the task) is reached.
             truncated: Whether a truncation condition outside the scope of the MDP is satisfied.
         """
-        self.replay_buffer.store(states, actions, reward, next_states, terminated)
+        self.replay_buffer.store(states, actions, next_states, reward, terminated)
 
-    def train(self) -> None:
+        self._episode_rewards += reward
+        if terminated or truncated:
+            self._episode += 1
+            with self.summary_writer.as_default():
+                tf.summary.scalar('episode_rewards', self._episode_rewards, step=self._episode)
+            self._episode_rewards = 0
+
+    def train(self):
         """Train model."""
         if self.replay_buffer.size >= self.update_after and self._react_steps % self.update_online_every == 0:
             for _ in range(self.update_online_every):
                 batch = self.replay_buffer.sample(self.batch_size)
-                grads, loss, td_errors = self.apply_grads(
+                loss = self.apply_grads(
                     batch['obs1'],
                     batch['acts'].astype(np.int32).squeeze(axis=1),
                     batch['obs2'],
                     batch['rews'],
                     batch['term'],
                 )
-                self.optimizer.apply_gradients(zip(grads, self.online_net.trainable_variables))
                 self._train_steps += 1
                 with self.summary_writer.as_default():
                     tf.summary.scalar('loss', loss, step=self._train_steps)
-                    tf.summary.scalar('td_error', tf.math.reduce_mean(tf.math.abs(td_errors)), step=self._train_steps)
                     if not self._graph_exported:
                         tf.summary.trace_export(name='model', step=self._train_steps, profiler_outdir=self.log_dir)
                         self._graph_exported = True
@@ -187,12 +197,13 @@ class DQN(RLModelBase):
             td_errors = tf.stop_gradient(target_q_values) - q_values
             loss = tf.math.reduce_mean(tf.math.square(td_errors))
         grads = tape.gradient(loss, self.online_net.trainable_variables)
-        return grads, loss, td_errors
+        self.optimizer.apply_gradients(zip(grads, self.online_net.trainable_variables))
+        return loss
 
     def update_target(self):
         self.target_net.set_weights(self.online_net.get_weights())
 
-    def get_weights(self) -> Dict[str, np.ndarray]:
+    def get_weights(self) -> Dict[str, List[np.ndarray]]:
         """Get weights of neural networks.
 
         Returns:
@@ -201,33 +212,35 @@ class DQN(RLModelBase):
         weights = {
             'online': self.online_net.get_weights(),
         }
-        if self.training and self.target_net is not None:
+        if self.training:
             weights['target'] = self.target_net.get_weights()
         return weights
 
-    def set_weights(self, weights: Dict[str, np.ndarray]) -> None:
+    def set_weights(self, weights: Dict[str, List[np.ndarray]]):
         """Set weights of neural networks.
 
         Args:
             weights: Weights of `online network` and `target network`(if exists).
         """
-        self.online_net.set_weights(weights['online'])
-        if self.training and 'target' in weights:
-            self.target_net.set_weights(weights['target'])
+        if 'online' in weights:
+            self.online_net.set_weights(weights['online'])
+        if self.training:
+            if 'target' in weights:
+                self.target_net.set_weights(weights['target'])
 
-    def get_buffer(self) -> Dict[str, int | Dict[str, np.ndarray]]:
+    def get_buffer(self) -> Dict[str, Union[int, str, Dict[str, np.ndarray]]]:
         """Get buffer of experience replay.
 
         Returns:
-            Internel state of the simple replay buffer.
+            Internel state of the replay buffer.
         """
         return self.replay_buffer.get()
 
-    def set_buffer(self, buffer: Dict[str, int | Dict[str, np.ndarray]]) -> None:
+    def set_buffer(self, buffer: Dict[str, Union[int, str, Dict[str, np.ndarray]]]):
         """Set buffer of experience replay.
 
         Args:
-            buffer: Internel state of the simple replay buffer.
+            buffer: Internel state of the replay buffer.
         """
         self.replay_buffer.set(buffer)
         self.replay_size = buffer['max_size']

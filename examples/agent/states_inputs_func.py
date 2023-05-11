@@ -6,6 +6,7 @@ import numpy as np
 
 def func(states: Dict[str, List[Dict[str, Any]]]) -> np.ndarray | Dict[str | int, np.ndarray]:
     """Convert `states` to `inputs` for model inferecing."""
+    global caches
     uav, sub = states['example_uav'][0], states['example_sub'][0]
     return np.array([
         (uav['longitude'] - 122.25) / 0.25,

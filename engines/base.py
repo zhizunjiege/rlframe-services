@@ -19,13 +19,13 @@ class SimEngineBase(ABC):
     @abstractmethod
     def control(
         self,
-        cmd: Literal['init', 'start', 'pause', 'step', 'resume', 'stop', 'episode', 'param'],
+        cmd: str,
         params: Dict[str, Any],
     ) -> bool:
         """Control engine.
 
         Args:
-            cmd: Control command. `episode` means ending current episode, `param` means setting simulation parameters.
+            cmd: Control command.
             params: Control parameters.
 
         Returns:
@@ -53,14 +53,15 @@ class SimEngineBase(ABC):
         """Setter of state."""
         self._state = value
 
-    def call(self, str_data: str = '', bin_data: bytes = b'') -> Tuple[str, bytes]:
+    def call(self, identity: str, str_data: str = '', bin_data: bytes = b'') -> Tuple[str, str, bytes]:
         """Any method can be called.
 
         Args:
+            identity: Identity of method.
             str_data: String data.
             bin_data: Binary data.
 
         Returns:
-            String data and binary data.
+            Identity of method, string data and binary data.
         """
-        return str_data, bin_data
+        return identity, '', b''

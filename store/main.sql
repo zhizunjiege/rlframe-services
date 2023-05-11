@@ -10,7 +10,7 @@
  Target Server Version : 3030001
  File Encoding         : 65001
 
- Date: 21/02/2023 12:53:42
+ Date: 15/03/2023 00:00:00
 */
 
 PRAGMA foreign_keys = false;
@@ -25,13 +25,12 @@ CREATE TABLE "agent" (
   "description" text NOT NULL,
   "create_time" text,
   "update_time" text,
+  "training" integer NOT NULL,
   "type" text NOT NULL,
   "hypers" text NOT NULL,
-  "structs" text,
-  "builder" text,
-  "states_inputs_func" text NOT NULL,
-  "outputs_actions_func" text NOT NULL,
-  "reward_func" text NOT NULL,
+  "sifunc" text NOT NULL,
+  "oafunc" text NOT NULL,
+  "rewfunc" text NOT NULL,
   "weights" blob,
   "buffer" blob,
   "status" text
@@ -49,7 +48,7 @@ CREATE TABLE "simenv" (
   "update_time" text,
   "type" text NOT NULL,
   "args" text NOT NULL,
-  "params" text NOT NULL
+  "params" text
 );
 
 -- ----------------------------
@@ -80,7 +79,7 @@ BEGIN
 	UPDATE agent SET create_time=DATETIME('now','localtime') WHERE id=new.id;
 END;
 CREATE TRIGGER "on_update_agent"
-AFTER UPDATE OF "name", "description", "create_time", "type", "hypers", "structs", "builder", "states_inputs_func", "outputs_actions_func", "reward_func", "weights", "buffer", "status"
+AFTER UPDATE OF "name", "description", "create_time", "training", "type", "hypers", "sifunc", "oafunc", "rewfunc", "weights", "buffer", "status"
 ON "agent"
 BEGIN
 	UPDATE agent SET update_time=DATETIME('now','localtime') WHERE id=new.id;

@@ -17,8 +17,8 @@ class BFFStub(object):
                                                request_serializer=types__pb2.CommonRequest.SerializeToString,
                                                response_deserializer=types__pb2.CommonResponse.FromString)
         self.RegisterService = channel.unary_unary('/game.bff.BFF/RegisterService',
-                                                   request_serializer=bff__pb2.ServiceInfoList.SerializeToString,
-                                                   response_deserializer=bff__pb2.ServiceIdList.FromString)
+                                                   request_serializer=bff__pb2.ServiceInfoMap.SerializeToString,
+                                                   response_deserializer=types__pb2.CommonResponse.FromString)
         self.UnRegisterService = channel.unary_unary('/game.bff.BFF/UnRegisterService',
                                                      request_serializer=bff__pb2.ServiceIdList.SerializeToString,
                                                      response_deserializer=types__pb2.CommonResponse.FromString)
@@ -267,8 +267,8 @@ def add_BFFServicer_to_server(servicer, server):
                                                 response_serializer=types__pb2.CommonResponse.SerializeToString),
         'RegisterService':
             grpc.unary_unary_rpc_method_handler(servicer.RegisterService,
-                                                request_deserializer=bff__pb2.ServiceInfoList.FromString,
-                                                response_serializer=bff__pb2.ServiceIdList.SerializeToString),
+                                                request_deserializer=bff__pb2.ServiceInfoMap.FromString,
+                                                response_serializer=types__pb2.CommonResponse.SerializeToString),
         'UnRegisterService':
             grpc.unary_unary_rpc_method_handler(servicer.UnRegisterService,
                                                 request_deserializer=bff__pb2.ServiceIdList.FromString,
@@ -393,7 +393,7 @@ class BFF(object):
                         timeout=None,
                         metadata=None):
         return grpc.experimental.unary_unary(request, target, '/game.bff.BFF/RegisterService',
-                                             bff__pb2.ServiceInfoList.SerializeToString, bff__pb2.ServiceIdList.FromString,
+                                             bff__pb2.ServiceInfoMap.SerializeToString, types__pb2.CommonResponse.FromString,
                                              options, channel_credentials, insecure, call_credentials, compression,
                                              wait_for_ready, timeout, metadata)
 
