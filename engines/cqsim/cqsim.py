@@ -55,7 +55,7 @@ class CQSIM(SimEngineBase):
         self.logs_lock = threading.Lock()
         self.logs_cache = []
 
-        self.cwd = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'res/cqsim/tmp')
+        self.cwd = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tmp')
         os.makedirs(self.cwd, exist_ok=True)
 
     def __del__(self):

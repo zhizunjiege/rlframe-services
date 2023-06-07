@@ -33,8 +33,8 @@ class SimenvServiceTestCase(unittest.TestCase):
             self.assertEqual(e.code(), grpc.StatusCode.FAILED_PRECONDITION)
 
         req = simenv_pb2.SimenvConfig()
-        with open('examples/simenv/args.json', 'r') as f1, \
-             open('examples/simenv/sim_term_func.cpp', 'r') as f2:
+        with open('tests/examples/simenv/args.json', 'r') as f1, \
+             open('tests/examples/simenv/sim_term_func.cpp', 'r') as f2:
             args = json.load(f1)
             args['args']['proxy']['sim_term_func'] = f2.read()
             req.type = args['type']

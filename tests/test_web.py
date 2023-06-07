@@ -52,10 +52,10 @@ class WebServerTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 400)
 
         addr = f'{self.addr}/api/db/agent'
-        with open('examples/agent/hypers.json', 'r') as f1, \
-             open('examples/agent/states_inputs_func.py', 'r') as f2, \
-             open('examples/agent/outputs_actions_func.py', 'r') as f3, \
-             open('examples/agent/reward_func.py', 'r') as f4:
+        with open('tests/examples/agent/hypers.json', 'r') as f1, \
+             open('tests/examples/agent/states_inputs_func.py', 'r') as f2, \
+             open('tests/examples/agent/outputs_actions_func.py', 'r') as f3, \
+             open('tests/examples/agent/reward_func.py', 'r') as f4:
             hypers = json.load(f1)
             states_inputs_func = f2.read()
             outputs_actions_func = f3.read()

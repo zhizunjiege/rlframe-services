@@ -25,7 +25,7 @@ class BFFServicerTestCase(unittest.TestCase):
         cls.stub = None
 
     def test_00_registerservice(self):
-        with open('examples/services.json', 'r') as f:
+        with open('tests/examples/services.json', 'r') as f:
             services = json.load(f)
         services = {id: bff_pb2.ServiceInfo(**service) for id, service in services.items()}
         req = bff_pb2.ServiceInfoMap(services=services)
@@ -41,7 +41,7 @@ class BFFServicerTestCase(unittest.TestCase):
         self.stub.SetServiceInfo(res)
 
     def test_02_routeconfig(self):
-        with open('examples/routes.json', 'r') as f:
+        with open('tests/examples/routes.json', 'r') as f:
             routes = json.load(f)
 
         req = bff_pb2.RouteConfig()
@@ -63,10 +63,10 @@ class BFFServicerTestCase(unittest.TestCase):
 
     def test_05_agentconfig(self):
         req = bff_pb2.AgentConfigMap()
-        with open('examples/agent/hypers.json', 'r') as f1, \
-             open('examples/agent/states_inputs_func.py', 'r') as f2, \
-             open('examples/agent/outputs_actions_func.py', 'r') as f3, \
-             open('examples/agent/reward_func.py', 'r') as f4:
+        with open('tests/examples/agent/hypers.json', 'r') as f1, \
+             open('tests/examples/agent/states_inputs_func.py', 'r') as f2, \
+             open('tests/examples/agent/outputs_actions_func.py', 'r') as f3, \
+             open('tests/examples/agent/reward_func.py', 'r') as f4:
             req.configs[self.ids[1]].training = True
             hypers = json.load(f1)
             req.configs[self.ids[1]].type = hypers['type']
@@ -103,8 +103,8 @@ class BFFServicerTestCase(unittest.TestCase):
 
     def test_10_simenvconfig(self):
         req = bff_pb2.SimenvConfigMap()
-        with open('examples/simenv/args.json', 'r') as f1, \
-             open('examples/simenv/sim_term_func.cpp', 'r') as f2:
+        with open('tests/examples/simenv/args.json', 'r') as f1, \
+             open('tests/examples/simenv/sim_term_func.cpp', 'r') as f2:
             args = json.load(f1)
             args['args']['proxy']['sim_term_func'] = f2.read()
             req.configs[self.ids[0]].type = args['type']

@@ -36,10 +36,10 @@ class AgentServiceTestCase(unittest.TestCase):
             self.assertEqual(e.code(), grpc.StatusCode.FAILED_PRECONDITION)
 
         req = agent_pb2.AgentConfig()
-        with open('examples/agent/hypers.json', 'r') as f1, \
-             open('examples/agent/states_inputs_func.py', 'r') as f2, \
-             open('examples/agent/outputs_actions_func.py', 'r') as f3, \
-             open('examples/agent/reward_func.py', 'r') as f4:
+        with open('tests/examples/agent/hypers.json', 'r') as f1, \
+             open('tests/examples/agent/states_inputs_func.py', 'r') as f2, \
+             open('tests/examples/agent/outputs_actions_func.py', 'r') as f3, \
+             open('tests/examples/agent/reward_func.py', 'r') as f4:
             req.training = True
             hypers = json.load(f1)
             req.type = hypers['type']
