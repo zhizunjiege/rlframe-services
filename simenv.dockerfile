@@ -9,4 +9,4 @@ RUN apt-get update \
 EXPOSE 10001
 VOLUME [ "/app/data" ]
 ENTRYPOINT [ "./simenv.sh" ]
-CMD [ "-w", "10", "-m", "4" ]
+CMD [ "-w", "10", "-m", "4", "-l", "info" ]

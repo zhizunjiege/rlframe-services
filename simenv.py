@@ -1,6 +1,7 @@
 import argparse
 from concurrent import futures
 import json
+import logging
 import signal
 
 import grpc
@@ -87,17 +88,17 @@ def simenv_server(host, port, max_workers, max_msg_len):
     simenv_pb2_grpc.add_SimenvServicer_to_server(SimenvServicer(), server)
     port = server.add_insecure_port(f'{host}:{port}')
     server.start()
-    print(f'Simenv server started at {host}:{port}')
+    logging.info(f'Simenv server started at {host}:{port}')
 
     def grace_exit(*_):
-        print('Simenv service stopping...')
+        logging.info('Simenv service stopping...')
         evt = server.stop(0)
         evt.wait(1)
 
     signal.signal(signal.SIGINT, grace_exit)
     signal.signal(signal.SIGTERM, grace_exit)
     server.wait_for_termination()
-    print('Simenv server stopped.')
+    logging.info('Simenv server stopped.')
 
 
 if __name__ == '__main__':
@@ -106,5 +107,12 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--port', type=int, default=0, help='Port to listen on.')
     parser.add_argument('-w', '--worker', type=int, default=10, help='Max workers in thread pool.')
     parser.add_argument('-m', '--msglen', type=int, default=4, help='Max message length in MB.')
+    parser.add_argument('-l', '--loglvl', type=str, default='info', help='Log level defined in `logging`.')
     args = parser.parse_args()
+
+    logging.basicConfig(
+        format='%(asctime)s - %(filename)s:%(lineno)d - %(levelname)s - %(message)s',
+        level=args.loglvl.upper(),
+    )
+
     simenv_server(args.host, args.port, args.worker, args.msglen)

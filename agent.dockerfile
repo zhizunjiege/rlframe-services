@@ -9,4 +9,4 @@ RUN apt-get update \
 EXPOSE 6006 10002
 VOLUME [ "/app/data" ]
 ENTRYPOINT [ "./agent.sh" ]
-CMD [ "-w", "10", "-m", "256" ]
+CMD [ "-w", "10", "-m", "256", "-l", "info" ]

@@ -1,5 +1,6 @@
 import argparse
 from concurrent import futures
+import logging
 import signal
 
 import grpc
@@ -249,17 +250,17 @@ def bff_server(host, port, max_workers, max_msg_len):
     bff_pb2_grpc.add_BFFServicer_to_server(BFFServicer(options=options), server)
     port = server.add_insecure_port(f'{host}:{port}')
     server.start()
-    print(f'BFF server started at {host}:{port}')
+    logging.info(f'BFF server started at {host}:{port}')
 
     def grace_exit(*_):
-        print('BFF server stopping...')
+        logging.info('BFF server stopping...')
         evt = server.stop(0)
         evt.wait(1)
 
     signal.signal(signal.SIGINT, grace_exit)
     signal.signal(signal.SIGTERM, grace_exit)
     server.wait_for_termination()
-    print('BFF server stopped.')
+    logging.info('BFF server stopped.')
 
 
 if __name__ == '__main__':
@@ -268,5 +269,12 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--port', type=int, default=0, help='Port to listen on.')
     parser.add_argument('-w', '--worker', type=int, default=10, help='Max workers in thread pool.')
     parser.add_argument('-m', '--msglen', type=int, default=256, help='Max message length in MB.')
+    parser.add_argument('-l', '--loglvl', type=str, default='info', help='Log level defined in `logging`.')
     args = parser.parse_args()
+
+    logging.basicConfig(
+        format='%(asctime)s - %(filename)s:%(lineno)d - %(levelname)s - %(message)s',
+        level=args.loglvl.upper(),
+    )
+
     bff_server(args.host, args.port, args.worker, args.msglen)

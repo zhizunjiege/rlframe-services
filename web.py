@@ -1,4 +1,5 @@
 import base64
+import logging
 import mimetypes
 import pathlib
 import sqlite3
@@ -17,6 +18,11 @@ def get_db(db_path):
     cur = con.cursor()
     return con, cur
 
+
+logging.basicConfig(
+    format='%(asctime)s - %(filename)s:%(lineno)d - %(levelname)s - %(message)s',
+    level='ERROR',
+)
 
 db_path = pathlib.Path('data/db.sqlite3')
 need_init = not db_path.exists()
@@ -117,8 +123,8 @@ def select(table):
                         row[col] = bytes_to_b64str(row[col])
         return rows
     except sqlite3.Error as e:
-        print(f'SQLite3 error: {e.args}')
-        print(f'Exception class is: {e.__class__}')
+        logging.error(f'SQLite3 error: {e.args}')
+        logging.error(f'Exception class is: {e.__class__}')
         return 'Unknown error', 500
 
 
@@ -156,8 +162,8 @@ def insert(table):
         data = {'lastrowid': cur.lastrowid}
         return data
     except sqlite3.Error as e:
-        print(f'SQLite3 error: {e.args}')
-        print(f'Exception class is: {e.__class__}')
+        logging.error(f'SQLite3 error: {e.args}')
+        logging.error(f'Exception class is: {e.__class__}')
         return 'Unknown error', 500
 
 
@@ -195,8 +201,8 @@ def update(table):
         data = {'rowcount': cur.rowcount}
         return data
     except sqlite3.Error as e:
-        print(f'SQLite3 error: {e.args}')
-        print(f'Exception class is: {e.__class__}')
+        logging.error(f'SQLite3 error: {e.args}')
+        logging.error(f'Exception class is: {e.__class__}')
         return 'Unknown error', 500
 
 
@@ -223,6 +229,6 @@ def delete(table):
         data = {'rowcount': cur.rowcount}
         return data
     except sqlite3.Error as e:
-        print(f'SQLite3 error: {e.args}')
-        print(f'Exception class is: {e.__class__}')
+        logging.error(f'SQLite3 error: {e.args}')
+        logging.error(f'Exception class is: {e.__class__}')
         return 'Unknown error', 500

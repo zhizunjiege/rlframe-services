@@ -9,6 +9,9 @@ while getopts "w:m:" opt; do
   m)
     msglen=$OPTARG
     ;;
+  l)
+    loglvl=$OPTARG
+    ;;
   ?)
     echo "Invalid option: -$opt"
     ;;
@@ -35,7 +38,7 @@ time=$(date +"%Y-%m-%d %H-%M-%S")
 
 # run python in background
 echo "starting python..."
-python -u simenv.py -p 10001 -w ${workers:-10} -m ${msglen:-4} </dev/null >"data/logs/$time.simenv.log" 2>&1 &
+python -u simenv.py -p 10001 -w ${workers:-10} -m ${msglen:-4} -l ${loglvl:info} </dev/null >"data/logs/$time.simenv.log" 2>&1 &
 
 # wait for subprocess
 wait

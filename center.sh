@@ -9,6 +9,9 @@ while getopts "w:m:" opt; do
   m)
     msglen=$OPTARG
     ;;
+  l)
+    loglvl=$OPTARG
+    ;;
   ?)
     echo "Invalid option: -$opt"
     ;;
@@ -39,11 +42,11 @@ func-e run -c envoy.yaml -l error </dev/null >/dev/null 2>&1 &
 
 # run gunicorn in background
 echo "starting gunicorn..."
-gunicorn -b 0.0.0.0:8888 --log-level info --log-file "data/logs/$time.web.log" -D web:app
+gunicorn -b 0.0.0.0:8888 --log-level error --log-file "data/logs/$time.web.log" -D web:app
 
 # run python in background
 echo "starting python..."
-python -u bff.py -p 10000 -w ${workers:-10} -m ${msglen:-256} </dev/null >"data/logs/$time.bff.log" 2>&1 &
+python -u bff.py -p 10000 -w ${workers:-10} -m ${msglen:-256} -l ${loglvl:info}  </dev/null >"data/logs/$time.bff.log" 2>&1 &
 
 # wait for subprocess
 wait

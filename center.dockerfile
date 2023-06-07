@@ -18,4 +18,4 @@ RUN apt-get update \
 EXPOSE 8888 9999 10000
 VOLUME [ "/app/data" ]
 ENTRYPOINT [ "./center.sh" ]
-CMD [ "-w", "10", "-m", "256" ]
+CMD [ "-w", "10", "-m", "256", "-l", "info" ]

@@ -2,6 +2,7 @@ import argparse
 import asyncio
 from concurrent import futures
 import json
+import logging
 import pickle
 import signal
 
@@ -272,17 +273,17 @@ async def agent_server(host, port, max_workers, max_msg_len):
     agent_pb2_grpc.add_AgentServicer_to_server(AgentServicer(), server)
     port = server.add_insecure_port(f'{host}:{port}')
     await server.start()
-    print(f'Agent server started at {host}:{port}')
+    logging.info(f'Agent server started at {host}:{port}')
 
     async def grace_exit(*_):
-        print('Agent service stopping...')
+        logging.info('Agent service stopping...')
         await server.stop(0)
 
     _cleanup_coroutines.append(grace_exit())
 
     await server.wait_for_termination()
 
-    print('Agent server stopped.')
+    logging.info('Agent server stopped.')
 
 
 if __name__ == '__main__':
@@ -291,7 +292,13 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--port', type=int, default=0, help='Port to listen on.')
     parser.add_argument('-w', '--worker', type=int, default=10, help='Max workers in thread pool.')
     parser.add_argument('-m', '--msglen', type=int, default=256, help='Max message length in MB.')
+    parser.add_argument('-l', '--loglvl', type=str, default='info', help='Log level defined in `logging`.')
     args = parser.parse_args()
+
+    logging.basicConfig(
+        format='%(asctime)s - %(filename)s:%(lineno)d - %(levelname)s - %(message)s',
+        level=args.loglvl.upper(),
+    )
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
