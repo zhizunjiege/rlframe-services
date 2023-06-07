@@ -12,7 +12,7 @@ class DDPGModelTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with open('tests/models/test_ddpg_src/hypers.json', 'r') as f:
+        with open('tests/models/ddpg/hypers.json', 'r') as f:
             hypers = json.load(f)
         cls.model = DDPG(training=True, **hypers)
 

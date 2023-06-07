@@ -12,9 +12,9 @@ from google.protobuf import duration_pb2
 from google.protobuf import timestamp_pb2
 import requests
 
-from .base import SimEngineBase
-from .res.cqsim import engine_pb2
-from .res.cqsim import engine_pb2_grpc
+from ..base import SimEngineBase
+from . import engine_pb2
+from . import engine_pb2_grpc
 
 
 class CQSIM(SimEngineBase):

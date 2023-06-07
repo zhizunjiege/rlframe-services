@@ -12,7 +12,7 @@ class MADDPGModelTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with open('tests/models/test_maddpg_src/hypers.json', 'r') as f:
+        with open('tests/models/maddpg/hypers.json', 'r') as f:
             hypers = json.load(f)
         cls.model = MADDPG(training=True, **hypers['hypers'])
 

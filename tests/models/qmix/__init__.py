@@ -16,7 +16,7 @@ class QMIXModelTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
 
-        with open('tests/models/test_qmix_src/hypers.json', 'r') as f:
+        with open('tests/models/qmix/hypers.json', 'r') as f:
             hypers = json.load(f)
         cls.model = QMIX(training=True, **hypers['hypers'])
 

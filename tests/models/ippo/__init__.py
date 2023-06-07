@@ -12,12 +12,12 @@ import tensorflow as tf
 class IPPOModelTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # with open('G:/RL/RLFrame-main/tests/models/test_maddpg_src/hypers.json', 'r') as f1, \
-        #      open('G:/RL/RLFrame-main/tests/models/test_maddpg_src/structs.json', 'r') as f2:
+        # with open('G:/RL/RLFrame-main/tests/models/maddpg/hypers.json', 'r') as f1, \
+        #      open('G:/RL/RLFrame-main/tests/models/maddpg/structs.json', 'r') as f2:
         #     hypers = json.load(f1)
         #     structs = json.load(f2)
         # cls.model = MADDPG(training=True, networks=default_builder(structs), **hypers['hypers'])
-        with open('tests/models/test_ippo_src/hypers.json', 'r') as f:
+        with open('tests/models/ippo/hypers.json', 'r') as f:
             hypers = json.load(f)
         cls.model = IPPO(training=True, **hypers['hypers'])
 

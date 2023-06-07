@@ -18,8 +18,8 @@ class CQSIMTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with open('tests/engines/test_cqsim_src/args.json', 'r') as f1, \
-             open('tests/engines/test_cqsim_src/sim_term_func.cpp', 'r') as f2:
+        with open('tests/engines/cqsim/args.json', 'r') as f1, \
+             open('tests/engines/cqsim/sim_term_func.cpp', 'r') as f2:
             cls.args = json.load(f1)
             cls.args['proxy']['sim_term_func'] = f2.read()
         cls.engine = CQSIM(**cls.args)

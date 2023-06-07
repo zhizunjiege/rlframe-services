@@ -5,16 +5,16 @@ import unittest
 import gymnasium as gym
 import numpy as np
 
-from models.double_dqn import DoubleDQN
+from models.dqn import DQN
 
 
-class DoubleDQNModelTestCase(unittest.TestCase):
+class DQNModelTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with open('tests/models/test_dqn_src/hypers.json', 'r') as f:
+        with open('tests/models/dqn/hypers.json', 'r') as f:
             cls.hypers = json.load(f)
-        cls.model = DoubleDQN(training=True, **cls.hypers)
+        cls.model = DQN(training=True, **cls.hypers)
 
     @classmethod
     def tearDownClass(cls):
@@ -71,7 +71,7 @@ class DoubleDQNModelTestCase(unittest.TestCase):
 
     def test_07_gymnasium(self):
         env = gym.make('CartPole-v1')
-        model = DoubleDQN(
+        model = DQN(
             training=True,
             obs_dim=env.observation_space.shape[0],
             act_num=env.action_space.n,
