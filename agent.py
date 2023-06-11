@@ -5,6 +5,7 @@ import json
 import logging
 import pickle
 import signal
+import sys
 
 from google.protobuf import json_format
 import grpc
@@ -13,7 +14,7 @@ from protos import agent_pb2
 from protos import agent_pb2_grpc
 from protos import types_pb2
 
-from sys import platform
+from hooks import AgentHooks
 from models import RLModels
 
 
@@ -31,9 +32,15 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
 
         self.sifunc = None
         self.oafunc = None
-        self.rfunc = None
+        self.rewfunc = None
 
-        self.pending_training = None
+        self.training = None
+
+        self.hooks = []
+
+        self.episodes = 0
+        self.react_steps = 0
+        self.train_steps = 0
 
     async def check_state(self, context):
         if self.state == types_pb2.ServiceState.State.UNINITED:
@@ -52,24 +59,39 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
 
     async def SetAgentConfig(self, request, context):
         try:
-            sifunc_src = request.sifunc + '\ninputs = func(states)'
-            self.sifunc = compile(sifunc_src, 'states_to_inputs', 'exec')
-            oafunc_src = request.oafunc + '\nactions = func(outputs)'
-            self.oafunc = compile(oafunc_src, 'outputs_to_actions', 'exec')
-            if request.training:
-                rfunc_src = request.rewfunc + '\nreward = func(states, inputs, actions, outputs,\
-                    next_states, next_inputs, terminated, truncated)'
+            sisrc = request.sifunc + '\ninputs = func(states)'
+            self.sifunc = compile(sisrc, 'states_to_inputs', 'exec')
+            oasrc = request.oafunc + '\nactions = func(outputs)'
+            self.oafunc = compile(oasrc, 'outputs_to_actions', 'exec')
+            rewsrc = request.rewfunc + '\nreward = func(states, inputs, actions, outputs,\
+                next_states, next_inputs, terminated, truncated, reward)'
 
-                self.rfunc = compile(rfunc_src, 'reward', 'exec')
+            self.rewfunc = compile(rewsrc, 'reward', 'exec')
         except SyntaxError as e:
             message = f'Invalid {e.filename} function, error in line {e.lineno}, column {e.offset}, {e.text}'
             await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
 
+        if request.name not in RLModels:
+            message = f'{request.name} model not supported'
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
+
         try:
-            hypers = json.loads(request.hypers)
-            self.model = RLModels[request.type](training=request.training, **hypers)
+            hypers = json.loads(request.hypers) if request.hypers else {}
+            self.model = RLModels[request.name](training=request.training, **hypers)
         except Exception as e:
-            message = f'Invalid hypers for {request.type} model, info: {e}'
+            message = f'Invalid hypers for {request.name} model, info: {e}'
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
+
+        try:
+            for hook in request.hooks:
+                if hook.name not in AgentHooks:
+                    message = f'{hook.name} hook not supported'
+                    await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
+                else:
+                    args = json.loads(hook.args) if hook.args else {}
+                    self.hooks.append(AgentHooks[hook.name](self.model, **args))
+        except Exception as e:
+            message = f'Invalid args for {hook.name} hook, info: {e}'
             await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
 
         self.state = types_pb2.ServiceState.State.INITED
@@ -86,8 +108,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         if not self.configs.training:
             message = 'Cannot change training mode when training is initially set to False'
             await context.abort(grpc.StatusCode.FAILED_PRECONDITION, message)
-        # self.model.training = request.training
-        self.pending_training = request.training
+        self.training = request.training
         return types_pb2.CommonResponse()
 
     async def GetModelWeights(self, request, context):
@@ -100,7 +121,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         try:
             self.model.set_weights(pickle.loads(request.weights))
         except Exception as e:
-            message = f'Invalid weights for {self.configs.type} model, info: {e}'
+            message = f'Invalid weights for {self.configs.name} model, info: {e}'
             await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
         return types_pb2.CommonResponse()
 
@@ -114,7 +135,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         try:
             self.model.set_buffer(pickle.loads(request.buffer))
         except Exception as e:
-            message = f'Invalid buffer for {self.configs.type} model, info: {e}'
+            message = f'Invalid buffer for {self.configs.name} model, info: {e}'
             await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
         return types_pb2.CommonResponse()
 
@@ -126,33 +147,25 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
     async def SetModelStatus(self, request, context):
         await self.check_state(context)
         try:
-            self.model.set_status(json.loads(request.status))
+            status = json.loads(request.status) if request.status else {}
+            self.model.set_status(status)
         except Exception as e:
-            message = f'Invalid status for {self.configs.type} model, info: {e}'
+            message = f'Invalid status for {self.configs.name} model, info: {e}'
             await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
         return types_pb2.CommonResponse()
 
     async def GetAction(self, request_iterator, context):
         await self.check_state(context)
 
-        if self.pending_training is not None:
-            self.model.training = self.pending_training
-            self.pending_training = None
+        if self.training is not None:
+            self.model.training = self.training
+            self.training = None
 
-        global_caches = {}
-        sifunc_args = {'states': None, 'inputs': None, 'caches': global_caches}
-        oafunc_args = {'outputs': None, 'actions': None, 'caches': global_caches}
-        rfunc_args = {
-            'states': None,
-            'inputs': None,
-            'actions': None,
-            'outputs': None,
-            'next_states': None,
-            'next_inputs': None,
-            'reward': None,
-            'terminated': False,
-            'truncated': False,
-        }
+        for hook in self.hooks:
+            hook.before_episode(self.episodes)
+
+        initialized = False
+        siargs, oaargs, rewargs, caches = {}, {}, {}, {}
 
         task = None
         loop = asyncio.get_running_loop()
@@ -161,88 +174,120 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
                 await task
                 task = None
 
-            states, terminated, truncated = self.parse_state(request)
+            states, terminated, truncated, reward = self.parse_state(request)
 
-            sifunc_args['states'] = states
-            exec(self.sifunc, sifunc_args)
-            inputs = sifunc_args['inputs']
-            outputs = self.model.react(inputs)
-            oafunc_args['outputs'] = outputs
-            exec(self.oafunc, oafunc_args)
-            actions = oafunc_args['actions']
+            if not (terminated or truncated):
+                for hook in self.hooks:
+                    hook.before_react(self.react_steps)
 
-            if self.model.training:
-                if rfunc_args['states'] is None:
-                    rfunc_args['states'] = states
-                    rfunc_args['inputs'] = inputs
-                    rfunc_args['actions'] = actions
-                    rfunc_args['outputs'] = outputs
-                else:
-                    rfunc_args['next_states'] = states
-                    rfunc_args['next_inputs'] = inputs
-                    rfunc_args['terminated'] = terminated
-                    rfunc_args['truncated'] = truncated
-                    exec(self.rfunc, rfunc_args)
+            siargs['caches'] = caches
+            siargs['states'] = states
+            exec(self.sifunc, siargs)
+            inputs = siargs['inputs']
+
+            if not (terminated or truncated):
+                outputs = self.model.react(inputs)
+
+                oaargs['caches'] = caches
+                oaargs['outputs'] = outputs
+                exec(self.oafunc, oaargs)
+                actions = oaargs['actions']
+
+                self.react_steps += 1
+                for hook in reversed(self.hooks):
+                    hook.after_react(self.react_steps, siargs, oaargs, caches)
+
+            if initialized:
+                rewargs['next_states'] = states
+                rewargs['next_inputs'] = inputs
+                rewargs['terminated'] = terminated
+                rewargs['truncated'] = truncated
+                rewargs['reward'] = reward
+                exec(self.rewfunc, rewargs)
+
+                for hook in self.hooks:
+                    hook.react2train(self.react_steps, rewargs, caches)
+
+                if self.model.training:
                     self.model.store(
-                        states=rfunc_args['inputs'],
-                        actions=rfunc_args['outputs'],
-                        next_states=rfunc_args['next_inputs'],
-                        reward=rfunc_args['reward'],
-                        terminated=terminated,
-                        truncated=truncated,
+                        states=rewargs['inputs'],
+                        actions=rewargs['outputs'],
+                        next_states=rewargs['next_inputs'],
+                        reward=rewargs['reward'],
+                        terminated=rewargs['terminated'],
+                        truncated=rewargs['truncated'],
                     )
-                    rfunc_args['states'] = rfunc_args['next_states']
-                    rfunc_args['inputs'] = rfunc_args['next_inputs']
-                    rfunc_args['actions'] = actions
-                    rfunc_args['outputs'] = outputs
-                    task = asyncio.create_task(self.train(loop))
+                    task = asyncio.create_task(self.learn(loop))
+            else:
+                initialized = True
 
-            response = self.wrap_action(actions)
-            yield response
+            rewargs['caches'] = caches
+            rewargs['states'] = states
+            rewargs['inputs'] = inputs
+            rewargs['actions'] = actions
+            rewargs['outputs'] = outputs
+
             if terminated or truncated:
+                if task is not None:
+                    await task
+                    task = None
                 break
+            else:
+                response = self.wrap_action(actions)
+                yield response
 
-    async def train(self, loop):
-        await loop.run_in_executor(None, self.model.train)
+        self.episodes += 1
+        for hook in reversed(self.hooks):
+            hook.after_episode(self.episodes)
+
+    async def learn(self, loop):
+        for hook in self.hooks:
+            hook.before_train(self.train_steps)
+
+        infos = await loop.run_in_executor(None, self.model.train)
+
+        self.train_steps += 1
+        for hook in reversed(self.hooks):
+            hook.after_train(self.train_steps, infos)
 
     def parse_param(self, param):
-        if 'double_value' in param:
-            return param['double_value']
-        elif 'int32_value' in param:
-            return param['int32_value']
-        elif 'bool_value' in param:
-            return param['bool_value']
-        elif 'string_value' in param:
-            return param['string_value']
-        elif 'array_value' in param:
-            return [self.parse_param(item) for item in param['array_value']['items']]
-        elif 'struct_value' in param:
-            return {field: self.parse_param(value) for field, value in param['struct_value']['fields'].items()}
+        if 'vdouble' in param:
+            return param['vdouble']
+        elif 'vint32' in param:
+            return param['vint32']
+        elif 'vbool' in param:
+            return param['vbool']
+        elif 'vstring' in param:
+            return param['vstring']
+        elif 'varray' in param:
+            return [self.parse_param(item) for item in param['varray']['items']]
+        elif 'vstruct' in param:
+            return {field: self.parse_param(value) for field, value in param['vstruct']['fields'].items()}
 
     def parse_state(self, req):
         req = json_format.MessageToDict(req, preserving_proto_field_name=True, including_default_value_fields=True)
-        states, terminated, truncated = req['states'], req['terminated'], req['truncated']
+        states = req['states']
         for k in states:
             states[k] = states[k]['entities']
             for i in range(len(states[k])):
                 states[k][i] = states[k][i]['params']
                 for j in states[k][i]:
                     states[k][i][j] = self.parse_param(states[k][i][j])
-        return states, terminated, truncated
+        return states, req['terminated'], req['truncated'], req['reward']
 
     def wrap_param(self, param):
         if isinstance(param, bool):
-            return {'bool_value': param}
+            return {'vbool': param}
         elif isinstance(param, float):
-            return {'double_value': param}
+            return {'vdouble': param}
         elif isinstance(param, int):
-            return {'int32_value': param}
+            return {'vint32': param}
         elif isinstance(param, str):
-            return {'string_value': param}
+            return {'vstring': param}
         elif isinstance(param, list):
-            return {'array_value': {'items': [self.wrap_param(item) for item in param]}}
+            return {'varray': {'items': [self.wrap_param(item) for item in param]}}
         elif isinstance(param, dict):
-            return {'struct_value': {'fields': {k: self.wrap_param(v) for k, v in param.items()}}}
+            return {'vstruct': {'fields': {k: self.wrap_param(v) for k, v in param.items()}}}
 
     def wrap_action(self, actions):
         for k in actions:
@@ -255,8 +300,8 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
 
     async def Call(self, request, context):
         await self.check_state(context)
-        identity, str_data, bin_data = self.model.call(request.identity, request.str_data, request.bin_data)
-        return types_pb2.CallData(identity=identity, str_data=str_data, bin_data=bin_data)
+        name, dstr, dbin = self.model.call(request.name, request.dstr, request.dbin)
+        return types_pb2.CallData(name=name, dstr=dstr, dbin=dbin)
 
 
 _cleanup_coroutines = []
@@ -303,7 +348,7 @@ if __name__ == '__main__':
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     server = agent_server(args.host, args.port, args.worker, args.msglen)
-    if platform == "linux":
+    if sys.platform == "linux":
         try:
             for signame in ('SIGINT', 'SIGTERM'):
                 loop.add_signal_handler(getattr(signal, signame), lambda: asyncio.create_task(_cleanup_coroutines[0]))

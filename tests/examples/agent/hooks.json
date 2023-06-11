@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Training",
+    "args": {
+      "test_policy_every": 8,
+      "test_policy_total": 2
+    }
+  },
+  {
+    "name": "Tensorboard",
+    "args": {}
+  },
+  {
+    "name": "AutoSave",
+    "args": {
+      "per_steps": 1000,
+      "per_episodes": 10
+    }
+  }
+]

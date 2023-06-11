@@ -73,9 +73,11 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
                 self.services[id] = request.services[id]
         return types_pb2.CommonResponse()
 
+    # Deprecated
     def GetRouteConfig(self, request, context):
         return self.route_config
 
+    # Deprecated
     def SetRouteConfig(self, request, context):
         self.route_config = request
         return types_pb2.CommonResponse()

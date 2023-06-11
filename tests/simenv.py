@@ -35,32 +35,29 @@ class SimenvServiceTestCase(unittest.TestCase):
         req = simenv_pb2.SimenvConfig()
         with open('tests/examples/simenv/args.json', 'r') as f1, \
              open('tests/examples/simenv/sim_term_func.cpp', 'r') as f2:
+            req.name = 'CQSIM'
             args = json.load(f1)
-            args['args']['proxy']['sim_term_func'] = f2.read()
-            req.type = args['type']
-            req.args = json.dumps(args['args'])
+            args['proxy']['sim_term_func'] = f2.read()
+            req.args = json.dumps(args)
         self.stub.SetSimenvConfig(req)
 
         res = self.stub.QueryService(types_pb2.CommonRequest())
         self.assertEqual(res.state, types_pb2.ServiceState.State.INITED)
 
         res = self.stub.GetSimenvConfig(types_pb2.CommonRequest())
-        self.assertEqual(res.type, args['type'])
+        self.assertEqual(res.name, 'CQSIM')
 
     def test_02_simcontrol(self):
         cmd = simenv_pb2.SimCmd()
 
         cmd.type = 'init'
-        cmd.params = '{}'
         self.stub.SimControl(cmd)
 
         cmd.type = 'start'
-        cmd.params = '{}'
         self.stub.SimControl(cmd)
         time.sleep(3)
 
         cmd.type = 'pause'
-        cmd.params = '{}'
         self.stub.SimControl(cmd)
 
         cmd.type = 'param'
@@ -68,21 +65,17 @@ class SimenvServiceTestCase(unittest.TestCase):
         self.stub.SimControl(cmd)
 
         cmd.type = 'step'
-        cmd.params = '{}'
         self.stub.SimControl(cmd)
 
         cmd.type = 'resume'
-        cmd.params = '{}'
         self.stub.SimControl(cmd)
         time.sleep(3)
 
         cmd.type = 'episode'
-        cmd.params = '{}'
         self.stub.SimControl(cmd)
         time.sleep(10)
 
         cmd.type = 'stop'
-        cmd.params = '{}'
         self.stub.SimControl(cmd)
 
     def test_03_simmonitor(self):

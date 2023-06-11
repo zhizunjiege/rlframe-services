@@ -4,7 +4,7 @@ import os
 import subprocess
 import threading
 import time
-from typing import Any, Dict, List, Literal, Tuple
+from typing import Any, Dict, List, Tuple
 import xml.etree.ElementTree as xml
 
 import grpc
@@ -12,7 +12,7 @@ from google.protobuf import duration_pb2
 from google.protobuf import timestamp_pb2
 import requests
 
-from ..base import SimEngineBase
+from ..base import SimEngineBase, AnyDict, CommandType
 from . import engine_pb2
 from . import engine_pb2_grpc
 
@@ -29,8 +29,9 @@ class CQSIM(SimEngineBase):
         """Init CQSIM engine.
 
         Args:
-            ctrl_addr: Address of CQSIM engine controller.
-            res_addr: Address of CQSIM resource service.
+            platform: Platform information.
+            task: Task information.
+            proxy: Proxy information.
         """
         super().__init__()
 
@@ -58,26 +59,21 @@ class CQSIM(SimEngineBase):
         self.cwd = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tmp')
         os.makedirs(self.cwd, exist_ok=True)
 
-    def __del__(self):
-        """Close CQSIM engine."""
-        self.join_threads()
-        self.channel.close()
-
     def control(
         self,
-        cmd: Literal['init', 'start', 'pause', 'step', 'resume', 'stop', 'episode', 'param'],
-        params: Dict[str, Any] = {},
+        type: CommandType,
+        params: AnyDict = {},
     ) -> bool:
         """Control CQSIM engine.
 
         Args:
-            cmd: Control command. `episode` means ending current episode, `param` means setting simulation parameters.
-            params: Control parameters.
+            type: Command type.
+            params: Command params.
 
         Returns:
             True if success.
         """
-        if cmd == 'init':
+        if type == 'init':
             self.join_threads()
             self.init_threads()
             self.fine_params()
@@ -99,30 +95,30 @@ class CQSIM(SimEngineBase):
             self.control('param', p)
             self.state = 'stopped'
             return True
-        elif cmd == 'start':
+        elif type == 'start':
             self.current_repeat_time = 1
             self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.START))
             self.state = 'running'
             return True
-        elif cmd == 'pause':
+        elif type == 'pause':
             self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.SUSPEND))
             self.state = 'suspended'
             return True
-        elif cmd == 'step':
+        elif type == 'step':
             return False
-        elif cmd == 'resume':
+        elif type == 'resume':
             self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.CONTINUE))
             self.state = 'running'
             return True
-        elif cmd == 'stop':
+        elif type == 'stop':
             self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.STOP))
             self.state = 'stopped'
             return True
-        elif cmd == 'episode':
+        elif type == 'episode':
             self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.STOP_CURRENT_SAMPLE))
             self.state = 'running'
             return True
-        elif cmd == 'param':
+        elif type == 'param':
             if 'time_step' in params:
                 self.sim_params['task']['time_step'] = params['time_step']
                 self.engine.Control(engine_pb2.ControlCmd(time_step=params['time_step']))
@@ -133,11 +129,11 @@ class CQSIM(SimEngineBase):
         else:
             return False
 
-    def monitor(self) -> Tuple[List[Dict[str, Any]], List[str]]:
+    def monitor(self) -> Tuple[List[AnyDict], List[str]]:
         """Monitor CQSIM engine.
 
         Returns:
-            Data of simulation process.
+            Data of CQSIM engine.
             Logs of CQSIM engine.
         """
         with self.data_lock:
@@ -147,20 +143,20 @@ class CQSIM(SimEngineBase):
             self.logs_cache.clear()
         return data, logs
 
-    def call(self, identity: str, str_data: str = '', bin_data: bytes = b'') -> Tuple[str, str, bytes]:
+    def call(self, name: str, dstr='', dbin=b'') -> Tuple[str, str, bytes]:
         """Any method can be called.
 
         Args:
-            identity: Identity of method. `reset-proxy` means resetting proxy enviroment.
-            str_data: String data.
-            bin_data: Binary data.
+            name: Name of method. `reset-proxy` means resetting proxy enviroment.
+            dstr: String data.
+            dbin: Binary data.
 
         Returns:
-            Identity of method, string data and binary data.
+            Name of method, string data and binary data.
         """
-        if identity == 'reset-proxy':
+        if name == 'reset-proxy':
             self.set_configs(self.reset_configs(self.get_configs()))
-        return identity, '', b''
+        return name, '', b''
 
     def data_callback(self):
         self.data_responses = self.engine.GetSysInfo(engine_pb2.CommonRequest())
@@ -574,3 +570,9 @@ class CQSIM(SimEngineBase):
             'scenario_xml': scenario_xml,
             'interaction_xml': interaction_xml,
         }
+
+    def __del__(self):
+        """Close CQSIM engine."""
+        self.join_threads()
+        self.channel.close()
+        super().__del__()

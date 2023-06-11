@@ -41,11 +41,15 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
         return self.configs
 
     def SetSimenvConfig(self, request, context):
+        if request.name not in SimEngines:
+            message = f'{request.name} engine not supported'
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
+
         try:
-            args = json.loads(request.args)
-            self.engine = SimEngines[request.type](**args)
+            args = json.loads(request.args) if request.args else {}
+            self.engine = SimEngines[request.name](**args)
         except Exception as e:
-            message = f'Invalid args for {request.type} engine, info: {e}'
+            message = f'Invalid args for {request.name} engine, info: {e}'
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
 
         self.state = types_pb2.ServiceState.State.INITED
@@ -56,11 +60,10 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
     def SimControl(self, request, context):
         self.check_state(context)
         try:
-            cmd = request.type
-            params = json.loads(request.params)
-            self.engine.control(cmd=cmd, params=params)
+            params = json.loads(request.params) if request.params else {}
+            self.engine.control(type=request.type, params=params)
         except Exception as e:
-            message = f'Invalid command {cmd} with its params, info: {e}'
+            message = f'Invalid command {request.type} with its params, info: {e}'
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
         return types_pb2.CommonResponse()
 
@@ -73,8 +76,8 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
 
     def Call(self, request, context):
         self.check_state(context)
-        identity, str_data, bin_data = self.engine.call(request.identity, request.str_data, request.bin_data)
-        return types_pb2.CallData(identity=identity, str_data=str_data, bin_data=bin_data)
+        name, dstr, dbin = self.engine.call(request.name, request.dstr, request.dbin)
+        return types_pb2.CallData(name=name, dstr=dstr, dbin=dbin)
 
 
 def simenv_server(host, port, max_workers, max_msg_len):

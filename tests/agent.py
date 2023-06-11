@@ -39,21 +39,26 @@ class AgentServiceTestCase(unittest.TestCase):
         with open('tests/examples/agent/hypers.json', 'r') as f1, \
              open('tests/examples/agent/states_inputs_func.py', 'r') as f2, \
              open('tests/examples/agent/outputs_actions_func.py', 'r') as f3, \
-             open('tests/examples/agent/reward_func.py', 'r') as f4:
+             open('tests/examples/agent/reward_func.py', 'r') as f4, \
+             open('tests/examples/agent/hooks.json', 'r') as f5:
             req.training = True
-            hypers = json.load(f1)
-            req.type = hypers['type']
-            req.hypers = json.dumps(hypers['hypers'])
+            req.name = 'DQN'
+            req.hypers = f1.read()
             req.sifunc = f2.read()
             req.oafunc = f3.read()
             req.rewfunc = f4.read()
+            hooks = json.load(f5)
+            for hook in hooks:
+                pointer = req.hooks.add()
+                pointer.name = hook['name']
+                pointer.args = json.dumps(hook['args'])
         self.stub.SetAgentConfig(req)
 
         res = self.stub.QueryService(types_pb2.CommonRequest())
         self.assertEqual(res.state, types_pb2.ServiceState.State.INITED)
 
         res = self.stub.GetAgentConfig(types_pb2.CommonRequest())
-        self.assertEqual(res.type, hypers['type'])
+        self.assertEqual(res.name, 'DQN')
 
     def test_02_agentmode(self):
         res = self.stub.GetAgentMode(types_pb2.CommonRequest())
@@ -73,7 +78,7 @@ class AgentServiceTestCase(unittest.TestCase):
         res = self.stub.GetModelBuffer(types_pb2.CommonRequest())
         buffer = pickle.loads(res.buffer)
         self.assertEqual(buffer['size'], 0)
-        self.assertEqual(buffer['data']['acts_buf'].shape, (0, 1))
+        self.assertEqual(buffer['acts_buf'].shape, (0, 1))
 
         self.stub.SetModelBuffer(agent_pb2.ModelBuffer(buffer=res.buffer))
 
@@ -92,19 +97,19 @@ class AgentServiceTestCase(unittest.TestCase):
                     'entities': [{
                         'params': {
                             'longitude': {
-                                'double_value': 0.0
+                                'vdouble': 0.0
                             },
                             'latitude': {
-                                'double_value': 0.0
+                                'vdouble': 0.0
                             },
                             'altitude': {
-                                'double_value': 0.0
+                                'vdouble': 0.0
                             },
                             'speed': {
-                                'double_value': 0.0
+                                'vdouble': 0.0
                             },
                             'azimuth': {
-                                'double_value': 0.0
+                                'vdouble': 0.0
                             },
                         }
                     }],
@@ -113,19 +118,19 @@ class AgentServiceTestCase(unittest.TestCase):
                     'entities': [{
                         'params': {
                             'longitude': {
-                                'double_value': 0.0
+                                'vdouble': 0.0
                             },
                             'latitude': {
-                                'double_value': 0.0
+                                'vdouble': 0.0
                             },
                             'altitude': {
-                                'double_value': 0.0
+                                'vdouble': 0.0
                             },
                             'speed': {
-                                'double_value': 0.0
+                                'vdouble': 0.0
                             },
                             'azimuth': {
-                                'double_value': 0.0
+                                'vdouble': 0.0
                             },
                         }
                     }],
@@ -133,27 +138,31 @@ class AgentServiceTestCase(unittest.TestCase):
             },
             'terminated': False,
             'truncated': False,
+            'reward': 0.0,
         }
         req = json_format.ParseDict(info, types_pb2.SimState())
 
-        req_count = 5000
-        req_queue = queue.SimpleQueue()
-        req_queue.put(req)
-        req_count -= 1
         t1 = time.time()
-        for res in self.stub.GetAction(iter(req_queue.get, None)):
-            res = json_format.MessageToDict(res, preserving_proto_field_name=True)
-            before = time.perf_counter_ns()
-            while time.perf_counter_ns() - before < 10000000:
-                pass
-            if req_count > 0:
-                req_queue.put(req)
-            else:
-                req_queue.put(None)
-            req_count -= 1
+        for _ in range(100):
+            req_count = 100
+            req_queue = queue.SimpleQueue()
+            req_queue.put(req)
+            req.truncated = False
+            for res in self.stub.GetAction(iter(req_queue.get, None)):
+                res = json_format.MessageToDict(res, preserving_proto_field_name=True)
+                before = time.perf_counter_ns()
+                while time.perf_counter_ns() - before < 0.01 * 1e9:
+                    pass
+                if req_count > 0:
+                    if req_count == 1:
+                        req.truncated = True
+                    req_queue.put(req)
+                else:
+                    req_queue.put(None)
+                req_count -= 1
         t2 = time.time()
-        print(f'Time cost: {t2 - t1} s, FPS: {5000 / (t2 - t1)}')
+        print(f'Time cost: {t2 - t1} s, FPS: {100 * 100 / (t2 - t1)}')
 
-        azimuth = res['actions']['example_uav']['entities'][0]['params']['azimuth']['double_value']
+        azimuth = res['actions']['example_uav']['entities'][0]['params']['azimuth']['vdouble']
         print(f'Azimuth: {azimuth}')
         self.assertIsInstance(azimuth, float)

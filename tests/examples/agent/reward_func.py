@@ -12,9 +12,11 @@ def func(
     next_inputs: np.ndarray | Dict[str | int, np.ndarray],
     terminated: bool,
     truncated: bool,
+    reward: float | Dict[str | int, float],
 ) -> float | Dict[str | int, float]:
     """Calculate the reward for the current step."""
+    global caches
     if terminated:
-        return 1.0
+        return reward + 1
     else:
-        return 0.0
+        return reward + 0

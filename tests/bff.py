@@ -40,6 +40,7 @@ class BFFServicerTestCase(unittest.TestCase):
         self.assertIn(self.ids[0], res.services)
         self.stub.SetServiceInfo(res)
 
+    @unittest.skip('Deprecated')
     def test_02_routeconfig(self):
         with open('tests/examples/routes.json', 'r') as f:
             routes = json.load(f)
@@ -66,14 +67,19 @@ class BFFServicerTestCase(unittest.TestCase):
         with open('tests/examples/agent/hypers.json', 'r') as f1, \
              open('tests/examples/agent/states_inputs_func.py', 'r') as f2, \
              open('tests/examples/agent/outputs_actions_func.py', 'r') as f3, \
-             open('tests/examples/agent/reward_func.py', 'r') as f4:
+             open('tests/examples/agent/reward_func.py', 'r') as f4, \
+             open('tests/examples/agent/hooks.json', 'r') as f5:
             req.configs[self.ids[1]].training = True
-            hypers = json.load(f1)
-            req.configs[self.ids[1]].type = hypers['type']
-            req.configs[self.ids[1]].hypers = json.dumps(hypers['hypers'])
+            req.configs[self.ids[1]].name = 'DQN'
+            req.configs[self.ids[1]].hypers = f1.read()
             req.configs[self.ids[1]].sifunc = f2.read()
             req.configs[self.ids[1]].oafunc = f3.read()
             req.configs[self.ids[1]].rewfunc = f4.read()
+            hooks = json.load(f5)
+            for hook in hooks:
+                pointer = req.configs[self.ids[1]].hooks.add()
+                pointer.name = hook['name']
+                pointer.args = json.dumps(hook['args'])
 
         self.stub.SetAgentConfig(req)
         res = self.stub.GetAgentConfig(bff_pb2.ServiceIdList(ids=[]))
@@ -105,10 +111,10 @@ class BFFServicerTestCase(unittest.TestCase):
         req = bff_pb2.SimenvConfigMap()
         with open('tests/examples/simenv/args.json', 'r') as f1, \
              open('tests/examples/simenv/sim_term_func.cpp', 'r') as f2:
+            req.configs[self.ids[0]].name = 'CQSIM'
             args = json.load(f1)
-            args['args']['proxy']['sim_term_func'] = f2.read()
-            req.configs[self.ids[0]].type = args['type']
-            req.configs[self.ids[0]].args = json.dumps(args['args'])
+            args['proxy']['sim_term_func'] = f2.read()
+            req.configs[self.ids[0]].args = json.dumps(args)
         self.stub.SetSimenvConfig(req)
         res = self.stub.GetSimenvConfig(bff_pb2.ServiceIdList(ids=[]))
         self.assertIn(self.ids[0], res.configs)
@@ -117,17 +123,14 @@ class BFFServicerTestCase(unittest.TestCase):
         req = bff_pb2.SimCmdMap()
 
         req.cmds[self.ids[0]].type = 'init'
-        req.cmds[self.ids[0]].params = '{}'
         self.stub.SimControl(req)
 
         req.cmds[self.ids[0]].type = 'start'
-        req.cmds[self.ids[0]].params = '{}'
         self.stub.SimControl(req)
 
         time.sleep(30)
 
         req.cmds[self.ids[0]].type = 'stop'
-        req.cmds[self.ids[0]].params = '{}'
         self.stub.SimControl(req)
 
     def test_12_simmonitor(self):
