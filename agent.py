@@ -17,6 +17,8 @@ from protos import types_pb2
 from hooks import AgentHooks
 from models import RLModels
 
+LOGGER_NAME = 'agent'
+
 
 class AgentServicer(agent_pb2_grpc.AgentServicer):
 
@@ -193,9 +195,10 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
                 exec(self.oafunc, oaargs)
                 actions = oaargs['actions']
 
-                self.react_steps += 1
                 for hook in reversed(self.hooks):
                     hook.after_react(self.react_steps, siargs, oaargs, caches)
+
+                self.react_steps += 1
 
             if initialized:
                 rewargs['next_states'] = states
@@ -206,7 +209,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
                 exec(self.rewfunc, rewargs)
 
                 for hook in self.hooks:
-                    hook.react2train(self.react_steps, rewargs, caches)
+                    hook.react2train(rewargs, caches)
 
                 if self.model.training:
                     self.model.store(
@@ -221,24 +224,25 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             else:
                 initialized = True
 
-            rewargs['caches'] = caches
-            rewargs['states'] = states
-            rewargs['inputs'] = inputs
-            rewargs['actions'] = actions
-            rewargs['outputs'] = outputs
-
             if terminated or truncated:
                 if task is not None:
                     await task
                     task = None
                 break
             else:
+                rewargs['caches'] = caches
+                rewargs['states'] = states
+                rewargs['inputs'] = inputs
+                rewargs['actions'] = actions
+                rewargs['outputs'] = outputs
+
                 response = self.wrap_action(actions)
                 yield response
 
-        self.episodes += 1
         for hook in reversed(self.hooks):
             hook.after_episode(self.episodes)
+
+        self.episodes += 1
 
     async def learn(self, loop):
         for hook in self.hooks:
@@ -246,9 +250,10 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
 
         infos = await loop.run_in_executor(None, self.model.train)
 
-        self.train_steps += 1
         for hook in reversed(self.hooks):
             hook.after_train(self.train_steps, infos)
+
+        self.train_steps += 1
 
     def parse_param(self, param):
         if 'vdouble' in param:
@@ -308,6 +313,7 @@ _cleanup_coroutines = []
 
 
 async def agent_server(host, port, max_workers, max_msg_len):
+    logger = logging.getLogger(LOGGER_NAME)
     server = grpc.aio.server(
         futures.ThreadPoolExecutor(max_workers=max_workers),
         options=[
@@ -318,17 +324,15 @@ async def agent_server(host, port, max_workers, max_msg_len):
     agent_pb2_grpc.add_AgentServicer_to_server(AgentServicer(), server)
     port = server.add_insecure_port(f'{host}:{port}')
     await server.start()
-    logging.info(f'Agent server started at {host}:{port}')
+    logger.info(f'Agent server started at {host}:{port}')
 
     async def grace_exit(*_):
-        logging.info('Agent service stopping...')
+        logger.info('Agent server stopping...')
         await server.stop(0)
 
     _cleanup_coroutines.append(grace_exit())
-
     await server.wait_for_termination()
-
-    logging.info('Agent server stopped.')
+    logger.info('Agent server stopped.')
 
 
 if __name__ == '__main__':
@@ -340,10 +344,11 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--loglvl', type=str, default='info', help='Log level defined in `logging`.')
     args = parser.parse_args()
 
-    logging.basicConfig(
-        format='%(asctime)s - %(filename)s:%(lineno)d - %(levelname)s - %(message)s',
-        level=args.loglvl.upper(),
-    )
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(lineno)d - %(levelname)s - %(message)s'))
+    logger = logging.getLogger(LOGGER_NAME)
+    logger.addHandler(handler)
+    logger.setLevel(args.loglvl.upper())
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)

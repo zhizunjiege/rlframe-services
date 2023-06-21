@@ -1,9 +1,9 @@
 from .autosave import AutoSave
-from .tensorboard import Tensorboard
+from .logging import Logging
 from .training import Training
 
 AgentHooks = {hook.name: hook for hook in [
     Training,
-    Tensorboard,
+    Logging,
     AutoSave,
 ]}

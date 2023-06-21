@@ -3,6 +3,7 @@ from concurrent import futures
 import json
 import logging
 import signal
+import sys
 
 import grpc
 
@@ -11,6 +12,8 @@ from protos import simenv_pb2_grpc
 from protos import types_pb2
 
 from engines import SimEngines
+
+LOGGER_NAME = 'simenv'
 
 
 class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
@@ -81,6 +84,7 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
 
 
 def simenv_server(host, port, max_workers, max_msg_len):
+    logger = logging.getLogger(LOGGER_NAME)
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=max_workers),
         options=[
@@ -91,17 +95,17 @@ def simenv_server(host, port, max_workers, max_msg_len):
     simenv_pb2_grpc.add_SimenvServicer_to_server(SimenvServicer(), server)
     port = server.add_insecure_port(f'{host}:{port}')
     server.start()
-    logging.info(f'Simenv server started at {host}:{port}')
+    logger.info(f'Simenv server started at {host}:{port}')
 
     def grace_exit(*_):
-        logging.info('Simenv service stopping...')
+        logger.info('Simenv server stopping...')
         evt = server.stop(0)
         evt.wait(1)
 
     signal.signal(signal.SIGINT, grace_exit)
     signal.signal(signal.SIGTERM, grace_exit)
     server.wait_for_termination()
-    logging.info('Simenv server stopped.')
+    logger.info('Simenv server stopped.')
 
 
 if __name__ == '__main__':
@@ -113,9 +117,10 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--loglvl', type=str, default='info', help='Log level defined in `logging`.')
     args = parser.parse_args()
 
-    logging.basicConfig(
-        format='%(asctime)s - %(filename)s:%(lineno)d - %(levelname)s - %(message)s',
-        level=args.loglvl.upper(),
-    )
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(lineno)d - %(levelname)s - %(message)s'))
+    logger = logging.getLogger(LOGGER_NAME)
+    logger.addHandler(handler)
+    logger.setLevel(args.loglvl.upper())
 
     simenv_server(args.host, args.port, args.worker, args.msglen)

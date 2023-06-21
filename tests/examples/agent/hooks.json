@@ -7,8 +7,12 @@
     }
   },
   {
-    "name": "Tensorboard",
-    "args": {}
+    "name": "Logging",
+    "args": {
+      "loglvl": "INFO",
+      "terminal": true,
+      "tensorboard": true
+    }
   },
   {
     "name": "AutoSave",

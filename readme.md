@@ -12,7 +12,7 @@ For Linux:
 
 For Windows:
 
-```bat
+```powershell
 ./tools/build-protos.bat
 ```
 
@@ -28,6 +28,6 @@ For Linux:
 
 For Windows:
 
-```bat
+```powershell
 ./tools/unittests.bat
 ```
