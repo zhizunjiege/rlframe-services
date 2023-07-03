@@ -43,11 +43,11 @@ class Logging(HookBase):
         self.rewards, self.returns = {}, {}
         self.step = 0
 
-    def after_react(self, step: int, siargs: AnyDict, oaargs: AnyDict, caches: AnyDict):
+    def after_react(self, step: int, siargs: AnyDict, oaargs: AnyDict):
         if self.terminal:
             self.logger.debug(f'React step {step} ended, states: {siargs["states"]}, actions: {oaargs["actions"]}.')
 
-    def react2train(self, rewargs: AnyDict, caches: AnyDict):
+    def react2train(self, rewargs: AnyDict):
         reward = rewargs['reward']
 
         if isinstance(reward, dict):
@@ -57,7 +57,7 @@ class Logging(HookBase):
             self.rewards.setdefault('#', []).append(reward)
 
         if self.terminal:
-            self.logger.debug(f'React to Train: reward: {reward}, caches: {caches}.')
+            self.logger.debug(f'React to Train: reward: {reward}.')
 
     def after_train(self, step: int, infos: AnyDict):
         self.step = step
@@ -68,7 +68,7 @@ class Logging(HookBase):
             for k, v in infos.items():
                 self.writer.add_scalar(f'train/{k}', sum(v) / len(v) if isinstance(v, Iterable) else v, step)
 
-    def after_episode(self, episode: int):
+    def after_episode(self, episode: int, shared: AnyDict):
         if self.model.training:
             self.returns.clear()
 
@@ -79,15 +79,14 @@ class Logging(HookBase):
         if self.terminal:
             self.logger.info(f'Episode {episode} ended, traning: {self.model.training}, returns: {self.returns}.')
         if self.tensorboard:
-            title = 'train/return' if self.model.training else 'test/return'
-            if len(self.returns) > 1:
-                for k, v in self.returns.items():
-                    self.writer.add_scalar(f'{title}/{k}', sum(v) / len(v), self.step)
-            elif len(self.returns) == 1:
-                self.writer.add_scalar(title, sum(self.returns['#']) / len(self.returns['#']), self.step)
-
-        if self.model.training:
-            self.returns.clear()
+            if self.model.training or shared['test_episode'] == shared['test_policy_total'] - 1:
+                title = 'train/return' if self.model.training else 'test/return'
+                if len(self.returns) > 1:
+                    for k, v in self.returns.items():
+                        self.writer.add_scalar(f'{title}/{k}', sum(v) / len(v), self.step)
+                elif len(self.returns) == 1:
+                    self.writer.add_scalar(title, sum(self.returns['#']) / len(self.returns['#']), self.step)
+                self.returns.clear()
 
     def __del__(self):
         if self.terminal:

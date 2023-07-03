@@ -1,6 +1,7 @@
 import json
 import pickle
 import queue
+import random
 import time
 import unittest
 
@@ -148,6 +149,7 @@ class AgentServiceTestCase(unittest.TestCase):
             req_queue = queue.SimpleQueue()
             req_queue.put(req)
             req.truncated = False
+            req.reward = random.random()
             for res in self.stub.GetAction(iter(req_queue.get, None)):
                 res = json_format.MessageToDict(res, preserving_proto_field_name=True)
                 before = time.perf_counter_ns()

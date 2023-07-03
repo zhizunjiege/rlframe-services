@@ -25,11 +25,12 @@ class HookBase(ABC):
         """
         self.model = model
 
-    def before_episode(self, episode: int):
+    def before_episode(self, episode: int, shared: AnyDict):
         """Before episode.
 
         Args:
             episode: Current episode.
+            shared: Shared data between hooks.
         """
         ...
 
@@ -41,23 +42,21 @@ class HookBase(ABC):
         """
         ...
 
-    def after_react(self, step: int, siargs: AnyDict, oaargs: AnyDict, caches: AnyDict):
+    def after_react(self, step: int, siargs: AnyDict, oaargs: AnyDict):
         """After react.
 
         Args:
             step: Current react step.
             siargs: Arguments of state to input function.
             oaargs: Arguments of output to action function.
-            caches: Caches.
         """
         ...
 
-    def react2train(self, rewargs: AnyDict, caches: AnyDict):
+    def react2train(self, rewargs: AnyDict):
         """Between react and train.
 
         Args:
             rewargs: Arguments of reward function.
-            caches: Caches.
         """
         ...
 
@@ -78,11 +77,12 @@ class HookBase(ABC):
         """
         ...
 
-    def after_episode(self, episode: int):
+    def after_episode(self, episode: int, shared: AnyDict):
         """After episode.
 
         Args:
             episode: Current episode.
+            shared: Shared data between hooks.
         """
         ...
 

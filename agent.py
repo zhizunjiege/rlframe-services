@@ -39,6 +39,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         self.training = None
 
         self.hooks = []
+        self.shared = {}
 
         self.episodes = 0
         self.react_steps = 0
@@ -98,12 +99,13 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
 
         self.state = types_pb2.ServiceState.State.INITED
         self.configs = request
+        self.training = request.training
 
         return types_pb2.CommonResponse()
 
     async def GetAgentMode(self, request, context):
         await self.check_state(context)
-        return agent_pb2.AgentMode(training=self.model.training)
+        return agent_pb2.AgentMode(training=self.training)
 
     async def SetAgentMode(self, request, context):
         await self.check_state(context)
@@ -159,14 +161,14 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
     async def GetAction(self, request_iterator, context):
         await self.check_state(context)
 
-        if self.training is not None:
-            self.model.training = self.training
-            self.training = None
+        enabled = self.training
+        self.model.training = self.training
 
-        for hook in self.hooks:
-            hook.before_episode(self.episodes)
+        if enabled:
+            for hook in self.hooks:
+                hook.before_episode(self.episodes, self.shared)
 
-        initialized = False
+        init, done = False, False
         siargs, oaargs, rewargs, caches = {}, {}, {}, {}
 
         task = None
@@ -178,16 +180,19 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
 
             states, terminated, truncated, reward = self.parse_state(request)
 
-            if not (terminated or truncated):
-                for hook in self.hooks:
-                    hook.before_react(self.react_steps)
+            done = terminated or truncated
+
+            if not done:
+                if enabled:
+                    for hook in self.hooks:
+                        hook.before_react(self.react_steps)
 
             siargs['caches'] = caches
             siargs['states'] = states
             exec(self.sifunc, siargs)
             inputs = siargs['inputs']
 
-            if not (terminated or truncated):
+            if not done:
                 outputs = self.model.react(inputs)
 
                 oaargs['caches'] = caches
@@ -195,54 +200,58 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
                 exec(self.oafunc, oaargs)
                 actions = oaargs['actions']
 
-                for hook in reversed(self.hooks):
-                    hook.after_react(self.react_steps, siargs, oaargs, caches)
+                if enabled:
+                    for hook in reversed(self.hooks):
+                        hook.after_react(self.react_steps, siargs, oaargs)
 
-                self.react_steps += 1
+                    self.react_steps += 1
 
-            if initialized:
-                rewargs['next_states'] = states
-                rewargs['next_inputs'] = inputs
-                rewargs['terminated'] = terminated
-                rewargs['truncated'] = truncated
-                rewargs['reward'] = reward
-                exec(self.rewfunc, rewargs)
+            if init:
+                if enabled:
+                    rewargs['next_states'] = states
+                    rewargs['next_inputs'] = inputs
+                    rewargs['terminated'] = terminated
+                    rewargs['truncated'] = truncated
+                    rewargs['reward'] = reward
+                    exec(self.rewfunc, rewargs)
 
-                for hook in self.hooks:
-                    hook.react2train(rewargs, caches)
+                    for hook in self.hooks:
+                        hook.react2train(rewargs)
 
-                if self.model.training:
-                    self.model.store(
-                        states=rewargs['inputs'],
-                        actions=rewargs['outputs'],
-                        next_states=rewargs['next_inputs'],
-                        reward=rewargs['reward'],
-                        terminated=rewargs['terminated'],
-                        truncated=rewargs['truncated'],
-                    )
-                    task = asyncio.create_task(self.learn(loop))
+                    if self.model.training:
+                        self.model.store(
+                            states=rewargs['inputs'],
+                            actions=rewargs['outputs'],
+                            next_states=rewargs['next_inputs'],
+                            reward=rewargs['reward'],
+                            terminated=rewargs['terminated'],
+                            truncated=rewargs['truncated'],
+                        )
+                        task = asyncio.create_task(self.learn(loop))
             else:
-                initialized = True
+                init = True
 
-            if terminated or truncated:
+            if not done:
+                if enabled:
+                    rewargs['caches'] = caches
+                    rewargs['states'] = states
+                    rewargs['inputs'] = inputs
+                    rewargs['actions'] = actions
+                    rewargs['outputs'] = outputs
+
+                response = self.wrap_action(actions)
+                yield response
+            else:
                 if task is not None:
                     await task
                     task = None
                 break
-            else:
-                rewargs['caches'] = caches
-                rewargs['states'] = states
-                rewargs['inputs'] = inputs
-                rewargs['actions'] = actions
-                rewargs['outputs'] = outputs
 
-                response = self.wrap_action(actions)
-                yield response
+        if enabled:
+            for hook in reversed(self.hooks):
+                hook.after_episode(self.episodes, self.shared)
 
-        for hook in reversed(self.hooks):
-            hook.after_episode(self.episodes)
-
-        self.episodes += 1
+            self.episodes += 1
 
     async def learn(self, loop):
         for hook in self.hooks:
