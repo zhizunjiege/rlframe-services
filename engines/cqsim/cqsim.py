@@ -1,5 +1,6 @@
 import base64
 import json
+import logging
 import os
 import subprocess
 import threading
@@ -13,8 +14,8 @@ from google.protobuf import timestamp_pb2
 import requests
 
 from ..base import SimEngineBase, AnyDict, CommandType
-from . import engine_pb2
-from . import engine_pb2_grpc
+from .engine import engine_pb2
+from .engine import engine_pb2_grpc
 
 
 class CQSIM(SimEngineBase):
@@ -22,27 +23,40 @@ class CQSIM(SimEngineBase):
     def __init__(
         self,
         *,
-        platform: Dict[str, str] = {},
+        ctrl_addr='localhost:50041',
+        res_addr='localhost:8001',
+        x_token='Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhc2NvcGUiOiIiLCJleHAiOjQ4MTAxOTcxNTQsImlkZW50aXR5 \
+            IjoxLCJuaWNlIjoiYWRtaW4iLCJvcmlnX2lhdCI6MTY1NjU2MTE1NCwicm9sZWlkIjoxLCJyb2xla2V5IjoiYWRtaW4iLCJyb2xlbmFtZ \
+            SI6Iuezu-e7n-euoeeQhuWRmCJ9.BvjGw26L1vbWHwl0n8Y1_yTF-fiFNZNmIw20iYe7ToU',
+        proxy_id='',
         task: Dict[str, int | float] = {},
         proxy: Dict[str, Any] = {},
     ):
         """Init CQSIM engine.
 
         Args:
-            platform: Platform information.
+            ctrl_addr: Control server address.
+            res_addr: Resource server address.
+            x_token: Token for resource server.
+            proxy_id: Proxy model ID.
             task: Task information.
             proxy: Proxy information.
         """
         super().__init__()
 
-        self.ctrl_addr = platform['ctrl_addr']
-        self.res_addr = platform['res_addr']
-        self.x_token = platform['x_token']
-        self.proxy_id = platform['proxy_id']
-        self.sim_params = {'task': task, 'proxy': proxy}
+        self.ctrl_addr = ctrl_addr
+        self.res_addr = res_addr
+        self.x_token = x_token
+        self.proxy_id = proxy_id
+
+        self.task = task
+        self.proxy = proxy
 
         self.channel = grpc.insecure_channel(self.ctrl_addr)
         self.engine = engine_pb2_grpc.SimControllerStub(channel=self.channel)
+
+        self.cache = {}
+        self.check_args()
 
         self.current_repeat_time = 1
 
@@ -58,12 +72,116 @@ class CQSIM(SimEngineBase):
 
         self.cwd = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tmp')
         os.makedirs(self.cwd, exist_ok=True)
+        self.logger = logging.getLogger(f'simenv.{self.name.lower()}')
 
-    def control(
-        self,
-        type: CommandType,
-        params: AnyDict = {},
-    ) -> bool:
+    def check_args(self):
+        # check scenario
+        if 'exp_design_id' in self.task:
+            r = requests.get(
+                f'http://{self.res_addr}/api/design/{self.task["exp_design_id"]}',
+                headers={'x-token': self.x_token},
+            )
+            msg = r.json()
+            if not msg['data']:
+                raise ValueError('Invalid exp_design_id')
+            self.task['scenario_id'] = msg['data']['scenarioId']
+            self.task['exp_sample_num'] = msg['data']['sampleSize']
+        if 'scenario_id' not in self.task:
+            raise ValueError('Missing scenario_id or exp_design_id')
+        r = requests.post(
+            f'http://{self.res_addr}/api/scenario/unpack',
+            headers={'x-token': self.x_token},
+            json={
+                'id': self.task['scenario_id'],
+                'types': [1, 2, 8],
+            },
+        )
+        msg = r.json()
+        if not msg['data']:
+            raise ValueError('Invalid scenario_id')
+
+        # cache scenario related definitions
+        scenario_b64 = msg['data']['scenarioFile']
+        scenario_str = base64.b64decode(scenario_b64).decode('utf-8')
+        scenario_xml = xml.fromstring(scenario_str)
+        interaction_b64 = msg['data']['interactionFile']
+        interaction_str = base64.b64decode(interaction_b64).decode('utf-8')
+        interaction_xml = xml.fromstring(interaction_str)
+        typedefine_b64 = msg['data']['typeDefineFile']
+        typedefine_str = base64.b64decode(typedefine_b64).decode('utf-8')
+        typedefine_xml = xml.fromstring(typedefine_str)
+        self.cache['scenario_xml'] = scenario_xml
+        self.cache['interaction_xml'] = interaction_xml
+        self.cache['typedefine_xml'] = typedefine_xml
+
+        # check models
+        model_ids = [self.proxy_id] + [v['id'] for _, v in self.proxy['data'].items()]
+        r = requests.post(
+            f'http://{self.res_addr}/api/model/unpack',
+            headers={'x-token': self.x_token},
+            json={
+                'ids': model_ids,
+                'types': [1],
+            },
+        )
+        msg = r.json()
+        if len(msg['data']) != len(model_ids):
+            invalid_ids = set(model_ids) - set([v['id'] for v in msg['data']])
+            raise ValueError(f'Invalid model_id: {invalid_ids}')
+
+        # check model inputs and outputs
+        structs = {}
+        for model in msg['data']:
+            if model['id'] == self.proxy_id:
+                proxy_b64 = model['configFile']
+                proxy_str = base64.b64decode(proxy_b64).decode('utf-8')
+                proxy_xml = xml.fromstring(proxy_str)
+                self.cache['proxy_xml'] = proxy_xml
+                continue
+
+            model_b64 = model['configFile']
+            model_str = base64.b64decode(model_b64).decode('utf-8')
+            model_xml = xml.fromstring(model_str)
+
+            model_config = self.proxy['data'][model['name']]
+
+            model_inputs = {}
+            init = isinstance(model_config['inputs'], dict)
+            for input_name in model_config['inputs']:
+                input_param = model_xml[0].find(f'./Parameter[@name="{input_name}"]')
+                if input_param is None or input_param.attrib['usage'].find('input') == -1:
+                    raise ValueError(f'Invalid input name {input_name} for model_id {model["id"]}')
+                input_type = input_param.attrib['type']
+                self.extract_struct(structs, typedefine_xml, input_type)
+                model_inputs[input_name] = {
+                    'type': input_type,
+                    'value': model_config['inputs'][input_name],
+                } if init else input_type
+            model_config['inputs'] = model_inputs
+
+            model_outputs = {}
+            for output_name in model_config['outputs']:
+                output_param = model_xml[0].find(f'./Parameter[@name="{output_name}"]')
+                if output_param is None or output_param.attrib['usage'].find('output') == -1:
+                    raise ValueError(f'Invalid output name {output_name} for model_id {model["id"]}')
+                output_type = output_param.attrib['type']
+                self.extract_struct(structs, typedefine_xml, output_type)
+                model_outputs[output_name] = output_type
+            model_config['outputs'] = model_outputs
+        self.proxy['types'] = structs
+
+    def extract_struct(self, structs, type_define, type_name):
+        type_name = type_name.replace('[]', '')
+        if type_name not in structs:
+            type_node = type_define.find(f'./Type[@name="{type_name}"]')
+            if type_node is not None:
+                structs[type_name] = {}
+                for field in type_node[0].findall('./Param'):
+                    param_name, param_type = field.attrib['name'], field.attrib['type']
+                    structs[type_name][param_name] = param_type
+                    self.extract_struct(structs, type_define, param_type)
+
+    def control(self, type: CommandType, params: AnyDict = {}) -> bool:
         """Control CQSIM engine.
 
         Args:
@@ -76,57 +194,65 @@ class CQSIM(SimEngineBase):
         if type == 'init':
             self.join_threads()
             self.init_threads()
-            self.fine_params()
             self.set_configs(self.renew_configs(self.reset_configs(self.get_configs())))
             self.engine.SetHttpInfo(engine_pb2.HttpInfo(token=self.x_token))
-            p = self.sim_params['task']
-            if 'exp_design_id' in p:
-                sample = engine_pb2.InitInfo.MultiSample(exp_design_id=p['exp_design_id'])
+            if 'exp_design_id' in self.task:
+                sample = engine_pb2.InitInfo.MultiSample(exp_design_id=self.task['exp_design_id'])
                 self.engine.Init(engine_pb2.InitInfo(multi_sample_config=sample))
             else:
-                sample = engine_pb2.InitInfo.OneSample(task_id=p['scenario_id'])
+                sample = engine_pb2.InitInfo.OneSample(task_id=self.task['scenario_id'])
                 self.engine.Init(engine_pb2.InitInfo(one_sample_config=sample))
             sim_start_time = timestamp_pb2.Timestamp()
-            sim_start_time.FromSeconds(p['sim_start_time'])
+            sim_start_time.FromSeconds(self.task['sim_start_time'])
             self.engine.Control(engine_pb2.ControlCmd(sim_start_time=sim_start_time))
             sim_duration = duration_pb2.Duration()
-            sim_duration.FromSeconds(p['sim_duration'])
+            sim_duration.FromSeconds(self.task['sim_duration'])
             self.engine.Control(engine_pb2.ControlCmd(sim_duration=sim_duration))
-            self.control('param', p)
+            self.control('param', self.task)
             self.state = 'stopped'
+            self.logger.info('CQSIM engine inited.')
             return True
         elif type == 'start':
             self.current_repeat_time = 1
             self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.START))
             self.state = 'running'
+            self.logger.info('CQSIM engine started.')
             return True
         elif type == 'pause':
             self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.SUSPEND))
             self.state = 'suspended'
+            self.logger.info('CQSIM engine paused.')
             return True
         elif type == 'step':
+            self.logger.warning('CQSIM engine does not support step.')
             return False
         elif type == 'resume':
             self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.CONTINUE))
             self.state = 'running'
+            self.logger.info('CQSIM engine resumed.')
             return True
         elif type == 'stop':
             self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.STOP))
             self.state = 'stopped'
+            self.logger.info('CQSIM engine stopped.')
             return True
         elif type == 'episode':
             self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.STOP_CURRENT_SAMPLE))
             self.state = 'running'
+            self.logger.info('CQSIM engine stopped current episode.')
             return True
         elif type == 'param':
             if 'time_step' in params:
-                self.sim_params['task']['time_step'] = params['time_step']
+                self.task['time_step'] = params['time_step']
                 self.engine.Control(engine_pb2.ControlCmd(time_step=params['time_step']))
+                self.logger.info(f'CQSIM engine time step set to {params["time_step"]}.')
             if 'speed_ratio' in params:
-                self.sim_params['task']['speed_ratio'] = params['speed_ratio']
+                self.task['speed_ratio'] = params['speed_ratio']
                 self.engine.Control(engine_pb2.ControlCmd(speed_ratio=params['speed_ratio']))
+                self.logger.info(f'CQSIM engine speed ratio set to {params["speed_ratio"]}.')
             return True
         else:
+            self.logger.warning(f'Unknown command type {type}.')
             return False
 
     def monitor(self) -> Tuple[List[AnyDict], List[str]]:
@@ -156,6 +282,9 @@ class CQSIM(SimEngineBase):
         """
         if name == 'reset-proxy':
             self.set_configs(self.reset_configs(self.get_configs()))
+            self.logger.info('CQSIM engine proxy reseted.')
+        else:
+            self.logger.warning(f'Unknown method {name}.')
         return name, '', b''
 
     def data_callback(self):
@@ -174,21 +303,22 @@ class CQSIM(SimEngineBase):
                     self.data_cache['current_sample_id'] = response.current_sample_id
                     self.data_cache['current_repeat_time'] = self.current_repeat_time
 
-                p = self.sim_params['task']
                 if self.state == 'running':
                     now_state = response.node_state[0].state
                     if now_state == STOPPED and now_state != prev_state and prev_state is not None:
-                        if 'exp_design_id' not in p or response.current_sample_id == p['exp_sample_num'] - 1:
-                            if self.current_repeat_time < p['repeat_times']:
+                        if 'exp_design_id' not in self.task or response.current_sample_id == self.task['exp_sample_num'] - 1:
+                            if self.current_repeat_time < self.task['repeat_times']:
                                 self.control('stop')
                                 time.sleep(1)
                                 self.control('start')
                                 self.current_repeat_time = self.data_cache['current_repeat_time'] + 1
                                 now_state = None
+                                self.logger.debug(f'CQSIM engine repeat {self.current_repeat_time} times.')
                     prev_state = now_state
-        except grpc.RpcError:
-            with self.data_lock:
-                self.data_cache.clear()
+        except grpc.FutureCancelledError:
+            self.logger.debug('CQSIM engine data callback cancelled.')
+        except grpc.RpcError as e:
+            self.logger.error(f'CQSIM engine data callback error: {e.args}')
 
     def logs_callback(self):
         self.logs_responses = self.engine.GetErrorMsg(engine_pb2.CommonRequest())
@@ -196,9 +326,10 @@ class CQSIM(SimEngineBase):
             for response in self.logs_responses:
                 with self.logs_lock:
                     self.logs_cache.append(response.msg)
-        except grpc.RpcError:
-            with self.logs_lock:
-                self.logs_cache.clear()
+        except grpc.FutureCancelledError:
+            self.logger.debug('CQSIM engine logs callback cancelled.')
+        except grpc.RpcError as e:
+            self.logger.error(f'CQSIM engine logs callback error: {e.args}')
 
     def join_threads(self):
         if self.data_thread is not None:
@@ -224,121 +355,15 @@ class CQSIM(SimEngineBase):
         self.logs_thread.daemon = True
         self.logs_thread.start()
 
-    def fine_params(self):
-        structs = {}
-
-        r = requests.post(
-            f'http://{self.res_addr}/api/scenario/unpack',
-            headers={'x-token': self.x_token},
-            json={
-                'id': self.sim_params['task']['scenario_id'],
-                'types': [8],
-            },
-        )
-        msg = r.json()
-        typedefine_b64 = msg['data']['typeDefineFile']
-        typedefine_str = base64.b64decode(typedefine_b64).decode('utf-8')
-        typedefine_xml = xml.fromstring(typedefine_str)
-
-        def extract_structs(type_name):
-            type_name = type_name.replace('[]', '')
-            if type_name not in structs:
-                struct = typedefine_xml.find(f'./Type[@name="{type_name}"]')
-                if struct is not None:
-                    structs[type_name] = {}
-                    for field in struct[0].findall('./Param'):
-                        structs[type_name][field.attrib['name']] = field.attrib['type']
-                        extract_structs(field.attrib['type'])
-
-        data = self.sim_params['proxy']['data']
-        ids = [v['id'] for _, v in data.items()]
-        r = requests.post(
-            f'http://{self.res_addr}/api/model/unpack',
-            headers={'x-token': self.x_token},
-            json={
-                'ids': ids,
-                'types': [1],
-            },
-        )
-        msg = r.json()
-        for model in msg['data']:
-            model_name = model['name']
-            proxy_b64 = model['configFile']
-            proxy_str = base64.b64decode(proxy_b64).decode('utf-8')
-            proxy_xml = xml.fromstring(proxy_str)
-
-            proxy_inputs = {}
-            inputs = data[model_name]['inputs']
-            if isinstance(inputs, list):
-                for input_name in inputs:
-                    input_param = proxy_xml[0].find(f'./Parameter[@name="{input_name}"]')
-                    input_type = input_param.attrib['type']
-                    proxy_inputs[input_name] = input_type
-                    extract_structs(input_type)
-            elif isinstance(inputs, dict):
-                for input_name, input_value in inputs.items():
-                    input_param = proxy_xml[0].find(f'./Parameter[@name="{input_name}"]')
-                    input_type = input_param.attrib['type']
-                    proxy_inputs[input_name] = {
-                        'type': input_type,
-                        'value': input_value,
-                    }
-                    extract_structs(input_type)
-            self.sim_params['proxy']['data'][model_name]['inputs'] = proxy_inputs
-
-            proxy_outputs = {}
-            outputs = data[model_name]['outputs']
-            for output_name in outputs:
-                output_param = proxy_xml[0].find(f'./Parameter[@name="{output_name}"]')
-                output_type = output_param.attrib['type']
-                proxy_outputs[output_name] = output_type
-                extract_structs(output_type)
-            self.sim_params['proxy']['data'][model_name]['outputs'] = proxy_outputs
-
-        self.sim_params['proxy']['types'] = structs
-
     def get_configs(self):
-        r = requests.post(
-            f'http://{self.res_addr}/api/model/unpack',
-            headers={'x-token': self.x_token},
-            json={
-                'ids': [self.proxy_id],
-                'types': [1]
-            },
-        )
-        msg = r.json()
-        proxy_b64 = msg['data'][0]['configFile']
-        proxy_str = base64.b64decode(proxy_b64).decode('utf-8')
-        proxy_xml = xml.fromstring(proxy_str)
-
-        r = requests.post(
-            f'http://{self.res_addr}/api/scenario/unpack',
-            headers={'x-token': self.x_token},
-            json={
-                'id': self.sim_params['task']['scenario_id'],
-                'types': [1, 2],
-            },
-        )
-        msg = r.json()
-        scenario_b64 = msg['data']['scenarioFile']
-        scenario_str = base64.b64decode(scenario_b64).decode('utf-8')
-        scenario_xml = xml.fromstring(scenario_str)
-        interaction_b64 = msg['data']['interactionFile']
-        interaction_str = base64.b64decode(interaction_b64).decode('utf-8')
-        interaction_xml = xml.fromstring(interaction_str)
-
-        return {
-            'proxy_xml': proxy_xml,
-            'scenario_xml': scenario_xml,
-            'interaction_xml': interaction_xml,
-        }
+        return self.cache
 
     def set_configs(self, configs):
         proxy_bin = xml.tostring(configs['proxy_xml'], encoding='UTF-8', xml_declaration=True)
         proxy_b64 = base64.b64encode(proxy_bin).decode('utf-8')
         with open(f'{self.cwd}/../zlib.dll', 'rb') as f1, \
-                open(f'{self.cwd}/configs.json', 'rb') as f2, \
-                open(f'{self.cwd}/sim_term_func.dll', 'rb') as f3:
+             open(f'{self.cwd}/configs.json', 'rb') as f2, \
+             open(f'{self.cwd}/sim_term_func.dll', 'rb') as f3:
             requests.put(
                 f'http://{self.res_addr}/api/model/{self.proxy_id}',
                 headers={'x-token': self.x_token},
@@ -355,7 +380,7 @@ class CQSIM(SimEngineBase):
         interaction_bin = xml.tostring(configs['interaction_xml'], encoding='UTF-8', xml_declaration=True)
         interaction_b64 = base64.b64encode(interaction_bin).decode('utf-8')
         requests.put(
-            f'http://{self.res_addr}/api/scenario/{self.sim_params["task"]["scenario_id"]}',
+            f'http://{self.res_addr}/api/scenario/{self.task["scenario_id"]}',
             headers={'x-token': self.x_token},
             json={
                 'scenarioFile': scenario_b64,
@@ -409,7 +434,7 @@ class CQSIM(SimEngineBase):
         proxy_xml[0].find('./Parameter[@name="InstanceName"]').set('value', proxy_name)
         proxy_xml[0].find('./Parameter[@name="ForceSideID"]').set('value', '80')
         proxy_xml[0].find('./Parameter[@name="ID"]').set('value', '8080')
-        for model_name, model_config in self.sim_params['proxy']['data'].items():
+        for model_name, model_config in self.proxy['data'].items():
             for input_name, input_config in model_config['inputs'].items():
                 param_name = f'{model_name}_input_{input_name}'
                 param_type = input_config['type'] if isinstance(input_config, dict) else input_config
@@ -442,13 +467,15 @@ class CQSIM(SimEngineBase):
                 )
 
         with open(f'{self.cwd}/configs.json', 'w') as f1, \
-                open(f'{self.cwd}/../serialize.hpp', 'r') as f2, \
-                open(f'{self.cwd}/serialize.hpp', 'w') as f3, \
-                open(f'{self.cwd}/../interface.cpp', 'r') as f4, \
-                open(f'{self.cwd}/sim_term_func.cpp', 'w') as f5:
-            json.dump(self.sim_params, f1)
+             open(f'{self.cwd}/../proxy/serialize.hpp', 'r') as f2, \
+             open(f'{self.cwd}/serialize.hpp', 'w') as f3, \
+             open(f'{self.cwd}/../proxy/interface.cpp', 'r') as f4, \
+             open(f'{self.cwd}/interface.cpp', 'w') as f5, \
+             open(f'{self.cwd}/sim_term_func.cpp', 'w') as f6:
+            json.dump({'task': self.task, 'proxy': self.proxy}, f1)
             f3.write(f2.read())
-            f5.write(self.sim_params['proxy']['sim_term_func'] + f4.read())
+            f5.write(f4.read())
+            f6.write(self.proxy['sim_term_func'])
         cmd = 'x86_64-w64-mingw32-g++ -O1 -static -shared -o sim_term_func.dll -std=c++17 sim_term_func.cpp'
         subprocess.run(cmd, cwd=self.cwd, timeout=10, shell=True, capture_output=True)
 
@@ -476,7 +503,7 @@ class CQSIM(SimEngineBase):
         proxy_pubsub = xml.SubElement(interaction_xml[2], 'ModelPubSubInfo', attrib={'modelID': self.proxy_id})
         xml.SubElement(proxy_pubsub, 'PublishParams')
         xml.SubElement(proxy_pubsub, 'SubscribeParams')
-        for model_name, model_config in self.sim_params['proxy']['data'].items():
+        for model_name, model_config in self.proxy['data'].items():
             pub_sub = interaction_xml[2].find(f'./ModelPubSubInfo[@modelID="{model_config["id"]}"]')
             if pub_sub is None:
                 pub_sub = xml.SubElement(interaction_xml[2], 'ModelPubSubInfo', attrib={'modelID': model_config['id']})

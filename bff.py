@@ -27,8 +27,6 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
         self.agents = {}
         self.simenvs = {}
 
-        self.route_config = None
-
     def unknown_id(self, id, context):
         context.abort(grpc.StatusCode.INVALID_ARGUMENT, f'Unknown service id: {id}')
 
@@ -74,15 +72,6 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
         for id in request.services:
             if id in self.services:
                 self.services[id] = request.services[id]
-        return types_pb2.CommonResponse()
-
-    # Deprecated
-    def GetRouteConfig(self, request, context):
-        return self.route_config
-
-    # Deprecated
-    def SetRouteConfig(self, request, context):
-        self.route_config = request
         return types_pb2.CommonResponse()
 
     def ResetService(self, request, context):

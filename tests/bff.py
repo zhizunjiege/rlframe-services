@@ -40,29 +40,15 @@ class BFFServicerTestCase(unittest.TestCase):
         self.assertIn(self.ids[0], res.services)
         self.stub.SetServiceInfo(res)
 
-    @unittest.skip('Deprecated')
-    def test_02_routeconfig(self):
-        with open('tests/examples/routes.json', 'r') as f:
-            routes = json.load(f)
-
-        req = bff_pb2.RouteConfig()
-        for simenv, agents in routes.items():
-            for agent, models in agents.items():
-                req.routes[simenv].configs[agent].models.extend(models)
-
-        self.stub.SetRouteConfig(req)
-        res = self.stub.GetRouteConfig(types_pb2.CommonRequest())
-        self.assertIn(self.ids[0], res.routes)
-
-    def test_03_resetservice(self):
+    def test_02_resetservice(self):
         self.stub.ResetService(bff_pb2.ServiceIdList(ids=self.ids))
 
-    def test_04_queryservice(self):
+    def test_03_queryservice(self):
         res = self.stub.QueryService(bff_pb2.ServiceIdList(ids=self.ids))
         self.assertEqual(res.states[self.ids[0]].state, types_pb2.ServiceState.State.UNINITED)
         self.assertEqual(res.states[self.ids[1]].state, types_pb2.ServiceState.State.UNINITED)
 
-    def test_05_agentconfig(self):
+    def test_04_agentconfig(self):
         req = bff_pb2.AgentConfigMap()
         with open('tests/examples/agent/hypers.json', 'r') as f1, \
              open('tests/examples/agent/states_inputs_func.py', 'r') as f2, \
@@ -85,29 +71,29 @@ class BFFServicerTestCase(unittest.TestCase):
         res = self.stub.GetAgentConfig(bff_pb2.ServiceIdList(ids=[]))
         self.assertIn(self.ids[1], res.configs)
 
-    def test_06_agentmode(self):
+    def test_05_agentmode(self):
         req = bff_pb2.AgentModeMap()
         req.modes[self.ids[1]].training = True
         self.stub.SetAgentMode(req)
         res = self.stub.GetAgentMode(bff_pb2.ServiceIdList(ids=[]))
         self.assertIn(self.ids[1], res.modes)
 
-    def test_07_modelweights(self):
+    def test_06_modelweights(self):
         res = self.stub.GetModelWeights(bff_pb2.ServiceIdList(ids=[]))
         self.assertIn(self.ids[1], res.weights)
         self.stub.SetModelWeights(res)
 
-    def test_08_modelbuffer(self):
+    def test_07_modelbuffer(self):
         res = self.stub.GetModelBuffer(bff_pb2.ServiceIdList(ids=[]))
         self.assertIn(self.ids[1], res.buffers)
         self.stub.SetModelBuffer(res)
 
-    def test_09_modelstatus(self):
+    def test_08_modelstatus(self):
         res = self.stub.GetModelStatus(bff_pb2.ServiceIdList(ids=[]))
         self.assertIn(self.ids[1], res.status)
         self.stub.SetModelStatus(res)
 
-    def test_10_simenvconfig(self):
+    def test_09_simenvconfig(self):
         req = bff_pb2.SimenvConfigMap()
         with open('tests/examples/simenv/args.json', 'r') as f1, \
              open('tests/examples/simenv/sim_term_func.cpp', 'r') as f2:
@@ -119,7 +105,7 @@ class BFFServicerTestCase(unittest.TestCase):
         res = self.stub.GetSimenvConfig(bff_pb2.ServiceIdList(ids=[]))
         self.assertIn(self.ids[0], res.configs)
 
-    def test_11_simcontrol(self):
+    def test_10_simcontrol(self):
         req = bff_pb2.SimCmdMap()
 
         req.cmds[self.ids[0]].type = 'init'
@@ -133,7 +119,7 @@ class BFFServicerTestCase(unittest.TestCase):
         req.cmds[self.ids[0]].type = 'stop'
         self.stub.SimControl(req)
 
-    def test_12_simmonitor(self):
+    def test_11_simmonitor(self):
         res = self.stub.SimMonitor(bff_pb2.ServiceIdList(ids=[]))
         for id, info in res.infos.items():
             print('id: ', id)

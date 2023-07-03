@@ -10,7 +10,6 @@
   "proxy": {
     "types": {},
     "data": {},
-    "routes": {},
     "simenv_addr": "localhost:10001",
     "sim_step_ratio": 1,
     "sim_term_func": "#include <cstdint>\n\nextern \"C\" __declspec(dllexport) bool __sim_term_func__(const char *data, int32_t size)\n{\n  return false;\n}\n"

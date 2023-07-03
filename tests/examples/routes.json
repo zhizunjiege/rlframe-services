@@ -1,8 +1,0 @@
-{
-  "simenv-main": {
-    "agent-main": [
-      "example_uav",
-      "example_sub"
-    ]
-  }
-}

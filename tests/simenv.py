@@ -34,11 +34,15 @@ class SimenvServiceTestCase(unittest.TestCase):
 
         req = simenv_pb2.SimenvConfig()
         with open('tests/examples/simenv/args.json', 'r') as f1, \
-             open('tests/examples/simenv/sim_term_func.cpp', 'r') as f2:
+             open('tests/examples/simenv/sim_term_func.cpp', 'r') as f2, \
+             open('tests/examples/simenv/routes.json', 'r') as f3:
             req.name = 'CQSIM'
             args = json.load(f1)
             args['proxy']['sim_term_func'] = f2.read()
             req.args = json.dumps(args)
+            routes = json.load(f3)
+            for addr, route in routes.items():
+                req.routes[addr].models.extend(route)
         self.stub.SetSimenvConfig(req)
 
         res = self.stub.QueryService(types_pb2.CommonRequest())
