@@ -110,12 +110,6 @@ bool IntelProxy::Init(const std::unordered_map<std::string, std::any>& value) {
 	sim_step_ratio_ = configs_["proxy"]["sim_step_ratio"].get<int32_t>();
 	sim_steps_ = 0;
 
-	//std::ofstream fo(library_dir_ + "sim_term_func.cc", std::ios::out | std::ios::trunc);
-	//fo << configs_["proxy"]["sim_term_func"].get<std::string>();
-	//fo.close();
-	//std::string cmd = "cd /d " + library_dir_ + " && build.bat";
-	//std::system(cmd.c_str());
-
 #ifdef _WIN32
 	std::string lib_name = "sim_term_func.dll";
 #else

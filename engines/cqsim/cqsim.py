@@ -393,11 +393,6 @@ class CQSIM(SimEngineBase):
         for el in proxy_xml[0].findall('./Parameter[@unit="proxy"]'):
             proxy_xml[0].remove(el)
 
-        with open(f'{self.cwd}/../configs.json', 'rb') as src1, open(f'{self.cwd}/configs.json', 'wb') as tgt1, \
-                open(f'{self.cwd}/../sim_term_func.dll', 'rb') as src2, open(f'{self.cwd}/sim_term_func.dll', 'wb') as tgt2:
-            tgt1.write(src1.read())
-            tgt2.write(src2.read())
-
         scenario_xml = configs['scenario_xml']
         proxy_side = scenario_xml[2].find('./ForceSide[@id="80"]')
         if proxy_side is not None:
