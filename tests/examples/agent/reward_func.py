@@ -1,19 +1,20 @@
-from typing import Any, Dict, List
+# Python 3.8.10
+from typing import Any, Dict, List, Union
 
 import numpy as np
 
 
 def func(
     states: Dict[str, List[Dict[str, Any]]],
-    inputs: np.ndarray | Dict[str | int, np.ndarray],
+    inputs: Union[np.ndarray, Dict[Union[str, int], np.ndarray]],
     actions: Dict[str, List[Dict[str, Any]]],
-    outputs: np.ndarray | Dict[str | int, np.ndarray],
+    outputs: Union[np.ndarray, Dict[Union[str, int], np.ndarray]],
     next_states: Dict[str, List[Dict[str, Any]]],
-    next_inputs: np.ndarray | Dict[str | int, np.ndarray],
+    next_inputs: Union[np.ndarray, Dict[Union[str, int], np.ndarray]],
     terminated: bool,
     truncated: bool,
-    reward: float | Dict[str | int, float],
-) -> float | Dict[str | int, float]:
+    reward: Union[float, Dict[Union[str, int], float]],
+) -> Union[float, Dict[Union[str, int], float]]:
     """Calculate the reward for the current step."""
     global caches
     if terminated:
