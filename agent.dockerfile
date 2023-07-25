@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:2.9.1-gpu
+FROM tensorflow/tensorflow:2.13.0-gpu
 WORKDIR /app
 COPY . .
 ENV TZ=Asia/Shanghai

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# parse arguments -w, -m
-while getopts "w:m:" opt; do
+# parse arguments -w, -m, -l
+while getopts "w:m:l:" opt; do
   case $opt in
   w)
     workers=$OPTARG
