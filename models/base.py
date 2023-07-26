@@ -10,9 +10,9 @@ class RLModelBase(ABC):
 
     @classmethod
     @property
-    def name(self) -> str:
+    def name(cls) -> str:
         """Return name of this model."""
-        return self.__name__
+        return cls.__name__
 
     def __init__(self, training: bool):
         """Init model.

@@ -13,9 +13,9 @@ class HookBase(ABC):
 
     @classmethod
     @property
-    def name(self) -> str:
+    def name(cls) -> str:
         """Return name of this hook."""
-        return self.__name__
+        return cls.__name__
 
     def __init__(self, model: RLModelBase):
         """Init hook.
