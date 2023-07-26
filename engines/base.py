@@ -1,10 +1,31 @@
 from abc import ABC
 from abc import abstractmethod
-from typing import Any, Dict, List, Literal, Tuple
+from enum import auto, Enum
+from typing import Any, Dict, List, Tuple
 
 AnyDict = Dict[str, Any]
-CommandType = Literal['init', 'start', 'pause', 'step', 'resume', 'stop', 'episode', 'param']
-EngineState = Literal['uninited', 'stopped', 'running', 'suspended']
+
+
+class CommandType(Enum):
+    """Command type."""
+
+    INIT = auto()
+    START = auto()
+    PAUSE = auto()
+    STEP = auto()
+    RESUME = auto()
+    STOP = auto()
+    EPISODE = auto()
+    PARAM = auto()
+
+
+class EngineState(Enum):
+    """Engine state."""
+
+    UNINITED = auto()
+    STOPPED = auto()
+    RUNNING = auto()
+    SUSPENDED = auto()
 
 
 class SimEngineBase(ABC):
@@ -18,7 +39,7 @@ class SimEngineBase(ABC):
 
     def __init__(self):
         """Init engine."""
-        self._state = 'uninited'
+        self._state = EngineState.UNINITED
 
     @abstractmethod
     def control(

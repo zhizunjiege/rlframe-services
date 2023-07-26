@@ -13,7 +13,7 @@ from google.protobuf import duration_pb2
 from google.protobuf import timestamp_pb2
 import requests
 
-from ..base import SimEngineBase, AnyDict, CommandType
+from ..base import SimEngineBase, AnyDict, CommandType, EngineState
 from .engine import engine_pb2
 from .engine import engine_pb2_grpc
 
@@ -191,7 +191,7 @@ class CQSIM(SimEngineBase):
         Returns:
             True if success.
         """
-        if type == 'init':
+        if type == CommandType.INIT:
             self.join_threads()
             self.init_threads()
             self.set_configs(self.renew_configs(self.reset_configs(self.get_configs())))
@@ -208,40 +208,40 @@ class CQSIM(SimEngineBase):
             sim_duration = duration_pb2.Duration()
             sim_duration.FromSeconds(self.task['sim_duration'])
             self.engine.Control(engine_pb2.ControlCmd(sim_duration=sim_duration))
-            self.control('param', self.task)
-            self.state = 'stopped'
+            self.control(CommandType.PARAM, self.task)
+            self.state = EngineState.STOPPED
             self.logger.info('CQSIM engine inited.')
             return True
-        elif type == 'start':
+        elif type == CommandType.START:
             self.current_repeat_time = 1
             self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.START))
-            self.state = 'running'
+            self.state = EngineState.RUNNING
             self.logger.info('CQSIM engine started.')
             return True
-        elif type == 'pause':
+        elif type == CommandType.PAUSE:
             self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.SUSPEND))
-            self.state = 'suspended'
+            self.state = EngineState.SUSPENDED
             self.logger.info('CQSIM engine paused.')
             return True
-        elif type == 'step':
+        elif type == CommandType.STEP:
             self.logger.warning('CQSIM engine does not support step.')
             return False
-        elif type == 'resume':
+        elif type == CommandType.RESUME:
             self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.CONTINUE))
-            self.state = 'running'
+            self.state = EngineState.RUNNING
             self.logger.info('CQSIM engine resumed.')
             return True
-        elif type == 'stop':
+        elif type == CommandType.STOP:
             self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.STOP))
-            self.state = 'stopped'
+            self.state = EngineState.STOPPED
             self.logger.info('CQSIM engine stopped.')
             return True
-        elif type == 'episode':
+        elif type == CommandType.EPISODE:
             self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.STOP_CURRENT_SAMPLE))
-            self.state = 'running'
+            self.state = EngineState.RUNNING
             self.logger.info('CQSIM engine stopped current episode.')
             return True
-        elif type == 'param':
+        elif type == CommandType.PARAM:
             if 'time_step' in params:
                 self.task['time_step'] = params['time_step']
                 self.engine.Control(engine_pb2.ControlCmd(time_step=params['time_step']))
@@ -303,14 +303,14 @@ class CQSIM(SimEngineBase):
                     self.data_cache['current_sample_id'] = response.current_sample_id
                     self.data_cache['current_repeat_time'] = self.current_repeat_time
 
-                if self.state == 'running':
+                if self.state == EngineState.RUNNING:
                     now_state = response.node_state[0].state
                     if now_state == STOPPED and now_state != prev_state and prev_state is not None:
                         if 'exp_design_id' not in self.task or response.current_sample_id == self.task['exp_sample_num'] - 1:
                             if self.current_repeat_time < self.task['repeat_times']:
-                                self.control('stop')
+                                self.control(CommandType.STOP)
                                 time.sleep(1)
-                                self.control('start')
+                                self.control(CommandType.START)
                                 self.current_repeat_time = self.data_cache['current_repeat_time'] + 1
                                 now_state = None
                                 self.logger.debug(f'CQSIM engine repeat {self.current_repeat_time} times.')

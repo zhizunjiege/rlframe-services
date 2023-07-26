@@ -11,7 +11,7 @@ from protos import simenv_pb2
 from protos import simenv_pb2_grpc
 from protos import types_pb2
 
-from engines import SimEngines
+from engines import CommandType, SimEngines
 
 LOGGER_NAME = 'simenv'
 
@@ -64,7 +64,7 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
         self.check_state(context)
         try:
             params = json.loads(request.params) if request.params else {}
-            self.engine.control(type=request.type, params=params)
+            self.engine.control(type=CommandType[request.type.upper()], params=params)
         except Exception as e:
             message = f'Invalid command {request.type} with its params, info: {e}'
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
@@ -72,7 +72,7 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
 
     def SimMonitor(self, request, context):
         self.check_state(context)
-        state = self.engine.state
+        state = self.engine.state.name
         data_, logs_ = self.engine.monitor()
         data, logs = json.dumps(data_), json.dumps(logs_)
         return simenv_pb2.SimInfo(state=state, data=data, logs=logs)
