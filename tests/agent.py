@@ -17,14 +17,15 @@ class AgentServiceTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.channel = grpc.insecure_channel('localhost:10002')
+        with open('tests/examples/agent/service.json', 'r') as f:
+            service = json.load(f)
+        cls.channel = grpc.insecure_channel(f'{service["host"]}:{service["port"]}')
         cls.stub = agent_pb2_grpc.AgentStub(channel=cls.channel)
 
     @classmethod
     def tearDownClass(cls):
         cls.stub.ResetService(types_pb2.CommonRequest())
         cls.channel.close()
-        cls.stub = None
 
     def test_00_queryservice(self):
         res = self.stub.QueryService(types_pb2.CommonRequest())
@@ -37,19 +38,18 @@ class AgentServiceTestCase(unittest.TestCase):
             self.assertEqual(e.code(), grpc.StatusCode.FAILED_PRECONDITION)
 
         req = agent_pb2.AgentConfig()
-        with open('tests/examples/agent/hypers.json', 'r') as f1, \
+        with open('tests/examples/agent/configs.json', 'r') as f1, \
              open('tests/examples/agent/states_inputs_func.py', 'r') as f2, \
              open('tests/examples/agent/outputs_actions_func.py', 'r') as f3, \
-             open('tests/examples/agent/reward_func.py', 'r') as f4, \
-             open('tests/examples/agent/hooks.json', 'r') as f5:
-            req.training = True
-            req.name = 'DQN'
-            req.hypers = f1.read()
+             open('tests/examples/agent/reward_func.py', 'r') as f4:
+            configs = json.load(f1)
+            req.training = configs['training']
+            req.name = configs['name']
+            req.hypers = json.dumps(configs['hypers'])
             req.sifunc = f2.read()
             req.oafunc = f3.read()
             req.rewfunc = f4.read()
-            hooks = json.load(f5)
-            for hook in hooks:
+            for hook in configs['hooks']:
                 pointer = req.hooks.add()
                 pointer.name = hook['name']
                 pointer.args = json.dumps(hook['args'])

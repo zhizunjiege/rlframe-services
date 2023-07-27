@@ -83,18 +83,12 @@ bool IntelProxy::Init(const std::unordered_map<std::string, std::any>& value) {
 		data_.emplace(model_name, model_params);
 	}
 
-	auto simenv_addr = configs_["proxy"]["simenv_addr"].get<std::string>();
-	auto simenv_channel = grpc::CreateChannel(simenv_addr, grpc::InsecureChannelCredentials());
-	simenv_ = simenv::Simenv::NewStub(simenv_channel);
-
-	grpc::ClientContext ctx;
-	types::CommonRequest req;
-	simenv::SimenvConfig res;
-	simenv_->GetSimenvConfig(&ctx, req, &res);
-	for (auto& [agent_addr, models_msg] : res.routes()) {
+	for (auto& it1 : configs_["proxy"]["routes"].items()) {
+		auto agent_addr = it1.key();
+		auto agent_models = it1.value();
 		routes_.emplace(agent_addr, std::vector<std::string>());
-		for (auto& agent_model : models_msg.models()) {
-			routes_[agent_addr].emplace_back(agent_model);
+		for (auto& agent_model : agent_models) {
+			routes_[agent_addr].emplace_back(agent_model.get<std::string>());
 		}
 		auto agent_channel = grpc::CreateChannel(agent_addr, grpc::InsecureChannelCredentials());
 		std::shared_ptr<agent::Agent::Stub> agent_stub = agent::Agent::NewStub(agent_channel);
@@ -104,6 +98,10 @@ bool IntelProxy::Init(const std::unordered_map<std::string, std::any>& value) {
 		std::shared_ptr<grpc::ClientReaderWriter<types::SimState, types::SimAction>> agent_stream = agent_stub->GetAction(agent_context.get());
 		streams_.emplace(agent_addr, agent_stream);
 	}
+
+	auto simenv_addr = configs_["proxy"]["simenv_addr"].get<std::string>();
+	auto simenv_channel = grpc::CreateChannel(simenv_addr, grpc::InsecureChannelCredentials());
+	simenv_ = simenv::Simenv::NewStub(simenv_channel);
 
 	sim_duration_ = configs_["task"]["sim_duration"].get<double>() * 1000;
 	sim_times_ = 0;
@@ -174,6 +172,7 @@ bool IntelProxy::Tick(double time) {
 			}
 			req.set_terminated(terminated);
 			req.set_truncated(truncated);
+			req.set_reward(0);
 			streams_[agent_addr]->Write(req);
 		}
 

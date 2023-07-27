@@ -22,12 +22,21 @@ class BFFServicerTestCase(unittest.TestCase):
         cls.stub.ResetService(bff_pb2.ServiceIdList(ids=cls.ids))
         cls.stub.ResetServer(types_pb2.CommonRequest())
         cls.channel.close()
-        cls.stub = None
 
     def test_00_registerservice(self):
-        with open('tests/examples/services.json', 'r') as f:
-            services = json.load(f)
-        services = {id: bff_pb2.ServiceInfo(**service) for id, service in services.items()}
+        with open('tests/examples/agent/service.json', 'r') as f1, \
+             open('tests/examples/simenv/service.json', 'r') as f2:
+            agent_service = json.load(f1)
+            simenv_service = json.load(f2)
+        services = {
+            service['id']: bff_pb2.ServiceInfo(
+                type=service['type'],
+                name=service['name'],
+                host=service['host'],
+                port=service['port'],
+                desc=service['desc'],
+            ) for service in [agent_service, simenv_service]
+        }
         req = bff_pb2.ServiceInfoMap(services=services)
 
         self.stub.RegisterService(req)
@@ -50,73 +59,72 @@ class BFFServicerTestCase(unittest.TestCase):
 
     def test_04_agentconfig(self):
         req = bff_pb2.AgentConfigMap()
-        with open('tests/examples/agent/hypers.json', 'r') as f1, \
+        with open('tests/examples/agent/configs.json', 'r') as f1, \
              open('tests/examples/agent/states_inputs_func.py', 'r') as f2, \
              open('tests/examples/agent/outputs_actions_func.py', 'r') as f3, \
-             open('tests/examples/agent/reward_func.py', 'r') as f4, \
-             open('tests/examples/agent/hooks.json', 'r') as f5:
-            req.configs[self.ids[1]].training = True
-            req.configs[self.ids[1]].name = 'DQN'
-            req.configs[self.ids[1]].hypers = f1.read()
-            req.configs[self.ids[1]].sifunc = f2.read()
-            req.configs[self.ids[1]].oafunc = f3.read()
-            req.configs[self.ids[1]].rewfunc = f4.read()
-            hooks = json.load(f5)
-            for hook in hooks:
-                pointer = req.configs[self.ids[1]].hooks.add()
+             open('tests/examples/agent/reward_func.py', 'r') as f4:
+            configs = json.load(f1)
+            req.configs[self.ids[0]].training = configs['training']
+            req.configs[self.ids[0]].name = configs['name']
+            req.configs[self.ids[0]].hypers = json.dumps(configs['hypers'])
+            req.configs[self.ids[0]].sifunc = f2.read()
+            req.configs[self.ids[0]].oafunc = f3.read()
+            req.configs[self.ids[0]].rewfunc = f4.read()
+            for hook in configs['hooks']:
+                pointer = req.configs[self.ids[0]].hooks.add()
                 pointer.name = hook['name']
                 pointer.args = json.dumps(hook['args'])
 
         self.stub.SetAgentConfig(req)
         res = self.stub.GetAgentConfig(bff_pb2.ServiceIdList(ids=[]))
-        self.assertIn(self.ids[1], res.configs)
+        self.assertIn(self.ids[0], res.configs)
 
     def test_05_agentmode(self):
         req = bff_pb2.AgentModeMap()
-        req.modes[self.ids[1]].training = True
+        req.modes[self.ids[0]].training = True
         self.stub.SetAgentMode(req)
         res = self.stub.GetAgentMode(bff_pb2.ServiceIdList(ids=[]))
-        self.assertIn(self.ids[1], res.modes)
+        self.assertIn(self.ids[0], res.modes)
 
     def test_06_modelweights(self):
         res = self.stub.GetModelWeights(bff_pb2.ServiceIdList(ids=[]))
-        self.assertIn(self.ids[1], res.weights)
+        self.assertIn(self.ids[0], res.weights)
         self.stub.SetModelWeights(res)
 
     def test_07_modelbuffer(self):
         res = self.stub.GetModelBuffer(bff_pb2.ServiceIdList(ids=[]))
-        self.assertIn(self.ids[1], res.buffers)
+        self.assertIn(self.ids[0], res.buffers)
         self.stub.SetModelBuffer(res)
 
     def test_08_modelstatus(self):
         res = self.stub.GetModelStatus(bff_pb2.ServiceIdList(ids=[]))
-        self.assertIn(self.ids[1], res.status)
+        self.assertIn(self.ids[0], res.status)
         self.stub.SetModelStatus(res)
 
     def test_09_simenvconfig(self):
         req = bff_pb2.SimenvConfigMap()
-        with open('tests/examples/simenv/args.json', 'r') as f1, \
+        with open('tests/examples/simenv/configs.json', 'r') as f1, \
              open('tests/examples/simenv/sim_term_func.cpp', 'r') as f2:
-            req.configs[self.ids[0]].name = 'CQSIM'
-            args = json.load(f1)
-            args['proxy']['sim_term_func'] = f2.read()
-            req.configs[self.ids[0]].args = json.dumps(args)
+            configs = json.load(f1)
+            req.configs[self.ids[1]].name = configs['name']
+            configs['args']['proxy']['sim_term_func'] = f2.read()
+            req.configs[self.ids[1]].args = json.dumps(configs['args'])
         self.stub.SetSimenvConfig(req)
         res = self.stub.GetSimenvConfig(bff_pb2.ServiceIdList(ids=[]))
-        self.assertIn(self.ids[0], res.configs)
+        self.assertIn(self.ids[1], res.configs)
 
     def test_10_simcontrol(self):
         req = bff_pb2.SimCmdMap()
 
-        req.cmds[self.ids[0]].type = 'init'
+        req.cmds[self.ids[1]].type = 'init'
         self.stub.SimControl(req)
 
-        req.cmds[self.ids[0]].type = 'start'
+        req.cmds[self.ids[1]].type = 'start'
         self.stub.SimControl(req)
 
         time.sleep(30)
 
-        req.cmds[self.ids[0]].type = 'stop'
+        req.cmds[self.ids[1]].type = 'stop'
         self.stub.SimControl(req)
 
     def test_11_simmonitor(self):

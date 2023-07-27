@@ -30,9 +30,6 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/repeated_field.h>  // IWYU pragma: export
 #include <google/protobuf/extension_set.h>  // IWYU pragma: export
-#include <google/protobuf/map.h>  // IWYU pragma: export
-#include <google/protobuf/map_entry.h>
-#include <google/protobuf/map_field_inl.h>
 #include <google/protobuf/unknown_field_set.h>
 #include "types.pb.h"
 // @@protoc_insertion_point(includes)
@@ -50,7 +47,7 @@ struct TableStruct_simenv_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxiliaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[5]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[3]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -68,211 +65,17 @@ extern SimInfoDefaultTypeInternal _SimInfo_default_instance_;
 class SimenvConfig;
 struct SimenvConfigDefaultTypeInternal;
 extern SimenvConfigDefaultTypeInternal _SimenvConfig_default_instance_;
-class SimenvConfig_Route;
-struct SimenvConfig_RouteDefaultTypeInternal;
-extern SimenvConfig_RouteDefaultTypeInternal _SimenvConfig_Route_default_instance_;
-class SimenvConfig_RoutesEntry_DoNotUse;
-struct SimenvConfig_RoutesEntry_DoNotUseDefaultTypeInternal;
-extern SimenvConfig_RoutesEntry_DoNotUseDefaultTypeInternal _SimenvConfig_RoutesEntry_DoNotUse_default_instance_;
 }  // namespace simenv
 }  // namespace game
 PROTOBUF_NAMESPACE_OPEN
 template<> ::game::simenv::SimCmd* Arena::CreateMaybeMessage<::game::simenv::SimCmd>(Arena*);
 template<> ::game::simenv::SimInfo* Arena::CreateMaybeMessage<::game::simenv::SimInfo>(Arena*);
 template<> ::game::simenv::SimenvConfig* Arena::CreateMaybeMessage<::game::simenv::SimenvConfig>(Arena*);
-template<> ::game::simenv::SimenvConfig_Route* Arena::CreateMaybeMessage<::game::simenv::SimenvConfig_Route>(Arena*);
-template<> ::game::simenv::SimenvConfig_RoutesEntry_DoNotUse* Arena::CreateMaybeMessage<::game::simenv::SimenvConfig_RoutesEntry_DoNotUse>(Arena*);
 PROTOBUF_NAMESPACE_CLOSE
 namespace game {
 namespace simenv {
 
 // ===================================================================
-
-class SimenvConfig_Route final :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:game.simenv.SimenvConfig.Route) */ {
- public:
-  inline SimenvConfig_Route() : SimenvConfig_Route(nullptr) {}
-  ~SimenvConfig_Route() override;
-  explicit constexpr SimenvConfig_Route(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
-
-  SimenvConfig_Route(const SimenvConfig_Route& from);
-  SimenvConfig_Route(SimenvConfig_Route&& from) noexcept
-    : SimenvConfig_Route() {
-    *this = ::std::move(from);
-  }
-
-  inline SimenvConfig_Route& operator=(const SimenvConfig_Route& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline SimenvConfig_Route& operator=(SimenvConfig_Route&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetOwningArena() == from.GetOwningArena()
-  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetOwningArena() != nullptr
-  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const SimenvConfig_Route& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const SimenvConfig_Route* internal_default_instance() {
-    return reinterpret_cast<const SimenvConfig_Route*>(
-               &_SimenvConfig_Route_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages =
-    0;
-
-  friend void swap(SimenvConfig_Route& a, SimenvConfig_Route& b) {
-    a.Swap(&b);
-  }
-  inline void Swap(SimenvConfig_Route* other) {
-    if (other == this) return;
-  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetOwningArena() != nullptr &&
-        GetOwningArena() == other->GetOwningArena()) {
-   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetOwningArena() == other->GetOwningArena()) {
-  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(SimenvConfig_Route* other) {
-    if (other == this) return;
-    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  SimenvConfig_Route* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
-    return CreateMaybeMessage<SimenvConfig_Route>(arena);
-  }
-  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
-  void CopyFrom(const SimenvConfig_Route& from);
-  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
-  void MergeFrom(const SimenvConfig_Route& from);
-  private:
-  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
-  public:
-  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
-  bool IsInitialized() const final;
-
-  size_t ByteSizeLong() const final;
-  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
-  uint8_t* _InternalSerialize(
-      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const final { return _cached_size_.Get(); }
-
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const final;
-  void InternalSwap(SimenvConfig_Route* other);
-
-  private:
-  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
-  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
-    return "game.simenv.SimenvConfig.Route";
-  }
-  protected:
-  explicit SimenvConfig_Route(::PROTOBUF_NAMESPACE_ID::Arena* arena,
-                       bool is_message_owned = false);
-  private:
-  static void ArenaDtor(void* object);
-  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
-  public:
-
-  static const ClassData _class_data_;
-  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
-
-  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  enum : int {
-    kModelsFieldNumber = 1,
-  };
-  // repeated string models = 1;
-  int models_size() const;
-  private:
-  int _internal_models_size() const;
-  public:
-  void clear_models();
-  const std::string& models(int index) const;
-  std::string* mutable_models(int index);
-  void set_models(int index, const std::string& value);
-  void set_models(int index, std::string&& value);
-  void set_models(int index, const char* value);
-  void set_models(int index, const char* value, size_t size);
-  std::string* add_models();
-  void add_models(const std::string& value);
-  void add_models(std::string&& value);
-  void add_models(const char* value);
-  void add_models(const char* value, size_t size);
-  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>& models() const;
-  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>* mutable_models();
-  private:
-  const std::string& _internal_models(int index) const;
-  std::string* _internal_add_models();
-  public:
-
-  // @@protoc_insertion_point(class_scope:game.simenv.SimenvConfig.Route)
- private:
-  class _Internal;
-
-  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
-  typedef void InternalArenaConstructable_;
-  typedef void DestructorSkippable_;
-  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string> models_;
-  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
-  friend struct ::TableStruct_simenv_2eproto;
-};
-// -------------------------------------------------------------------
-
-class SimenvConfig_RoutesEntry_DoNotUse : public ::PROTOBUF_NAMESPACE_ID::internal::MapEntry<SimenvConfig_RoutesEntry_DoNotUse, 
-    std::string, ::game::simenv::SimenvConfig_Route,
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_MESSAGE> {
-public:
-  typedef ::PROTOBUF_NAMESPACE_ID::internal::MapEntry<SimenvConfig_RoutesEntry_DoNotUse, 
-    std::string, ::game::simenv::SimenvConfig_Route,
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_MESSAGE> SuperType;
-  SimenvConfig_RoutesEntry_DoNotUse();
-  explicit constexpr SimenvConfig_RoutesEntry_DoNotUse(
-      ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
-  explicit SimenvConfig_RoutesEntry_DoNotUse(::PROTOBUF_NAMESPACE_ID::Arena* arena);
-  void MergeFrom(const SimenvConfig_RoutesEntry_DoNotUse& other);
-  static const SimenvConfig_RoutesEntry_DoNotUse* internal_default_instance() { return reinterpret_cast<const SimenvConfig_RoutesEntry_DoNotUse*>(&_SimenvConfig_RoutesEntry_DoNotUse_default_instance_); }
-  static bool ValidateKey(std::string* s) {
-    return ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(s->data(), static_cast<int>(s->size()), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::PARSE, "game.simenv.SimenvConfig.RoutesEntry.key");
- }
-  static bool ValidateValue(void*) { return true; }
-  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
-  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
-};
-
-// -------------------------------------------------------------------
 
 class SimenvConfig final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:game.simenv.SimenvConfig) */ {
@@ -322,7 +125,7 @@ class SimenvConfig final :
                &_SimenvConfig_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    2;
+    0;
 
   friend void swap(SimenvConfig& a, SimenvConfig& b) {
     a.Swap(&b);
@@ -393,32 +196,12 @@ class SimenvConfig final :
 
   // nested types ----------------------------------------------------
 
-  typedef SimenvConfig_Route Route;
-
   // accessors -------------------------------------------------------
 
   enum : int {
-    kRoutesFieldNumber = 3,
     kNameFieldNumber = 1,
     kArgsFieldNumber = 2,
   };
-  // map<string, .game.simenv.SimenvConfig.Route> routes = 3;
-  int routes_size() const;
-  private:
-  int _internal_routes_size() const;
-  public:
-  void clear_routes();
-  private:
-  const ::PROTOBUF_NAMESPACE_ID::Map< std::string, ::game::simenv::SimenvConfig_Route >&
-      _internal_routes() const;
-  ::PROTOBUF_NAMESPACE_ID::Map< std::string, ::game::simenv::SimenvConfig_Route >*
-      _internal_mutable_routes();
-  public:
-  const ::PROTOBUF_NAMESPACE_ID::Map< std::string, ::game::simenv::SimenvConfig_Route >&
-      routes() const;
-  ::PROTOBUF_NAMESPACE_ID::Map< std::string, ::game::simenv::SimenvConfig_Route >*
-      mutable_routes();
-
   // string name = 1;
   void clear_name();
   const std::string& name() const;
@@ -454,11 +237,6 @@ class SimenvConfig final :
   template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
-  ::PROTOBUF_NAMESPACE_ID::internal::MapField<
-      SimenvConfig_RoutesEntry_DoNotUse,
-      std::string, ::game::simenv::SimenvConfig_Route,
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_MESSAGE> routes_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr name_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr args_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
@@ -514,7 +292,7 @@ class SimCmd final :
                &_SimCmd_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    3;
+    1;
 
   friend void swap(SimCmd& a, SimCmd& b) {
     a.Swap(&b);
@@ -681,7 +459,7 @@ class SimInfo final :
                &_SimInfo_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    4;
+    2;
 
   friend void swap(SimInfo& a, SimInfo& b) {
     a.Swap(&b);
@@ -823,87 +601,6 @@ class SimInfo final :
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif  // __GNUC__
-// SimenvConfig_Route
-
-// repeated string models = 1;
-inline int SimenvConfig_Route::_internal_models_size() const {
-  return models_.size();
-}
-inline int SimenvConfig_Route::models_size() const {
-  return _internal_models_size();
-}
-inline void SimenvConfig_Route::clear_models() {
-  models_.Clear();
-}
-inline std::string* SimenvConfig_Route::add_models() {
-  std::string* _s = _internal_add_models();
-  // @@protoc_insertion_point(field_add_mutable:game.simenv.SimenvConfig.Route.models)
-  return _s;
-}
-inline const std::string& SimenvConfig_Route::_internal_models(int index) const {
-  return models_.Get(index);
-}
-inline const std::string& SimenvConfig_Route::models(int index) const {
-  // @@protoc_insertion_point(field_get:game.simenv.SimenvConfig.Route.models)
-  return _internal_models(index);
-}
-inline std::string* SimenvConfig_Route::mutable_models(int index) {
-  // @@protoc_insertion_point(field_mutable:game.simenv.SimenvConfig.Route.models)
-  return models_.Mutable(index);
-}
-inline void SimenvConfig_Route::set_models(int index, const std::string& value) {
-  models_.Mutable(index)->assign(value);
-  // @@protoc_insertion_point(field_set:game.simenv.SimenvConfig.Route.models)
-}
-inline void SimenvConfig_Route::set_models(int index, std::string&& value) {
-  models_.Mutable(index)->assign(std::move(value));
-  // @@protoc_insertion_point(field_set:game.simenv.SimenvConfig.Route.models)
-}
-inline void SimenvConfig_Route::set_models(int index, const char* value) {
-  GOOGLE_DCHECK(value != nullptr);
-  models_.Mutable(index)->assign(value);
-  // @@protoc_insertion_point(field_set_char:game.simenv.SimenvConfig.Route.models)
-}
-inline void SimenvConfig_Route::set_models(int index, const char* value, size_t size) {
-  models_.Mutable(index)->assign(
-    reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:game.simenv.SimenvConfig.Route.models)
-}
-inline std::string* SimenvConfig_Route::_internal_add_models() {
-  return models_.Add();
-}
-inline void SimenvConfig_Route::add_models(const std::string& value) {
-  models_.Add()->assign(value);
-  // @@protoc_insertion_point(field_add:game.simenv.SimenvConfig.Route.models)
-}
-inline void SimenvConfig_Route::add_models(std::string&& value) {
-  models_.Add(std::move(value));
-  // @@protoc_insertion_point(field_add:game.simenv.SimenvConfig.Route.models)
-}
-inline void SimenvConfig_Route::add_models(const char* value) {
-  GOOGLE_DCHECK(value != nullptr);
-  models_.Add()->assign(value);
-  // @@protoc_insertion_point(field_add_char:game.simenv.SimenvConfig.Route.models)
-}
-inline void SimenvConfig_Route::add_models(const char* value, size_t size) {
-  models_.Add()->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_add_pointer:game.simenv.SimenvConfig.Route.models)
-}
-inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>&
-SimenvConfig_Route::models() const {
-  // @@protoc_insertion_point(field_list:game.simenv.SimenvConfig.Route.models)
-  return models_;
-}
-inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>*
-SimenvConfig_Route::mutable_models() {
-  // @@protoc_insertion_point(field_mutable_list:game.simenv.SimenvConfig.Route.models)
-  return &models_;
-}
-
-// -------------------------------------------------------------------
-
-// -------------------------------------------------------------------
-
 // SimenvConfig
 
 // string name = 1;
@@ -1006,35 +703,6 @@ inline void SimenvConfig::set_allocated_args(std::string* args) {
   }
 #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
   // @@protoc_insertion_point(field_set_allocated:game.simenv.SimenvConfig.args)
-}
-
-// map<string, .game.simenv.SimenvConfig.Route> routes = 3;
-inline int SimenvConfig::_internal_routes_size() const {
-  return routes_.size();
-}
-inline int SimenvConfig::routes_size() const {
-  return _internal_routes_size();
-}
-inline void SimenvConfig::clear_routes() {
-  routes_.Clear();
-}
-inline const ::PROTOBUF_NAMESPACE_ID::Map< std::string, ::game::simenv::SimenvConfig_Route >&
-SimenvConfig::_internal_routes() const {
-  return routes_.GetMap();
-}
-inline const ::PROTOBUF_NAMESPACE_ID::Map< std::string, ::game::simenv::SimenvConfig_Route >&
-SimenvConfig::routes() const {
-  // @@protoc_insertion_point(field_map:game.simenv.SimenvConfig.routes)
-  return _internal_routes();
-}
-inline ::PROTOBUF_NAMESPACE_ID::Map< std::string, ::game::simenv::SimenvConfig_Route >*
-SimenvConfig::_internal_mutable_routes() {
-  return routes_.MutableMap();
-}
-inline ::PROTOBUF_NAMESPACE_ID::Map< std::string, ::game::simenv::SimenvConfig_Route >*
-SimenvConfig::mutable_routes() {
-  // @@protoc_insertion_point(field_mutable_map:game.simenv.SimenvConfig.routes)
-  return _internal_mutable_routes();
 }
 
 // -------------------------------------------------------------------
@@ -1303,10 +971,6 @@ inline void SimInfo::set_allocated_logs(std::string* logs) {
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
-// -------------------------------------------------------------------
-
-// -------------------------------------------------------------------
-
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

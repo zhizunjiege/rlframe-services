@@ -18,33 +18,9 @@
 PROTOBUF_PRAGMA_INIT_SEG
 namespace game {
 namespace simenv {
-constexpr SimenvConfig_Route::SimenvConfig_Route(
-  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
-  : models_(){}
-struct SimenvConfig_RouteDefaultTypeInternal {
-  constexpr SimenvConfig_RouteDefaultTypeInternal()
-    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
-  ~SimenvConfig_RouteDefaultTypeInternal() {}
-  union {
-    SimenvConfig_Route _instance;
-  };
-};
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT SimenvConfig_RouteDefaultTypeInternal _SimenvConfig_Route_default_instance_;
-constexpr SimenvConfig_RoutesEntry_DoNotUse::SimenvConfig_RoutesEntry_DoNotUse(
-  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized){}
-struct SimenvConfig_RoutesEntry_DoNotUseDefaultTypeInternal {
-  constexpr SimenvConfig_RoutesEntry_DoNotUseDefaultTypeInternal()
-    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
-  ~SimenvConfig_RoutesEntry_DoNotUseDefaultTypeInternal() {}
-  union {
-    SimenvConfig_RoutesEntry_DoNotUse _instance;
-  };
-};
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT SimenvConfig_RoutesEntry_DoNotUseDefaultTypeInternal _SimenvConfig_RoutesEntry_DoNotUse_default_instance_;
 constexpr SimenvConfig::SimenvConfig(
   ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
-  : routes_(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{})
-  , name_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  : name_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
   , args_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string){}
 struct SimenvConfigDefaultTypeInternal {
   constexpr SimenvConfigDefaultTypeInternal()
@@ -84,28 +60,11 @@ struct SimInfoDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT SimInfoDefaultTypeInternal _SimInfo_default_instance_;
 }  // namespace simenv
 }  // namespace game
-static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_simenv_2eproto[5];
+static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_simenv_2eproto[3];
 static constexpr ::PROTOBUF_NAMESPACE_ID::EnumDescriptor const** file_level_enum_descriptors_simenv_2eproto = nullptr;
 static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_simenv_2eproto = nullptr;
 
 const uint32_t TableStruct_simenv_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
-  ~0u,  // no _has_bits_
-  PROTOBUF_FIELD_OFFSET(::game::simenv::SimenvConfig_Route, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  ~0u,  // no _inlined_string_donated_
-  PROTOBUF_FIELD_OFFSET(::game::simenv::SimenvConfig_Route, models_),
-  PROTOBUF_FIELD_OFFSET(::game::simenv::SimenvConfig_RoutesEntry_DoNotUse, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::game::simenv::SimenvConfig_RoutesEntry_DoNotUse, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  ~0u,  // no _inlined_string_donated_
-  PROTOBUF_FIELD_OFFSET(::game::simenv::SimenvConfig_RoutesEntry_DoNotUse, key_),
-  PROTOBUF_FIELD_OFFSET(::game::simenv::SimenvConfig_RoutesEntry_DoNotUse, value_),
-  0,
-  1,
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::game::simenv::SimenvConfig, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -114,7 +73,6 @@ const uint32_t TableStruct_simenv_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(p
   ~0u,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::game::simenv::SimenvConfig, name_),
   PROTOBUF_FIELD_OFFSET(::game::simenv::SimenvConfig, args_),
-  PROTOBUF_FIELD_OFFSET(::game::simenv::SimenvConfig, routes_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::game::simenv::SimCmd, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -134,16 +92,12 @@ const uint32_t TableStruct_simenv_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(p
   PROTOBUF_FIELD_OFFSET(::game::simenv::SimInfo, logs_),
 };
 static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
-  { 0, -1, -1, sizeof(::game::simenv::SimenvConfig_Route)},
-  { 7, 15, -1, sizeof(::game::simenv::SimenvConfig_RoutesEntry_DoNotUse)},
-  { 17, -1, -1, sizeof(::game::simenv::SimenvConfig)},
-  { 26, -1, -1, sizeof(::game::simenv::SimCmd)},
-  { 34, -1, -1, sizeof(::game::simenv::SimInfo)},
+  { 0, -1, -1, sizeof(::game::simenv::SimenvConfig)},
+  { 8, -1, -1, sizeof(::game::simenv::SimCmd)},
+  { 16, -1, -1, sizeof(::game::simenv::SimInfo)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::game::simenv::_SimenvConfig_Route_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::game::simenv::_SimenvConfig_RoutesEntry_DoNotUse_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::game::simenv::_SimenvConfig_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::game::simenv::_SimCmd_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::game::simenv::_SimInfo_default_instance_),
@@ -151,34 +105,30 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
 
 const char descriptor_table_protodef_simenv_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
   "\n\014simenv.proto\022\013game.simenv\032\013types.proto"
-  "\"\312\001\n\014SimenvConfig\022\014\n\004name\030\001 \001(\t\022\014\n\004args\030"
-  "\002 \001(\t\0225\n\006routes\030\003 \003(\0132%.game.simenv.Sime"
-  "nvConfig.RoutesEntry\032\027\n\005Route\022\016\n\006models\030"
-  "\001 \003(\t\032N\n\013RoutesEntry\022\013\n\003key\030\001 \001(\t\022.\n\005val"
-  "ue\030\002 \001(\0132\037.game.simenv.SimenvConfig.Rout"
-  "e:\0028\001\"&\n\006SimCmd\022\014\n\004type\030\001 \001(\t\022\016\n\006params\030"
-  "\002 \001(\t\"4\n\007SimInfo\022\r\n\005state\030\001 \001(\t\022\014\n\004data\030"
-  "\002 \001(\t\022\014\n\004logs\030\003 \001(\t2\331\003\n\006Simenv\022E\n\014ResetS"
-  "ervice\022\031.game.types.CommonRequest\032\032.game"
-  ".types.CommonResponse\022C\n\014QueryService\022\031."
-  "game.types.CommonRequest\032\030.game.types.Se"
-  "rviceState\022G\n\017GetSimenvConfig\022\031.game.typ"
-  "es.CommonRequest\032\031.game.simenv.SimenvCon"
-  "fig\022H\n\017SetSimenvConfig\022\031.game.simenv.Sim"
-  "envConfig\032\032.game.types.CommonResponse\022=\n"
-  "\nSimControl\022\023.game.simenv.SimCmd\032\032.game."
-  "types.CommonResponse\022=\n\nSimMonitor\022\031.gam"
-  "e.types.CommonRequest\032\024.game.simenv.SimI"
-  "nfo\0222\n\004Call\022\024.game.types.CallData\032\024.game"
-  ".types.CallDatab\006proto3"
+  "\"*\n\014SimenvConfig\022\014\n\004name\030\001 \001(\t\022\014\n\004args\030\002"
+  " \001(\t\"&\n\006SimCmd\022\014\n\004type\030\001 \001(\t\022\016\n\006params\030\002"
+  " \001(\t\"4\n\007SimInfo\022\r\n\005state\030\001 \001(\t\022\014\n\004data\030\002"
+  " \001(\t\022\014\n\004logs\030\003 \001(\t2\331\003\n\006Simenv\022E\n\014ResetSe"
+  "rvice\022\031.game.types.CommonRequest\032\032.game."
+  "types.CommonResponse\022C\n\014QueryService\022\031.g"
+  "ame.types.CommonRequest\032\030.game.types.Ser"
+  "viceState\022G\n\017GetSimenvConfig\022\031.game.type"
+  "s.CommonRequest\032\031.game.simenv.SimenvConf"
+  "ig\022H\n\017SetSimenvConfig\022\031.game.simenv.Sime"
+  "nvConfig\032\032.game.types.CommonResponse\022=\n\n"
+  "SimControl\022\023.game.simenv.SimCmd\032\032.game.t"
+  "ypes.CommonResponse\022=\n\nSimMonitor\022\031.game"
+  ".types.CommonRequest\032\024.game.simenv.SimIn"
+  "fo\0222\n\004Call\022\024.game.types.CallData\032\024.game."
+  "types.CallDatab\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_simenv_2eproto_deps[1] = {
   &::descriptor_table_types_2eproto,
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_simenv_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_simenv_2eproto = {
-  false, false, 823, descriptor_table_protodef_simenv_2eproto, "simenv.proto", 
-  &descriptor_table_simenv_2eproto_once, descriptor_table_simenv_2eproto_deps, 1, 5,
+  false, false, 662, descriptor_table_protodef_simenv_2eproto, "simenv.proto", 
+  &descriptor_table_simenv_2eproto_once, descriptor_table_simenv_2eproto_deps, 1, 3,
   schemas, file_default_instances, TableStruct_simenv_2eproto::offsets,
   file_level_metadata_simenv_2eproto, file_level_enum_descriptors_simenv_2eproto, file_level_service_descriptors_simenv_2eproto,
 };
@@ -193,218 +143,13 @@ namespace simenv {
 
 // ===================================================================
 
-class SimenvConfig_Route::_Internal {
- public:
-};
-
-SimenvConfig_Route::SimenvConfig_Route(::PROTOBUF_NAMESPACE_ID::Arena* arena,
-                         bool is_message_owned)
-  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned),
-  models_(arena) {
-  SharedCtor();
-  if (!is_message_owned) {
-    RegisterArenaDtor(arena);
-  }
-  // @@protoc_insertion_point(arena_constructor:game.simenv.SimenvConfig.Route)
-}
-SimenvConfig_Route::SimenvConfig_Route(const SimenvConfig_Route& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
-      models_(from.models_) {
-  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
-  // @@protoc_insertion_point(copy_constructor:game.simenv.SimenvConfig.Route)
-}
-
-inline void SimenvConfig_Route::SharedCtor() {
-}
-
-SimenvConfig_Route::~SimenvConfig_Route() {
-  // @@protoc_insertion_point(destructor:game.simenv.SimenvConfig.Route)
-  if (GetArenaForAllocation() != nullptr) return;
-  SharedDtor();
-  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
-}
-
-inline void SimenvConfig_Route::SharedDtor() {
-  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
-}
-
-void SimenvConfig_Route::ArenaDtor(void* object) {
-  SimenvConfig_Route* _this = reinterpret_cast< SimenvConfig_Route* >(object);
-  (void)_this;
-}
-void SimenvConfig_Route::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
-}
-void SimenvConfig_Route::SetCachedSize(int size) const {
-  _cached_size_.Set(size);
-}
-
-void SimenvConfig_Route::Clear() {
-// @@protoc_insertion_point(message_clear_start:game.simenv.SimenvConfig.Route)
-  uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  models_.Clear();
-  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
-}
-
-const char* SimenvConfig_Route::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
-  while (!ctx->Done(&ptr)) {
-    uint32_t tag;
-    ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    switch (tag >> 3) {
-      // repeated string models = 1;
-      case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
-          ptr -= 1;
-          do {
-            ptr += 1;
-            auto str = _internal_add_models();
-            ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-            CHK_(::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "game.simenv.SimenvConfig.Route.models"));
-            CHK_(ptr);
-            if (!ctx->DataAvailable(ptr)) break;
-          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<10>(ptr));
-        } else
-          goto handle_unusual;
-        continue;
-      default:
-        goto handle_unusual;
-    }  // switch
-  handle_unusual:
-    if ((tag == 0) || ((tag & 7) == 4)) {
-      CHK_(ptr);
-      ctx->SetLastTag(tag);
-      goto message_done;
-    }
-    ptr = UnknownFieldParse(
-        tag,
-        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
-        ptr, ctx);
-    CHK_(ptr != nullptr);
-  }  // while
-message_done:
-  return ptr;
-failure:
-  ptr = nullptr;
-  goto message_done;
-#undef CHK_
-}
-
-uint8_t* SimenvConfig_Route::_InternalSerialize(
-    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:game.simenv.SimenvConfig.Route)
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
-
-  // repeated string models = 1;
-  for (int i = 0, n = this->_internal_models_size(); i < n; i++) {
-    const auto& s = this->_internal_models(i);
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
-      s.data(), static_cast<int>(s.length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
-      "game.simenv.SimenvConfig.Route.models");
-    target = stream->WriteString(1, s, target);
-  }
-
-  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:game.simenv.SimenvConfig.Route)
-  return target;
-}
-
-size_t SimenvConfig_Route::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:game.simenv.SimenvConfig.Route)
-  size_t total_size = 0;
-
-  uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  // repeated string models = 1;
-  total_size += 1 *
-      ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(models_.size());
-  for (int i = 0, n = models_.size(); i < n; i++) {
-    total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-      models_.Get(i));
-  }
-
-  return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
-}
-
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData SimenvConfig_Route::_class_data_ = {
-    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSizeCheck,
-    SimenvConfig_Route::MergeImpl
-};
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*SimenvConfig_Route::GetClassData() const { return &_class_data_; }
-
-void SimenvConfig_Route::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to,
-                      const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-  static_cast<SimenvConfig_Route *>(to)->MergeFrom(
-      static_cast<const SimenvConfig_Route &>(from));
-}
-
-
-void SimenvConfig_Route::MergeFrom(const SimenvConfig_Route& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:game.simenv.SimenvConfig.Route)
-  GOOGLE_DCHECK_NE(&from, this);
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
-
-  models_.MergeFrom(from.models_);
-  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
-}
-
-void SimenvConfig_Route::CopyFrom(const SimenvConfig_Route& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:game.simenv.SimenvConfig.Route)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-bool SimenvConfig_Route::IsInitialized() const {
-  return true;
-}
-
-void SimenvConfig_Route::InternalSwap(SimenvConfig_Route* other) {
-  using std::swap;
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  models_.InternalSwap(&other->models_);
-}
-
-::PROTOBUF_NAMESPACE_ID::Metadata SimenvConfig_Route::GetMetadata() const {
-  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
-      &descriptor_table_simenv_2eproto_getter, &descriptor_table_simenv_2eproto_once,
-      file_level_metadata_simenv_2eproto[0]);
-}
-
-// ===================================================================
-
-SimenvConfig_RoutesEntry_DoNotUse::SimenvConfig_RoutesEntry_DoNotUse() {}
-SimenvConfig_RoutesEntry_DoNotUse::SimenvConfig_RoutesEntry_DoNotUse(::PROTOBUF_NAMESPACE_ID::Arena* arena)
-    : SuperType(arena) {}
-void SimenvConfig_RoutesEntry_DoNotUse::MergeFrom(const SimenvConfig_RoutesEntry_DoNotUse& other) {
-  MergeFromInternal(other);
-}
-::PROTOBUF_NAMESPACE_ID::Metadata SimenvConfig_RoutesEntry_DoNotUse::GetMetadata() const {
-  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
-      &descriptor_table_simenv_2eproto_getter, &descriptor_table_simenv_2eproto_once,
-      file_level_metadata_simenv_2eproto[1]);
-}
-
-// ===================================================================
-
 class SimenvConfig::_Internal {
  public:
 };
 
 SimenvConfig::SimenvConfig(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
-  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned),
-  routes_(arena) {
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
   SharedCtor();
   if (!is_message_owned) {
     RegisterArenaDtor(arena);
@@ -414,7 +159,6 @@ SimenvConfig::SimenvConfig(::PROTOBUF_NAMESPACE_ID::Arena* arena,
 SimenvConfig::SimenvConfig(const SimenvConfig& from)
   : ::PROTOBUF_NAMESPACE_ID::Message() {
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
-  routes_.MergeFrom(from.routes_);
   name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
     name_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), "", GetArenaForAllocation());
@@ -461,12 +205,8 @@ inline void SimenvConfig::SharedDtor() {
 void SimenvConfig::ArenaDtor(void* object) {
   SimenvConfig* _this = reinterpret_cast< SimenvConfig* >(object);
   (void)_this;
-  _this->routes_. ~MapField();
 }
-inline void SimenvConfig::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena) {
-  if (arena != nullptr) {
-    arena->OwnCustomDestructor(this, &SimenvConfig::ArenaDtor);
-  }
+void SimenvConfig::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 }
 void SimenvConfig::SetCachedSize(int size) const {
   _cached_size_.Set(size);
@@ -478,7 +218,6 @@ void SimenvConfig::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  routes_.Clear();
   name_.ClearToEmpty();
   args_.ClearToEmpty();
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
@@ -507,19 +246,6 @@ const char* SimenvConfig::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_I
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "game.simenv.SimenvConfig.args"));
           CHK_(ptr);
-        } else
-          goto handle_unusual;
-        continue;
-      // map<string, .game.simenv.SimenvConfig.Route> routes = 3;
-      case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 26)) {
-          ptr -= 1;
-          do {
-            ptr += 1;
-            ptr = ctx->ParseMessage(&routes_, ptr);
-            CHK_(ptr);
-            if (!ctx->DataAvailable(ptr)) break;
-          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<26>(ptr));
         } else
           goto handle_unusual;
         continue;
@@ -572,48 +298,6 @@ uint8_t* SimenvConfig::_InternalSerialize(
         2, this->_internal_args(), target);
   }
 
-  // map<string, .game.simenv.SimenvConfig.Route> routes = 3;
-  if (!this->_internal_routes().empty()) {
-    typedef ::PROTOBUF_NAMESPACE_ID::Map< std::string, ::game::simenv::SimenvConfig_Route >::const_pointer
-        ConstPtr;
-    typedef ConstPtr SortItem;
-    typedef ::PROTOBUF_NAMESPACE_ID::internal::CompareByDerefFirst<SortItem> Less;
-    struct Utf8Check {
-      static void Check(ConstPtr p) {
-        (void)p;
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
-          p->first.data(), static_cast<int>(p->first.length()),
-          ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
-          "game.simenv.SimenvConfig.RoutesEntry.key");
-      }
-    };
-
-    if (stream->IsSerializationDeterministic() &&
-        this->_internal_routes().size() > 1) {
-      ::std::unique_ptr<SortItem[]> items(
-          new SortItem[this->_internal_routes().size()]);
-      typedef ::PROTOBUF_NAMESPACE_ID::Map< std::string, ::game::simenv::SimenvConfig_Route >::size_type size_type;
-      size_type n = 0;
-      for (::PROTOBUF_NAMESPACE_ID::Map< std::string, ::game::simenv::SimenvConfig_Route >::const_iterator
-          it = this->_internal_routes().begin();
-          it != this->_internal_routes().end(); ++it, ++n) {
-        items[static_cast<ptrdiff_t>(n)] = SortItem(&*it);
-      }
-      ::std::sort(&items[0], &items[static_cast<ptrdiff_t>(n)], Less());
-      for (size_type i = 0; i < n; i++) {
-        target = SimenvConfig_RoutesEntry_DoNotUse::Funcs::InternalSerialize(3, items[static_cast<ptrdiff_t>(i)]->first, items[static_cast<ptrdiff_t>(i)]->second, target, stream);
-        Utf8Check::Check(&(*items[static_cast<ptrdiff_t>(i)]));
-      }
-    } else {
-      for (::PROTOBUF_NAMESPACE_ID::Map< std::string, ::game::simenv::SimenvConfig_Route >::const_iterator
-          it = this->_internal_routes().begin();
-          it != this->_internal_routes().end(); ++it) {
-        target = SimenvConfig_RoutesEntry_DoNotUse::Funcs::InternalSerialize(3, it->first, it->second, target, stream);
-        Utf8Check::Check(&(*it));
-      }
-    }
-  }
-
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -629,15 +313,6 @@ size_t SimenvConfig::ByteSizeLong() const {
   uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
-
-  // map<string, .game.simenv.SimenvConfig.Route> routes = 3;
-  total_size += 1 *
-      ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(this->_internal_routes_size());
-  for (::PROTOBUF_NAMESPACE_ID::Map< std::string, ::game::simenv::SimenvConfig_Route >::const_iterator
-      it = this->_internal_routes().begin();
-      it != this->_internal_routes().end(); ++it) {
-    total_size += SimenvConfig_RoutesEntry_DoNotUse::Funcs::ByteSizeLong(it->first, it->second);
-  }
 
   // string name = 1;
   if (!this->_internal_name().empty()) {
@@ -675,7 +350,6 @@ void SimenvConfig::MergeFrom(const SimenvConfig& from) {
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  routes_.MergeFrom(from.routes_);
   if (!from._internal_name().empty()) {
     _internal_set_name(from._internal_name());
   }
@@ -701,7 +375,6 @@ void SimenvConfig::InternalSwap(SimenvConfig* other) {
   auto* lhs_arena = GetArenaForAllocation();
   auto* rhs_arena = other->GetArenaForAllocation();
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  routes_.InternalSwap(&other->routes_);
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
       &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
       &name_, lhs_arena,
@@ -717,7 +390,7 @@ void SimenvConfig::InternalSwap(SimenvConfig* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata SimenvConfig::GetMetadata() const {
   return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
       &descriptor_table_simenv_2eproto_getter, &descriptor_table_simenv_2eproto_once,
-      file_level_metadata_simenv_2eproto[2]);
+      file_level_metadata_simenv_2eproto[0]);
 }
 
 // ===================================================================
@@ -969,7 +642,7 @@ void SimCmd::InternalSwap(SimCmd* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata SimCmd::GetMetadata() const {
   return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
       &descriptor_table_simenv_2eproto_getter, &descriptor_table_simenv_2eproto_once,
-      file_level_metadata_simenv_2eproto[3]);
+      file_level_metadata_simenv_2eproto[1]);
 }
 
 // ===================================================================
@@ -1270,19 +943,13 @@ void SimInfo::InternalSwap(SimInfo* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata SimInfo::GetMetadata() const {
   return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
       &descriptor_table_simenv_2eproto_getter, &descriptor_table_simenv_2eproto_once,
-      file_level_metadata_simenv_2eproto[4]);
+      file_level_metadata_simenv_2eproto[2]);
 }
 
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace simenv
 }  // namespace game
 PROTOBUF_NAMESPACE_OPEN
-template<> PROTOBUF_NOINLINE ::game::simenv::SimenvConfig_Route* Arena::CreateMaybeMessage< ::game::simenv::SimenvConfig_Route >(Arena* arena) {
-  return Arena::CreateMessageInternal< ::game::simenv::SimenvConfig_Route >(arena);
-}
-template<> PROTOBUF_NOINLINE ::game::simenv::SimenvConfig_RoutesEntry_DoNotUse* Arena::CreateMaybeMessage< ::game::simenv::SimenvConfig_RoutesEntry_DoNotUse >(Arena* arena) {
-  return Arena::CreateMessageInternal< ::game::simenv::SimenvConfig_RoutesEntry_DoNotUse >(arena);
-}
 template<> PROTOBUF_NOINLINE ::game::simenv::SimenvConfig* Arena::CreateMaybeMessage< ::game::simenv::SimenvConfig >(Arena* arena) {
   return Arena::CreateMessageInternal< ::game::simenv::SimenvConfig >(arena);
 }

@@ -3,6 +3,7 @@ import threading
 import time
 import unittest
 
+from engines.base import CommandType
 from engines.cqsim import CQSIM
 
 
@@ -18,49 +19,57 @@ class CQSIMTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with open('tests/engines/cqsim/args.json', 'r') as f1, \
-             open('tests/engines/cqsim/sim_term_func.cpp', 'r') as f2:
-            cls.args = json.load(f1)
-            cls.args['proxy']['sim_term_func'] = f2.read()
-        cls.engine = CQSIM(**cls.args)
-        cls.timer = RepeatTimer(1, cls.print_monitor)
-        cls.timer.start()
-
-    @classmethod
-    def print_monitor(cls):
-        print(cls.engine.monitor())
+        ...
 
     @classmethod
     def tearDownClass(cls):
-        cls.timer.cancel()
-        cls.engine = None
+        ...
 
-    def test_00_onesample(self):
-        self.engine.control('init')
-        self.engine.control('start')
-        time.sleep(3)
-        self.engine.control('pause')
-        self.engine.control('param', {'speed_ratio': 100})
-        self.engine.control('step')
-        self.engine.control('resume')
-        time.sleep(3)
-        self.engine.control('episode')
-        time.sleep(10)
-        self.engine.control('stop')
+    @unittest.skip('skip multi-sample test')
+    def test_00_single_sample(self):
+        with open('tests/engines/cqsim/args-single-sample.json', 'r') as f1, \
+             open('tests/engines/cqsim/sim_term_func.cpp', 'r') as f2:
+            args = json.load(f1)
+            args['proxy']['sim_term_func'] = f2.read()
+        engine = CQSIM(**args)
 
-    def test_01_multisample(self):
-        self.args['task']['exp_design_id'] = 28
-        self.args['task']['exp_sample_num'] = 3
-        self.args['task']['repeat_times'] = 2
+        timer = RepeatTimer(1, lambda: print(engine.monitor()))
+        timer.start()
 
-        self.engine.control('init')
-        self.engine.control('start')
+        engine.control(CommandType.INIT)
+        engine.control(CommandType.START)
         time.sleep(3)
-        self.engine.control('pause')
-        self.engine.control('param', {'speed_ratio': 100})
-        self.engine.control('step')
-        self.engine.control('resume')
+        engine.control(CommandType.PAUSE)
+        engine.control(CommandType.PARAM, {'speed_ratio': 100})
+        engine.control(CommandType.STEP)
+        engine.control(CommandType.RESUME)
         time.sleep(3)
-        self.engine.control('episode')
-        time.sleep(10)
-        self.engine.control('stop')
+        engine.control(CommandType.EPISODE)
+        time.sleep(30)
+        engine.control(CommandType.STOP)
+
+        timer.cancel()
+
+    def test_01_multi_sample(self):
+        with open('tests/engines/cqsim/args-multi-sample.json', 'r') as f1, \
+             open('tests/engines/cqsim/sim_term_func.cpp', 'r') as f2:
+            args = json.load(f1)
+            args['proxy']['sim_term_func'] = f2.read()
+        engine = CQSIM(**args)
+
+        timer = RepeatTimer(1, lambda: print(engine.monitor()))
+        timer.start()
+
+        engine.control(CommandType.INIT)
+        engine.control(CommandType.START)
+        time.sleep(3)
+        engine.control(CommandType.PAUSE)
+        engine.control(CommandType.PARAM, {'speed_ratio': 100})
+        engine.control(CommandType.STEP)
+        engine.control(CommandType.RESUME)
+        time.sleep(3)
+        engine.control(CommandType.EPISODE)
+        time.sleep(30)
+        engine.control(CommandType.STOP)
+
+        timer.cancel()

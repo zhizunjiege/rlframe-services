@@ -13,14 +13,15 @@ class SimenvServiceTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.channel = grpc.insecure_channel('localhost:10001')
+        with open('tests/examples/simenv/service.json', 'r') as f:
+            service = json.load(f)
+        cls.channel = grpc.insecure_channel(f'{service["host"]}:{service["port"]}')
         cls.stub = simenv_pb2_grpc.SimenvStub(channel=cls.channel)
 
     @classmethod
     def tearDownClass(cls):
         cls.stub.ResetService(types_pb2.CommonRequest())
         cls.channel.close()
-        cls.stub = None
 
     def test_00_queryservice(self):
         res = self.stub.QueryService(types_pb2.CommonRequest())
@@ -33,16 +34,12 @@ class SimenvServiceTestCase(unittest.TestCase):
             self.assertEqual(e.code(), grpc.StatusCode.FAILED_PRECONDITION)
 
         req = simenv_pb2.SimenvConfig()
-        with open('tests/examples/simenv/args.json', 'r') as f1, \
-             open('tests/examples/simenv/sim_term_func.cpp', 'r') as f2, \
-             open('tests/examples/simenv/routes.json', 'r') as f3:
-            req.name = 'CQSIM'
-            args = json.load(f1)
-            args['proxy']['sim_term_func'] = f2.read()
-            req.args = json.dumps(args)
-            routes = json.load(f3)
-            for addr, route in routes.items():
-                req.routes[addr].models.extend(route)
+        with open('tests/examples/simenv/configs.json', 'r') as f1, \
+             open('tests/examples/simenv/sim_term_func.cpp', 'r') as f2:
+            configs = json.load(f1)
+            req.name = configs['name']
+            configs['args']['proxy']['sim_term_func'] = f2.read()
+            req.args = json.dumps(configs['args'])
         self.stub.SetSimenvConfig(req)
 
         res = self.stub.QueryService(types_pb2.CommonRequest())

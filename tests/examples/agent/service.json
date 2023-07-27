@@ -1,0 +1,8 @@
+{
+  "id": "agent-main",
+  "type": "agent",
+  "name": "agent",
+  "host": "localhost",
+  "port": 10002,
+  "desc": "agent service"
+}

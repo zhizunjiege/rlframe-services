@@ -11,12 +11,5 @@
  */
 bool func(std::unordered_map<std::string, std::vector<std::unordered_map<std::string, std::any>>> &states)
 {
-  auto &uav = states["example_uav"][0];
-  auto &sub = states["example_sub"][0];
-  auto uav_lon = std::any_cast<double>(uav["longitude"]);
-  auto uav_lat = std::any_cast<double>(uav["latitude"]);
-  auto sub_lon = std::any_cast<double>(sub["longitude"]);
-  auto sub_lat = std::any_cast<double>(sub["latitude"]);
-  auto dist = std::sqrt(std::pow(uav_lon - sub_lon, 2) + std::pow(uav_lat - sub_lat, 2));
-  return dist <= 0.1;
+  return false;
 }

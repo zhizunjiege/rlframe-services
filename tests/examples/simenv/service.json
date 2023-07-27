@@ -1,0 +1,8 @@
+{
+  "id": "simenv-main",
+  "type": "simenv",
+  "name": "simenv",
+  "host": "localhost",
+  "port": 10001,
+  "desc": "simenv service"
+}
