@@ -5,7 +5,7 @@ import os
 import subprocess
 import threading
 import time
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 import xml.etree.ElementTree as xml
 
 import grpc
@@ -29,18 +29,38 @@ class CQSIM(SimEngineBase):
             IjoxLCJuaWNlIjoiYWRtaW4iLCJvcmlnX2lhdCI6MTY1NjU2MTE1NCwicm9sZWlkIjoxLCJyb2xla2V5IjoiYWRtaW4iLCJyb2xlbmFtZ \
             SI6Iuezu-e7n-euoeeQhuWRmCJ9.BvjGw26L1vbWHwl0n8Y1_yTF-fiFNZNmIw20iYe7ToU',
         proxy_id='',
-        task: Dict[str, int | float] = {},
-        proxy: Dict[str, Any] = {},
+        scenario_id=0,
+        exp_design_id=0,
+        repeat_times=1,
+        sim_start_time=0,
+        sim_duration=1,
+        time_step=50,
+        speed_ratio=1,
+        data: Dict[str, Dict[str, Union[str, List[str], Dict[str, Any]]]] = {},
+        routes: Dict[str, List[str]] = {},
+        simenv_addr='localhost:10001',
+        sim_step_ratio=1,
+        sim_term_func='',
     ):
         """Init CQSIM engine.
 
         Args:
-            ctrl_addr: Control server address.
-            res_addr: Resource server address.
-            x_token: Token for resource server.
-            proxy_id: Proxy model ID.
-            task: Task information.
-            proxy: Proxy information.
+            ctrl_addr: control server address.
+            res_addr: resource server address.
+            x_token: token for resource server.
+            proxy_id: proxy model ID.
+            scenario_id: scenario ID.
+            exp_design_id: experimental design ID.
+            repeat_times: times to repeat the scenario or experiment.
+            sim_start_time: start time of scenario in timestamp.
+            sim_duration: simulation duration in seconds.
+            time_step: time step in milliseconds.
+            speed_ratio: speed ratio.
+            data: input and output data needed for interaction.
+            routes: routes for engine.
+            simenv_addr: simenv service address.
+            sim_step_ratio: number of steps to take once request for decision.
+            sim_term_func: termination function written in c++.
         """
         super().__init__()
 
@@ -49,8 +69,21 @@ class CQSIM(SimEngineBase):
         self.x_token = x_token
         self.proxy_id = proxy_id
 
-        self.task = task
-        self.proxy = proxy
+        self.scenario_id = scenario_id
+        self.exp_design_id = exp_design_id
+        self.exp_sample_num = 0
+        self.repeat_times = repeat_times
+        self.sim_start_time = sim_start_time
+        self.sim_duration = sim_duration
+        self.time_step = time_step
+        self.speed_ratio = speed_ratio
+
+        self.types = {}
+        self.data = data
+        self.routes = routes
+        self.simenv_addr = simenv_addr
+        self.sim_step_ratio = sim_step_ratio
+        self.sim_term_func = sim_term_func
 
         self.channel = grpc.insecure_channel(self.ctrl_addr)
         self.engine = engine_pb2_grpc.SimControllerStub(channel=self.channel)
@@ -76,23 +109,23 @@ class CQSIM(SimEngineBase):
 
     def check_args(self):
         # check scenario
-        if 'exp_design_id' in self.task:
+        if self.exp_design_id > 0:
             r = requests.get(
-                f'http://{self.res_addr}/api/design/{self.task["exp_design_id"]}',
+                f'http://{self.res_addr}/api/design/{self.exp_design_id}',
                 headers={'x-token': self.x_token},
             )
             msg = r.json()
             if not msg['data']:
                 raise ValueError('Invalid exp_design_id')
-            self.task['scenario_id'] = msg['data']['scenarioId']
-            self.task['exp_sample_num'] = msg['data']['sampleSize']
-        if 'scenario_id' not in self.task:
+            self.scenario_id = msg['data']['scenarioId']
+            self.exp_sample_num = msg['data']['sampleSize']
+        if self.scenario_id <= 0:
             raise ValueError('Missing scenario_id or exp_design_id')
         r = requests.post(
             f'http://{self.res_addr}/api/scenario/unpack',
             headers={'x-token': self.x_token},
             json={
-                'id': self.task['scenario_id'],
+                'id': self.scenario_id,
                 'types': [1, 2, 8],
             },
         )
@@ -115,7 +148,7 @@ class CQSIM(SimEngineBase):
         self.cache['typedefine_xml'] = typedefine_xml
 
         # check models
-        model_ids = [self.proxy_id] + [v['id'] for _, v in self.proxy['data'].items()]
+        model_ids = [self.proxy_id] + [v['id'] for _, v in self.data.items()]
         r = requests.post(
             f'http://{self.res_addr}/api/model/unpack',
             headers={'x-token': self.x_token},
@@ -143,7 +176,7 @@ class CQSIM(SimEngineBase):
             model_str = base64.b64decode(model_b64).decode('utf-8')
             model_xml = xml.fromstring(model_str)
 
-            model_config = self.proxy['data'][model['name']]
+            model_config = self.data[model['name']]
 
             model_inputs = {}
             init = isinstance(model_config['inputs'], dict)
@@ -168,7 +201,7 @@ class CQSIM(SimEngineBase):
                 self.extract_struct(structs, typedefine_xml, output_type)
                 model_outputs[output_name] = output_type
             model_config['outputs'] = model_outputs
-        self.proxy['types'] = structs
+        self.types = structs
 
     def extract_struct(self, structs, type_define, type_name):
         type_name = type_name.replace('[]', '')
@@ -196,19 +229,19 @@ class CQSIM(SimEngineBase):
             self.init_threads()
             self.set_configs(self.renew_configs(self.reset_configs(self.get_configs())))
             self.engine.SetHttpInfo(engine_pb2.HttpInfo(token=self.x_token))
-            if 'exp_design_id' in self.task:
-                sample = engine_pb2.InitInfo.MultiSample(exp_design_id=self.task['exp_design_id'])
+            if self.exp_design_id > 0:
+                sample = engine_pb2.InitInfo.MultiSample(exp_design_id=self.exp_design_id)
                 self.engine.Init(engine_pb2.InitInfo(multi_sample_config=sample))
             else:
-                sample = engine_pb2.InitInfo.OneSample(task_id=self.task['scenario_id'])
+                sample = engine_pb2.InitInfo.OneSample(task_id=self.scenario_id)
                 self.engine.Init(engine_pb2.InitInfo(one_sample_config=sample))
             sim_start_time = timestamp_pb2.Timestamp()
-            sim_start_time.FromSeconds(self.task['sim_start_time'])
+            sim_start_time.FromSeconds(self.sim_start_time)
             self.engine.Control(engine_pb2.ControlCmd(sim_start_time=sim_start_time))
             sim_duration = duration_pb2.Duration()
-            sim_duration.FromSeconds(self.task['sim_duration'])
+            sim_duration.FromSeconds(self.sim_duration)
             self.engine.Control(engine_pb2.ControlCmd(sim_duration=sim_duration))
-            self.control(CommandType.PARAM, self.task)
+            self.control(CommandType.PARAM, {'time_step': self.time_step, 'speed_ratio': self.speed_ratio})
             self.state = EngineState.STOPPED
             self.logger.info('CQSIM engine inited.')
             return True
@@ -243,11 +276,11 @@ class CQSIM(SimEngineBase):
             return True
         elif type == CommandType.PARAM:
             if 'time_step' in params:
-                self.task['time_step'] = params['time_step']
+                self.time_step = params['time_step']
                 self.engine.Control(engine_pb2.ControlCmd(time_step=params['time_step']))
                 self.logger.info(f'CQSIM engine time step set to {params["time_step"]}.')
             if 'speed_ratio' in params:
-                self.task['speed_ratio'] = params['speed_ratio']
+                self.speed_ratio = params['speed_ratio']
                 self.engine.Control(engine_pb2.ControlCmd(speed_ratio=params['speed_ratio']))
                 self.logger.info(f'CQSIM engine speed ratio set to {params["speed_ratio"]}.')
             return True
@@ -306,8 +339,8 @@ class CQSIM(SimEngineBase):
                 if self.state == EngineState.RUNNING:
                     now_state = response.node_state[0].state
                     if now_state == STOPPED and now_state != prev_state and prev_state is not None:
-                        if 'exp_design_id' not in self.task or response.current_sample_id == self.task['exp_sample_num'] - 1:
-                            if self.current_repeat_time < self.task['repeat_times']:
+                        if self.exp_design_id <= 0 or response.current_sample_id == self.exp_sample_num - 1:
+                            if self.current_repeat_time < self.repeat_times:
                                 self.control(CommandType.STOP)
                                 time.sleep(1)
                                 self.control(CommandType.START)
@@ -380,7 +413,7 @@ class CQSIM(SimEngineBase):
         interaction_bin = xml.tostring(configs['interaction_xml'], encoding='UTF-8', xml_declaration=True)
         interaction_b64 = base64.b64encode(interaction_bin).decode('utf-8')
         requests.put(
-            f'http://{self.res_addr}/api/scenario/{self.task["scenario_id"]}',
+            f'http://{self.res_addr}/api/scenario/{self.scenario_id}',
             headers={'x-token': self.x_token},
             json={
                 'scenarioFile': scenario_b64,
@@ -429,7 +462,7 @@ class CQSIM(SimEngineBase):
         proxy_xml[0].find('./Parameter[@name="InstanceName"]').set('value', proxy_name)
         proxy_xml[0].find('./Parameter[@name="ForceSideID"]').set('value', '80')
         proxy_xml[0].find('./Parameter[@name="ID"]').set('value', '8080')
-        for model_name, model_config in self.proxy['data'].items():
+        for model_name, model_config in self.data.items():
             for input_name, input_config in model_config['inputs'].items():
                 param_name = f'{model_name}_input_{input_name}'
                 param_type = input_config['type'] if isinstance(input_config, dict) else input_config
@@ -467,10 +500,18 @@ class CQSIM(SimEngineBase):
              open(f'{self.cwd}/../proxy/interface.cpp', 'r') as f4, \
              open(f'{self.cwd}/interface.cpp', 'w') as f5, \
              open(f'{self.cwd}/sim_term_func.cpp', 'w') as f6:
-            json.dump({'task': self.task, 'proxy': self.proxy}, f1)
+            proxy = {
+                'types': self.types,
+                'data': self.data,
+                'routes': self.routes,
+                'sim_duration': self.sim_duration,
+                'sim_step_ratio': self.sim_step_ratio,
+                'simenv_addr': self.simenv_addr,
+            }
+            json.dump(proxy, f1)
             f3.write(f2.read())
             f5.write(f4.read())
-            f6.write(self.proxy['sim_term_func'])
+            f6.write(self.sim_term_func)
         cmd = 'x86_64-w64-mingw32-g++ -O1 -static -shared -o sim_term_func.dll -std=c++17 sim_term_func.cpp'
         subprocess.run(cmd, cwd=self.cwd, timeout=10, shell=True, capture_output=True)
 
@@ -498,7 +539,7 @@ class CQSIM(SimEngineBase):
         proxy_pubsub = xml.SubElement(interaction_xml[2], 'ModelPubSubInfo', attrib={'modelID': self.proxy_id})
         xml.SubElement(proxy_pubsub, 'PublishParams')
         xml.SubElement(proxy_pubsub, 'SubscribeParams')
-        for model_name, model_config in self.proxy['data'].items():
+        for model_name, model_config in self.data.items():
             pub_sub = interaction_xml[2].find(f'./ModelPubSubInfo[@modelID="{model_config["id"]}"]')
             if pub_sub is None:
                 pub_sub = xml.SubElement(interaction_xml[2], 'ModelPubSubInfo', attrib={'modelID': model_config['id']})

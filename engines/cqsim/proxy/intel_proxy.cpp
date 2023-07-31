@@ -32,7 +32,7 @@ bool IntelProxy::Init(const std::unordered_map<std::string, std::any>& value) {
 	configs_ = json::parse(fi);
 	fi.close();
 
-	for (auto& it1 : configs_["proxy"]["types"].items()) {
+	for (auto& it1 : configs_["types"].items()) {
 		auto type_name = it1.key();
 		auto type_fields = it1.value();
 		std::unordered_map<std::string, std::string> type_struct;
@@ -44,7 +44,7 @@ bool IntelProxy::Init(const std::unordered_map<std::string, std::any>& value) {
 		types_.emplace(type_name, type_struct);
 	}
 
-	for (auto& it1 : configs_["proxy"]["data"].items()) {
+	for (auto& it1 : configs_["data"].items()) {
 		auto model_name = it1.key();
 		auto model_config = it1.value();
 		std::unordered_map<std::string, std::string> model_params;
@@ -83,7 +83,7 @@ bool IntelProxy::Init(const std::unordered_map<std::string, std::any>& value) {
 		data_.emplace(model_name, model_params);
 	}
 
-	for (auto& it1 : configs_["proxy"]["routes"].items()) {
+	for (auto& it1 : configs_["routes"].items()) {
 		auto agent_addr = it1.key();
 		auto agent_models = it1.value();
 		routes_.emplace(agent_addr, std::vector<std::string>());
@@ -99,14 +99,14 @@ bool IntelProxy::Init(const std::unordered_map<std::string, std::any>& value) {
 		streams_.emplace(agent_addr, agent_stream);
 	}
 
-	auto simenv_addr = configs_["proxy"]["simenv_addr"].get<std::string>();
+	sim_duration_ = configs_["sim_duration"].get<double>() * 1000;
+	sim_times_ = 0;
+	sim_step_ratio_ = configs_["sim_step_ratio"].get<int32_t>();
+	sim_steps_ = 0;
+
+	auto simenv_addr = configs_["simenv_addr"].get<std::string>();
 	auto simenv_channel = grpc::CreateChannel(simenv_addr, grpc::InsecureChannelCredentials());
 	simenv_ = simenv::Simenv::NewStub(simenv_channel);
-
-	sim_duration_ = configs_["task"]["sim_duration"].get<double>() * 1000;
-	sim_times_ = 0;
-	sim_step_ratio_ = configs_["proxy"]["sim_step_ratio"].get<int32_t>();
-	sim_steps_ = 0;
 
 #ifdef _WIN32
 	std::string lib_name = "sim_term_func.dll";
