@@ -24,19 +24,9 @@ class BFFServicerTestCase(unittest.TestCase):
         cls.channel.close()
 
     def test_00_registerservice(self):
-        with open('tests/examples/agent/service.json', 'r') as f1, \
-             open('tests/examples/simenv/service.json', 'r') as f2:
-            agent_service = json.load(f1)
-            simenv_service = json.load(f2)
-        services = {
-            service['id']: bff_pb2.ServiceInfo(
-                type=service['type'],
-                name=service['name'],
-                host=service['host'],
-                port=service['port'],
-                desc=service['desc'],
-            ) for service in [agent_service, simenv_service]
-        }
+        with open('tests/examples/services.json', 'r') as f:
+            services = json.load(f)
+        services = {id: bff_pb2.ServiceInfo(**service) for id, service in services.items()}
         req = bff_pb2.ServiceInfoMap(services=services)
 
         self.stub.RegisterService(req)
@@ -107,7 +97,7 @@ class BFFServicerTestCase(unittest.TestCase):
              open('tests/examples/simenv/sim_term_func.cpp', 'r') as f2:
             configs = json.load(f1)
             req.configs[self.ids[1]].name = configs['name']
-            configs['args']['proxy']['sim_term_func'] = f2.read()
+            configs['args']['sim_term_func'] = f2.read()
             req.configs[self.ids[1]].args = json.dumps(configs['args'])
         self.stub.SetSimenvConfig(req)
         res = self.stub.GetSimenvConfig(bff_pb2.ServiceIdList(ids=[]))

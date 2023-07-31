@@ -13,9 +13,7 @@ class SimenvServiceTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with open('tests/examples/simenv/service.json', 'r') as f:
-            service = json.load(f)
-        cls.channel = grpc.insecure_channel(f'{service["host"]}:{service["port"]}')
+        cls.channel = grpc.insecure_channel('localhost:10001')
         cls.stub = simenv_pb2_grpc.SimenvStub(channel=cls.channel)
 
     @classmethod
@@ -38,7 +36,7 @@ class SimenvServiceTestCase(unittest.TestCase):
              open('tests/examples/simenv/sim_term_func.cpp', 'r') as f2:
             configs = json.load(f1)
             req.name = configs['name']
-            configs['args']['proxy']['sim_term_func'] = f2.read()
+            configs['args']['sim_term_func'] = f2.read()
             req.args = json.dumps(configs['args'])
         self.stub.SetSimenvConfig(req)
 

@@ -17,9 +17,7 @@ class AgentServiceTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with open('tests/examples/agent/service.json', 'r') as f:
-            service = json.load(f)
-        cls.channel = grpc.insecure_channel(f'{service["host"]}:{service["port"]}')
+        cls.channel = grpc.insecure_channel('localhost:10002')
         cls.stub = agent_pb2_grpc.AgentStub(channel=cls.channel)
 
     @classmethod

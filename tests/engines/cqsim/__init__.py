@@ -25,12 +25,11 @@ class CQSIMTestCase(unittest.TestCase):
     def tearDownClass(cls):
         ...
 
-    @unittest.skip('skip multi-sample test')
     def test_00_single_sample(self):
         with open('tests/engines/cqsim/args-single-sample.json', 'r') as f1, \
              open('tests/engines/cqsim/sim_term_func.cpp', 'r') as f2:
             args = json.load(f1)
-            args['proxy']['sim_term_func'] = f2.read()
+            args['sim_term_func'] = f2.read()
         engine = CQSIM(**args)
 
         timer = RepeatTimer(1, lambda: print(engine.monitor()))
@@ -54,7 +53,7 @@ class CQSIMTestCase(unittest.TestCase):
         with open('tests/engines/cqsim/args-multi-sample.json', 'r') as f1, \
              open('tests/engines/cqsim/sim_term_func.cpp', 'r') as f2:
             args = json.load(f1)
-            args['proxy']['sim_term_func'] = f2.read()
+            args['sim_term_func'] = f2.read()
         engine = CQSIM(**args)
 
         timer = RepeatTimer(1, lambda: print(engine.monitor()))
