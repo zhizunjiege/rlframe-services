@@ -107,6 +107,8 @@ class CQSIM(SimEngineBase):
         os.makedirs(self.cwd, exist_ok=True)
         self.logger = logging.getLogger(f'simenv.{self.name.lower()}')
 
+        self.set_configs(self.renew_configs(self.reset_configs(self.get_configs())))
+
     def check_args(self):
         # check scenario
         if self.exp_design_id > 0:
@@ -227,7 +229,6 @@ class CQSIM(SimEngineBase):
         if type == CommandType.INIT:
             self.join_threads()
             self.init_threads()
-            self.set_configs(self.renew_configs(self.reset_configs(self.get_configs())))
             self.engine.SetHttpInfo(engine_pb2.HttpInfo(token=self.x_token))
             if self.exp_design_id > 0:
                 sample = engine_pb2.InitInfo.MultiSample(exp_design_id=self.exp_design_id)

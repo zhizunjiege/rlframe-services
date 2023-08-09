@@ -105,8 +105,8 @@ CREATE TABLE "service" (
   "agent_id" integer,
   "simenv_id" integer,
   CONSTRAINT "fk_task" FOREIGN KEY ("task_id") REFERENCES "task"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "fk_agent" FOREIGN KEY ("agent_id") REFERENCES "agent"("id") ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT "fk_simenv" FOREIGN KEY ("simenv_id") REFERENCES "simenv"("id") ON DELETE SET NULL ON UPDATE CASCADE
+  CONSTRAINT "fk_agent" FOREIGN KEY ("agent_id") REFERENCES "agent"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "fk_simenv" FOREIGN KEY ("simenv_id") REFERENCES "simenv"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- ----------------------------
