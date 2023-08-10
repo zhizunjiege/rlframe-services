@@ -513,7 +513,7 @@ class CQSIM(SimEngineBase):
             f3.write(f2.read())
             f5.write(f4.read())
             f6.write(self.sim_term_func)
-        cmd = 'x86_64-w64-mingw32-g++ -O1 -static -shared -o sim_term_func.dll -std=c++17 sim_term_func.cpp'
+        cmd = 'x86_64-w64-mingw32-g++ -O1 -static -shared -o sim_term_func.dll -std=c++17 interface.cpp sim_term_func.cpp'
         subprocess.run(cmd, cwd=self.cwd, timeout=10, shell=True, capture_output=True)
 
         scenario_xml = configs['scenario_xml']
