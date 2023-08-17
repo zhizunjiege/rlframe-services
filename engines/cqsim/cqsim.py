@@ -36,8 +36,8 @@ class CQSIM(SimEngineBase):
         sim_duration=1,
         time_step=50,
         speed_ratio=1,
-        data: Dict[str, Dict[str, Union[str, List[str], Dict[str, Any]]]] = {},
-        routes: Dict[str, List[str]] = {},
+        data: Union[Dict[str, Any], List[Dict[str, Any]]] = {},
+        routes: Union[Dict[str, List[str]], Dict[str, Any]] = {},
         simenv_addr='localhost:10001',
         sim_step_ratio=1,
         sim_term_func='',
@@ -79,8 +79,8 @@ class CQSIM(SimEngineBase):
         self.speed_ratio = speed_ratio
 
         self.types = {}
-        self.data = data
-        self.routes = routes
+        self.data = data if isinstance(data, dict) else {item['name']: item for item in data}
+        self.routes = routes if isinstance(routes, dict) else {item['addr']: item['models'] for item in routes}
         self.simenv_addr = simenv_addr
         self.sim_step_ratio = sim_step_ratio
         self.sim_term_func = sim_term_func
@@ -150,7 +150,7 @@ class CQSIM(SimEngineBase):
         self.cache['typedefine_xml'] = typedefine_xml
 
         # check models
-        model_ids = [self.proxy_id] + [v['id'] for _, v in self.data.items()]
+        model_ids = [self.proxy_id] + [v['modelid'] for _, v in self.data.items()]
         r = requests.post(
             f'http://{self.res_addr}/api/model/unpack',
             headers={'x-token': self.x_token},
@@ -162,7 +162,7 @@ class CQSIM(SimEngineBase):
         msg = r.json()
         if len(msg['data']) != len(model_ids):
             invalid_ids = set(model_ids) - set([v['id'] for v in msg['data']])
-            raise ValueError(f'Invalid model_id: {invalid_ids}')
+            raise ValueError(f'Invalid modelid: {invalid_ids}')
 
         # check model inputs and outputs
         structs = {}
@@ -185,7 +185,7 @@ class CQSIM(SimEngineBase):
             for input_name in model_config['inputs']:
                 input_param = model_xml[0].find(f'./Parameter[@name="{input_name}"]')
                 if input_param is None or input_param.attrib['usage'].find('input') == -1:
-                    raise ValueError(f'Invalid input name {input_name} for model_id {model["id"]}')
+                    raise ValueError(f'Invalid input name {input_name} for modelid {model["id"]}')
                 input_type = input_param.attrib['type']
                 self.extract_struct(structs, typedefine_xml, input_type)
                 model_inputs[input_name] = {
@@ -198,7 +198,7 @@ class CQSIM(SimEngineBase):
             for output_name in model_config['outputs']:
                 output_param = model_xml[0].find(f'./Parameter[@name="{output_name}"]')
                 if output_param is None or output_param.attrib['usage'].find('output') == -1:
-                    raise ValueError(f'Invalid output name {output_name} for model_id {model["id"]}')
+                    raise ValueError(f'Invalid output name {output_name} for modelid {model["id"]}')
                 output_type = output_param.attrib['type']
                 self.extract_struct(structs, typedefine_xml, output_type)
                 model_outputs[output_name] = output_type
@@ -541,9 +541,9 @@ class CQSIM(SimEngineBase):
         xml.SubElement(proxy_pubsub, 'PublishParams')
         xml.SubElement(proxy_pubsub, 'SubscribeParams')
         for model_name, model_config in self.data.items():
-            pub_sub = interaction_xml[2].find(f'./ModelPubSubInfo[@modelID="{model_config["id"]}"]')
+            pub_sub = interaction_xml[2].find(f'./ModelPubSubInfo[@modelID="{model_config["modelid"]}"]')
             if pub_sub is None:
-                pub_sub = xml.SubElement(interaction_xml[2], 'ModelPubSubInfo', attrib={'modelID': model_config['id']})
+                pub_sub = xml.SubElement(interaction_xml[2], 'ModelPubSubInfo', attrib={'modelID': model_config['modelid']})
                 xml.SubElement(pub_sub, 'PublishParams')
                 xml.SubElement(pub_sub, 'SubscribeParams')
 
@@ -554,7 +554,7 @@ class CQSIM(SimEngineBase):
                     'TopicType',
                     attrib={
                         'name': topic_name,
-                        'modelID': model_config['id'],
+                        'modelID': model_config['modelid'],
                         'isTaskFlow': 'false',
                     },
                 )
@@ -595,7 +595,7 @@ class CQSIM(SimEngineBase):
                     'TopicType',
                     attrib={
                         'name': topic_name,
-                        'modelID': model_config['id'],
+                        'modelID': model_config['modelid'],
                         'isTaskFlow': 'false',
                     },
                 )
