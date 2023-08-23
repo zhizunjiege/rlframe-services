@@ -237,7 +237,7 @@ class CQSIM(SimEngineBase):
                 sample = engine_pb2.InitInfo.OneSample(task_id=self.scenario_id)
                 self.engine.Init(engine_pb2.InitInfo(one_sample_config=sample))
             sim_start_time = timestamp_pb2.Timestamp()
-            sim_start_time.FromSeconds(self.sim_start_time)
+            sim_start_time.FromMilliseconds(self.sim_start_time)
             self.engine.Control(engine_pb2.ControlCmd(sim_start_time=sim_start_time))
             sim_duration = duration_pb2.Duration()
             sim_duration.FromSeconds(self.sim_duration)
