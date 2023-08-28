@@ -1,32 +1,51 @@
 from abc import ABC
 from abc import abstractmethod
-from typing import Any, Dict, List, Literal, Tuple
+from enum import auto, Enum
+from typing import Any, Dict, List, Tuple
+
+AnyDict = Dict[str, Any]
+
+
+class CommandType(Enum):
+    """Command type."""
+
+    INIT = auto()
+    START = auto()
+    PAUSE = auto()
+    STEP = auto()
+    RESUME = auto()
+    STOP = auto()
+    EPISODE = auto()
+    PARAM = auto()
+
+
+class EngineState(Enum):
+    """Engine state."""
+
+    UNINITED = auto()
+    STOPPED = auto()
+    RUNNING = auto()
+    SUSPENDED = auto()
 
 
 class SimEngineBase(ABC):
     """Abstract base class for all simulation engines."""
 
-    @abstractmethod
     def __init__(self):
         """Init engine."""
-        self._state = 'uninited'
-
-    @abstractmethod
-    def __del__(self):
-        """Close engine."""
-        ...
+        self._state = EngineState.UNINITED
 
     @abstractmethod
     def control(
         self,
-        cmd: str,
-        params: Dict[str, Any],
+        type: CommandType,
+        params: AnyDict,
     ) -> bool:
         """Control engine.
 
         Args:
-            cmd: Control command.
-            params: Control parameters.
+            type: Command type.
+            params: Command params.
 
         Returns:
             True if success.
@@ -34,7 +53,7 @@ class SimEngineBase(ABC):
         ...
 
     @abstractmethod
-    def monitor(self) -> Tuple[List[Dict[str, Any]], List[str]]:
+    def monitor(self) -> Tuple[List[AnyDict], List[str]]:
         """Monitor engine.
 
         Returns:
@@ -44,24 +63,28 @@ class SimEngineBase(ABC):
         ...
 
     @property
-    def state(self) -> Literal['uninited', 'stopped', 'running', 'suspended']:
+    def state(self) -> EngineState:
         """Getter of state."""
         return self._state
 
     @state.setter
-    def state(self, value: Literal['uninited', 'stopped', 'running', 'suspended']) -> None:
+    def state(self, value: EngineState) -> None:
         """Setter of state."""
         self._state = value
 
-    def call(self, identity: str, str_data: str = '', bin_data: bytes = b'') -> Tuple[str, str, bytes]:
+    def call(self, name: str, dstr='', dbin=b'') -> Tuple[str, str, bytes]:
         """Any method can be called.
 
         Args:
-            identity: Identity of method.
-            str_data: String data.
-            bin_data: Binary data.
+            name: Name of method.
+            dstr: String data.
+            dbin: Binary data.
 
         Returns:
-            Identity of method, string data and binary data.
+            Name of method, string data and binary data.
         """
-        return identity, '', b''
+        return name, '', b''
+
+    def __del__(self):
+        """Close engine."""
+        ...

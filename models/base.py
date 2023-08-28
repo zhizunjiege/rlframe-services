@@ -2,23 +2,19 @@ from abc import ABC
 from abc import abstractmethod
 from typing import Any, Dict, Tuple
 
+AnyDict = Dict[str, Any]
+
 
 class RLModelBase(ABC):
     """Abstract base class for all reinforcement learning models."""
 
-    @abstractmethod
     def __init__(self, training: bool):
         """Init model.
 
         Args:
-            training: Whether the model is in training mode.
+            training: whether model is used for `train` or `infer`.
         """
         self._training = training
-
-    @abstractmethod
-    def __del__(self):
-        """Close model."""
-        ...
 
     @abstractmethod
     def react(self, states: Any) -> Any:
@@ -48,15 +44,19 @@ class RLModelBase(ABC):
             states: States of enviroment.
             actions: Actions of model.
             next_states: Next states of enviroment.
-            reward: Reward.
+            reward: Reward of enviroment.
             terminated: Whether a `terminal state` (as defined under the MDP of the task) is reached.
-            truncated: Whether a truncation condition outside the scope of the MDP is satisfied.
+            truncated: Whether a `truncation condition` outside the scope of the MDP is satisfied.
         """
         ...
 
     @abstractmethod
     def train(self) -> Any:
-        """Train model."""
+        """Train model.
+
+        Returns:
+            Necessary infos.
+        """
         ...
 
     @abstractmethod
@@ -95,7 +95,7 @@ class RLModelBase(ABC):
         """
         ...
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> AnyDict:
         """Get intermediate status of model.
 
         Returns:
@@ -108,7 +108,7 @@ class RLModelBase(ABC):
                 status[name] = self.__dict__[key]
         return status
 
-    def set_status(self, status: Dict[str, Any]) -> None:
+    def set_status(self, status: AnyDict) -> None:
         """Set intermediate status of model.
 
         Args:
@@ -134,15 +134,19 @@ class RLModelBase(ABC):
         """Setter of training."""
         self._training = value
 
-    def call(self, identity: str, str_data: str = '', bin_data: bytes = b'') -> Tuple[str, str, bytes]:
+    def call(self, name: str, dstr: str = '', dbin: bytes = b'') -> Tuple[str, str, bytes]:
         """Any method can be called.
 
         Args:
-            identity: Identity of method.
-            str_data: String data.
-            bin_data: Binary data.
+            name: Name of method.
+            dstr: String data.
+            dbin: Binary data.
 
         Returns:
-            Identity of method, string data and binary data.
+            Name of method, string data and binary data.
         """
-        return identity, '', b''
+        return name, '', b''
+
+    def __del__(self):
+        """Close model."""
+        ...

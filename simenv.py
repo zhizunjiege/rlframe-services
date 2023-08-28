@@ -1,7 +1,9 @@
 import argparse
 from concurrent import futures
 import json
+import logging
 import signal
+import sys
 
 import grpc
 
@@ -9,7 +11,9 @@ from protos import simenv_pb2
 from protos import simenv_pb2_grpc
 from protos import types_pb2
 
-from engines import SimEngines
+from engines import CommandType, SimEngines
+
+LOGGER_NAME = 'simenv'
 
 
 class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
@@ -40,11 +44,15 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
         return self.configs
 
     def SetSimenvConfig(self, request, context):
+        if request.name not in SimEngines:
+            message = f'{request.name} engine not supported'
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
+
         try:
-            args = json.loads(request.args)
-            self.engine = SimEngines[request.type](**args)
+            args = json.loads(request.args) if request.args else {}
+            self.engine = SimEngines[request.name](**args)
         except Exception as e:
-            message = f'Invalid args for {request.type} engine, info: {e}'
+            message = f'Invalid args for {request.name} engine, info: {e}'
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
 
         self.state = types_pb2.ServiceState.State.INITED
@@ -55,28 +63,28 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
     def SimControl(self, request, context):
         self.check_state(context)
         try:
-            cmd = request.type
-            params = json.loads(request.params)
-            self.engine.control(cmd=cmd, params=params)
+            params = json.loads(request.params) if request.params else {}
+            self.engine.control(type=CommandType[request.type.upper()], params=params)
         except Exception as e:
-            message = f'Invalid command {cmd} with its params, info: {e}'
+            message = f'Invalid command {request.type} with its params, info: {e}'
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
         return types_pb2.CommonResponse()
 
     def SimMonitor(self, request, context):
         self.check_state(context)
-        state = self.engine.state
+        state = self.engine.state.name
         data_, logs_ = self.engine.monitor()
         data, logs = json.dumps(data_), json.dumps(logs_)
         return simenv_pb2.SimInfo(state=state, data=data, logs=logs)
 
     def Call(self, request, context):
         self.check_state(context)
-        identity, str_data, bin_data = self.engine.call(request.identity, request.str_data, request.bin_data)
-        return types_pb2.CallData(identity=identity, str_data=str_data, bin_data=bin_data)
+        name, dstr, dbin = self.engine.call(request.name, request.dstr, request.dbin)
+        return types_pb2.CallData(name=name, dstr=dstr, dbin=dbin)
 
 
 def simenv_server(host, port, max_workers, max_msg_len):
+    logger = logging.getLogger(LOGGER_NAME)
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=max_workers),
         options=[
@@ -87,17 +95,17 @@ def simenv_server(host, port, max_workers, max_msg_len):
     simenv_pb2_grpc.add_SimenvServicer_to_server(SimenvServicer(), server)
     port = server.add_insecure_port(f'{host}:{port}')
     server.start()
-    print(f'Simenv server started at {host}:{port}')
+    logger.info(f'Simenv server started at {host}:{port}')
 
     def grace_exit(*_):
-        print('Simenv service stopping...')
+        logger.info('Simenv server stopping...')
         evt = server.stop(0)
         evt.wait(1)
 
     signal.signal(signal.SIGINT, grace_exit)
     signal.signal(signal.SIGTERM, grace_exit)
     server.wait_for_termination()
-    print('Simenv server stopped.')
+    logger.info('Simenv server stopped.')
 
 
 if __name__ == '__main__':
@@ -106,5 +114,13 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--port', type=int, default=0, help='Port to listen on.')
     parser.add_argument('-w', '--worker', type=int, default=10, help='Max workers in thread pool.')
     parser.add_argument('-m', '--msglen', type=int, default=4, help='Max message length in MB.')
+    parser.add_argument('-l', '--loglvl', type=str, default='info', help='Log level defined in `logging`.')
     args = parser.parse_args()
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(lineno)d - %(levelname)s - %(message)s'))
+    logger = logging.getLogger(LOGGER_NAME)
+    logger.addHandler(handler)
+    logger.setLevel(args.loglvl.upper())
+
     simenv_server(args.host, args.port, args.worker, args.msglen)

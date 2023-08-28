@@ -1,13 +1,16 @@
 #!/bin/bash
 
-# parse arguments -w, -m
-while getopts "w:m:" opt; do
+# parse arguments -w, -m, -l
+while getopts "w:m:l:" opt; do
   case $opt in
   w)
     workers=$OPTARG
     ;;
   m)
     msglen=$OPTARG
+    ;;
+  l)
+    loglvl=$OPTARG
     ;;
   ?)
     echo "Invalid option: -$opt"
@@ -35,7 +38,7 @@ time=$(date +"%Y-%m-%d %H-%M-%S")
 
 # run python in background
 echo "starting python..."
-python -u agent.py -p 10002 -w ${workers:-10} -m ${msglen:-256} </dev/null >"data/logs/$time.agent.log" 2>&1 &
+python -u agent.py -p 10002 -w ${workers:-10} -m ${msglen:-256} -l ${loglvl:info} </dev/null >"data/logs/$time.agent.log" 2>&1 &
 
 # run tensorboard in background
 echo "starting tensorboard..."

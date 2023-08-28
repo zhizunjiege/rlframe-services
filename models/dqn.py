@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Dict, List, Optional, Union
 
 import numpy as np
@@ -29,13 +28,13 @@ class DQN(RLModelBase):
         update_after: int = 32,
         update_online_every: int = 1,
         update_target_every: int = 200,
-        seed: Optional[int] = None,
         dtype: str = 'float32',
+        seed: Optional[int] = None,
     ):
         """Init a DQN model.
 
         Args:
-            training: Whether the model is in training mode.
+            training: whether model is used for `train` or `infer`.
 
             obs_dim: Dimension of observation.
             act_num: Number of actions.
@@ -54,9 +53,9 @@ class DQN(RLModelBase):
                 Note: Ensures replay buffer is full enough for useful updates.
             update_online_every: Number of env interactions that should elapse between gradient descent updates.
                 Note: Regardless of how long you wait between updates, the ratio of env steps to gradient steps is locked to 1.
-            update_target_every: Number of env interactions that should elapse between target network updates.
-            seed: Seed for random number generators.
+            update_target_every: Number of gradient updations that should elapse between target network updates.
             dtype: Data type of model.
+            seed: Seed for random number generators.
         """
         super().__init__(training)
 
@@ -74,8 +73,8 @@ class DQN(RLModelBase):
         self.update_after = update_after
         self.update_online_every = update_online_every
         self.update_target_every = update_target_every
-        self.seed = seed
         self.dtype = dtype
+        self.seed = seed
 
         if training:
             tf.random.set_seed(seed)
@@ -88,22 +87,11 @@ class DQN(RLModelBase):
             self.optimizer = tf.keras.optimizers.Adam(lr)
             self.replay_buffer = SingleReplay(obs_dim, 1, replay_size, dtype=dtype)
 
-            self.log_dir = f'data/logs/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
-            self.summary_writer = tf.summary.create_file_writer(self.log_dir)
-            tf.summary.trace_on(graph=True, profiler=False)
-
             self._epsilon = epsilon_max
             self._react_steps = 0
             self._train_steps = 0
-            self._episode = 0
-            self._episode_rewards = 0
-            self._graph_exported = False
         else:
             self.online_net = self.net_builder('online', obs_dim, hidden_layers, act_num)
-
-    def __del__(self):
-        """Close model."""
-        ...
 
     def react(self, states: np.ndarray) -> int:
         """Get action.
@@ -148,18 +136,17 @@ class DQN(RLModelBase):
             terminated: Whether a `terminal state` (as defined under the MDP of the task) is reached.
             truncated: Whether a truncation condition outside the scope of the MDP is satisfied.
         """
-        self.replay_buffer.store(states, actions, next_states, reward, terminated)
+        if self.training:
+            self.replay_buffer.store(states, actions, next_states, reward, terminated)
 
-        self._episode_rewards += reward
-        if terminated or truncated:
-            self._episode += 1
-            with self.summary_writer.as_default():
-                tf.summary.scalar('episode_rewards', self._episode_rewards, step=self._episode)
-            self._episode_rewards = 0
+    def train(self) -> Dict[str, List[float]]:
+        """Train model.
 
-    def train(self):
-        """Train model."""
-        if self.replay_buffer.size >= self.update_after and self._react_steps % self.update_online_every == 0:
+        Returns:
+            Losses.
+        """
+        losses = {}
+        if self.training and self.replay_buffer.size >= self.update_after and self._react_steps % self.update_online_every == 0:
             for _ in range(self.update_online_every):
                 batch = self.replay_buffer.sample(self.batch_size)
                 loss = self.apply_grads(
@@ -170,13 +157,10 @@ class DQN(RLModelBase):
                     batch['term'],
                 )
                 self._train_steps += 1
-                with self.summary_writer.as_default():
-                    tf.summary.scalar('loss', loss, step=self._train_steps)
-                    if not self._graph_exported:
-                        tf.summary.trace_export(name='model', step=self._train_steps, profiler_outdir=self.log_dir)
-                        self._graph_exported = True
                 if self._train_steps % self.update_target_every == 0:
                     self.update_target()
+                losses.setdefault('loss', []).append(float(loss))
+        return losses
 
     def net_builder(self, name, input_dim, hidden_layers, output_dim):
         inputs = tf.keras.Input(shape=(input_dim,))
@@ -190,12 +174,12 @@ class DQN(RLModelBase):
     def apply_grads(self, states, actions, next_states, rewards, terminated):
         with tf.GradientTape() as tape:
             logits = self.online_net(states, training=True)
-            q_values = tf.math.reduce_sum(logits * tf.one_hot(actions, self.act_num), axis=1)
+            q_values = tf.reduce_sum(logits * tf.one_hot(actions, self.act_num), axis=1)
             next_logits = self.target_net(next_states, training=True)
-            next_q_values = tf.math.reduce_max(next_logits, axis=1)
+            next_q_values = tf.reduce_max(next_logits, axis=1)
             target_q_values = rewards + self.gamma * (1 - terminated) * next_q_values
             td_errors = tf.stop_gradient(target_q_values) - q_values
-            loss = tf.math.reduce_mean(tf.math.square(td_errors))
+            loss = tf.reduce_mean(tf.square(td_errors))
         grads = tape.gradient(loss, self.online_net.trainable_variables)
         self.optimizer.apply_gradients(zip(grads, self.online_net.trainable_variables))
         return loss
@@ -228,19 +212,23 @@ class DQN(RLModelBase):
             if 'target' in weights:
                 self.target_net.set_weights(weights['target'])
 
-    def get_buffer(self) -> Dict[str, Union[int, str, Dict[str, np.ndarray]]]:
+    def get_buffer(self) -> Optional[Dict[str, Union[int, str, Dict[str, np.ndarray]]]]:
         """Get buffer of experience replay.
 
         Returns:
             Internel state of the replay buffer.
         """
-        return self.replay_buffer.get()
+        if self.training:
+            return self.replay_buffer.get()
+        else:
+            return None
 
-    def set_buffer(self, buffer: Dict[str, Union[int, str, Dict[str, np.ndarray]]]):
+    def set_buffer(self, buffer: Optional[Dict[str, Union[int, str, Dict[str, np.ndarray]]]]):
         """Set buffer of experience replay.
 
         Args:
             buffer: Internel state of the replay buffer.
         """
-        self.replay_buffer.set(buffer)
-        self.replay_size = buffer['max_size']
+        if self.training:
+            if buffer is not None:
+                self.replay_buffer.set(buffer)

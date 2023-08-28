@@ -1,13 +1,16 @@
 #!/bin/bash
 
-# parse arguments -w, -m
-while getopts "w:m:" opt; do
+# parse arguments -w, -m, -l
+while getopts "w:m:l:" opt; do
   case $opt in
   w)
     workers=$OPTARG
     ;;
   m)
     msglen=$OPTARG
+    ;;
+  l)
+    loglvl=$OPTARG
     ;;
   ?)
     echo "Invalid option: -$opt"
@@ -25,7 +28,7 @@ function grace_exit() {
   exit 0
 }
 
-trap "grace_exit envoy gunicorn python" INT TERM
+trap "grace_exit envoy waitress-serve python" INT TERM
 
 # mkdir for logs
 mkdir -p data/logs
@@ -35,15 +38,15 @@ time=$(date +"%Y-%m-%d %H-%M-%S")
 
 # run envoy in background
 echo "starting envoy..."
-func-e run -c envoy.yaml -l error </dev/null >/dev/null 2>&1 &
+func-e run -c envoy.yaml </dev/null >/dev/null 2>&1 &
 
-# run gunicorn in background
-echo "starting gunicorn..."
-gunicorn -b 0.0.0.0:8888 --log-level info --log-file "data/logs/$time.web.log" -D web:app
+# run waitress in background
+echo "starting waitress..."
+waitress-serve --listen 0.0.0.0:8888 web:app </dev/null >"data/logs/$time.web.log" 2>&1 &
 
 # run python in background
 echo "starting python..."
-python -u bff.py -p 10000 -w ${workers:-10} -m ${msglen:-256} </dev/null >"data/logs/$time.bff.log" 2>&1 &
+python -u bff.py -p 10000 -w ${workers:-10} -m ${msglen:-256} -l ${loglvl:info}  </dev/null >"data/logs/$time.bff.log" 2>&1 &
 
 # wait for subprocess
 wait

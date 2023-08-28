@@ -1,6 +1,8 @@
 import argparse
 from concurrent import futures
+import logging
 import signal
+import sys
 
 import grpc
 
@@ -9,6 +11,8 @@ from protos import bff_pb2
 from protos import bff_pb2_grpc
 from protos import simenv_pb2_grpc
 from protos import types_pb2
+
+LOGGER_NAME = 'bff'
 
 
 class BFFServicer(bff_pb2_grpc.BFFServicer):
@@ -22,8 +26,6 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
 
         self.agents = {}
         self.simenvs = {}
-
-        self.route_config = None
 
     def unknown_id(self, id, context):
         context.abort(grpc.StatusCode.INVALID_ARGUMENT, f'Unknown service id: {id}')
@@ -70,13 +72,6 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
         for id in request.services:
             if id in self.services:
                 self.services[id] = request.services[id]
-        return types_pb2.CommonResponse()
-
-    def GetRouteConfig(self, request, context):
-        return self.route_config
-
-    def SetRouteConfig(self, request, context):
-        self.route_config = request
         return types_pb2.CommonResponse()
 
     def ResetService(self, request, context):
@@ -241,6 +236,7 @@ class BFFServicer(bff_pb2_grpc.BFFServicer):
 
 
 def bff_server(host, port, max_workers, max_msg_len):
+    logger = logging.getLogger(LOGGER_NAME)
     options = [
         ('grpc.max_send_message_length', max_msg_len * 1024 * 1024),
         ('grpc.max_receive_message_length', max_msg_len * 1024 * 1024),
@@ -249,17 +245,17 @@ def bff_server(host, port, max_workers, max_msg_len):
     bff_pb2_grpc.add_BFFServicer_to_server(BFFServicer(options=options), server)
     port = server.add_insecure_port(f'{host}:{port}')
     server.start()
-    print(f'BFF server started at {host}:{port}')
+    logger.info(f'BFF server started at {host}:{port}')
 
     def grace_exit(*_):
-        print('BFF server stopping...')
+        logger.info('BFF server stopping...')
         evt = server.stop(0)
         evt.wait(1)
 
     signal.signal(signal.SIGINT, grace_exit)
     signal.signal(signal.SIGTERM, grace_exit)
     server.wait_for_termination()
-    print('BFF server stopped.')
+    logger.info('BFF server stopped.')
 
 
 if __name__ == '__main__':
@@ -268,5 +264,13 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--port', type=int, default=0, help='Port to listen on.')
     parser.add_argument('-w', '--worker', type=int, default=10, help='Max workers in thread pool.')
     parser.add_argument('-m', '--msglen', type=int, default=256, help='Max message length in MB.')
+    parser.add_argument('-l', '--loglvl', type=str, default='info', help='Log level defined in `logging`.')
     args = parser.parse_args()
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(lineno)d - %(levelname)s - %(message)s'))
+    logger = logging.getLogger(LOGGER_NAME)
+    logger.addHandler(handler)
+    logger.setLevel(args.loglvl.upper())
+
     bff_server(args.host, args.port, args.worker, args.msglen)

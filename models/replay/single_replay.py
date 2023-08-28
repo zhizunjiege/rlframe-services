@@ -69,48 +69,31 @@ class SingleReplay:
             term=self.term_buf[idxs],
         )
 
-    def get(self) -> Dict[str, Union[int, str, Dict[str, np.ndarray]]]:
+    def get(self) -> Dict[str, Union[int, np.ndarray]]:
         """Get the internal state of the replay buffer.
 
         Returns:
             Internal state of the replay buffer.
         """
-        state = {
-            'obs_dim': self.obs_dim,
-            'act_dim': self.act_dim,
-            'max_size': self.max_size,
-            'dtype': self.dtype,
+        return {
             'ptr': self.ptr,
             'size': self.size,
-            'data': {
-                'obs1_buf': self.obs1_buf[:self.size],
-                'acts_buf': self.acts_buf[:self.size],
-                'obs2_buf': self.obs2_buf[:self.size],
-                'rews_buf': self.rews_buf[:self.size],
-                'term_buf': self.term_buf[:self.size],
-            }
+            'obs1_buf': self.obs1_buf[:self.size],
+            'acts_buf': self.acts_buf[:self.size],
+            'obs2_buf': self.obs2_buf[:self.size],
+            'rews_buf': self.rews_buf[:self.size],
+            'term_buf': self.term_buf[:self.size],
         }
-        return state
 
-    def set(self, state: Dict[str, Union[int, str, Dict[str, np.ndarray]]]):
+    def set(self, state: Dict[str, Union[int, np.ndarray]]):
         """Set the internal state of the replay buffer.
 
         Args:
             state: Internal state of the replay buffer.
         """
-        s = state
-        self.obs_dim, self.act_dim, self.max_size, self.dtype = s['obs_dim'], s['act_dim'], s['max_size'], s['dtype']
-        self.ptr, self.size = s['ptr'], s['size']
-
-        self.obs1_buf = np.zeros((self.max_size, self.obs_dim), dtype=self.dtype)
-        self.acts_buf = np.zeros((self.max_size, self.act_dim), dtype=self.dtype)
-        self.obs2_buf = np.zeros((self.max_size, self.obs_dim), dtype=self.dtype)
-        self.rews_buf = np.zeros(self.max_size, dtype=self.dtype)
-        self.term_buf = np.zeros(self.max_size, dtype=self.dtype)
-
-        d = s['data']
-        self.obs1_buf[:self.size] = d['obs1_buf']
-        self.acts_buf[:self.size] = d['acts_buf']
-        self.obs2_buf[:self.size] = d['obs2_buf']
-        self.rews_buf[:self.size] = d['rews_buf']
-        self.term_buf[:self.size] = d['term_buf']
+        self.ptr, self.size = state['ptr'], state['size']
+        self.obs1_buf[:self.size] = state['obs1_buf']
+        self.acts_buf[:self.size] = state['acts_buf']
+        self.obs2_buf[:self.size] = state['obs2_buf']
+        self.rews_buf[:self.size] = state['rews_buf']
+        self.term_buf[:self.size] = state['term_buf']
