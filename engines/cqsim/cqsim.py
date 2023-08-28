@@ -105,7 +105,7 @@ class CQSIM(SimEngineBase):
 
         self.cwd = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tmp')
         os.makedirs(self.cwd, exist_ok=True)
-        self.logger = logging.getLogger(f'simenv.{self.name.lower()}')
+        self.logger = logging.getLogger('simenv.cqsim')
 
         self.set_configs(self.renew_configs(self.reset_configs(self.get_configs())))
 
