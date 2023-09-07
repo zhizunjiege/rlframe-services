@@ -344,7 +344,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         return types_pb2.CallData(name=name, dstr=dstr, dbin=dbin)
 
     def call(self, name, dstr, dbin):
-        if name == '@custom-model':
+        if name == '@custom':
             with zipfile.ZipFile(io.BytesIO(dbin), 'r') as zip_ref:
                 zip_ref.extractall('data/models')
         return name, 'OK', b''

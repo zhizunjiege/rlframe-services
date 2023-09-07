@@ -176,7 +176,7 @@ class AgentServiceTestCase(unittest.TestCase):
         with open(arch, 'rb') as f:
             file = f.read()
 
-        req = types_pb2.CallData(name='@custom-model', dstr='', dbin=file)
+        req = types_pb2.CallData(name='@custom', dstr='', dbin=file)
         self.stub.Call(req)
 
         req = agent_pb2.AgentConfig()

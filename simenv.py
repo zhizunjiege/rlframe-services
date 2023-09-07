@@ -109,7 +109,7 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
         return types_pb2.CallData(name=name, dstr=dstr, dbin=dbin)
 
     def call(self, name, dstr, dbin):
-        if name == '@custom-engine':
+        if name == '@custom':
             with zipfile.ZipFile(io.BytesIO(dbin), 'r') as zip_ref:
                 zip_ref.extractall('data/engines')
         return name, 'OK', b''

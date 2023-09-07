@@ -92,7 +92,7 @@ class SimenvServiceTestCase(unittest.TestCase):
         with open(arch, 'rb') as f:
             file = f.read()
 
-        req = types_pb2.CallData(name='@custom-engine', dstr='', dbin=file)
+        req = types_pb2.CallData(name='@custom', dstr='', dbin=file)
         self.stub.Call(req)
 
         req = simenv_pb2.SimenvConfig()
