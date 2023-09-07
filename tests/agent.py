@@ -2,6 +2,8 @@ import json
 import pickle
 import queue
 import random
+import shutil
+import tempfile
 import time
 import unittest
 
@@ -166,3 +168,34 @@ class AgentServiceTestCase(unittest.TestCase):
         azimuth = res['actions']['example_uav']['entities'][0]['params']['azimuth']['vdouble']
         print(f'Azimuth: {azimuth}')
         self.assertIsInstance(azimuth, float)
+
+    def test_07_custommodel(self):
+        tmp = tempfile.gettempdir()
+        cwd = 'tests/examples/agent'
+        arch = shutil.make_archive(f'{tmp}/temp', 'zip', root_dir=cwd, base_dir='custom.py')
+        with open(arch, 'rb') as f:
+            file = f.read()
+
+        req = types_pb2.CallData(name='@custom-model', dstr='', dbin=file)
+        self.stub.Call(req)
+
+        req = agent_pb2.AgentConfig()
+        with open('tests/examples/agent/configs.json', 'r') as f1, \
+             open('tests/examples/agent/states_inputs_func.py', 'r') as f2, \
+             open('tests/examples/agent/outputs_actions_func.py', 'r') as f3, \
+             open('tests/examples/agent/reward_func.py', 'r') as f4:
+            configs = json.load(f1)
+            req.training = configs['training']
+            req.name = 'Custom'
+            req.hypers = json.dumps({'obs_dim': 4, 'act_num': 2})
+            req.sifunc = f2.read()
+            req.oafunc = f3.read()
+            req.rewfunc = f4.read()
+            for hook in configs['hooks']:
+                pointer = req.hooks.add()
+                pointer.name = hook['name']
+                pointer.args = json.dumps(hook['args'])
+        self.stub.SetAgentConfig(req)
+
+        res = self.stub.GetAgentConfig(types_pb2.CommonRequest())
+        self.assertEqual(res.name, 'Custom')

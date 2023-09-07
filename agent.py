@@ -1,11 +1,16 @@
 import argparse
 import asyncio
 from concurrent import futures
+import importlib
+import io
 import json
 import logging
+import os
 import pickle
+import shutil
 import signal
 import sys
+import zipfile
 
 from google.protobuf import json_format
 import grpc
@@ -24,6 +29,7 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
 
     def __init__(self):
         self.reset()
+        self.copy()
 
     def reset(self):
         self.state = types_pb2.ServiceState.State.UNINITED
@@ -44,6 +50,15 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         self.episodes = 0
         self.react_steps = 0
         self.train_steps = 0
+
+    def copy(self):
+        source, target = 'models', 'data/models'
+        if not os.path.exists(target):
+            os.makedirs(target, exist_ok=True)
+        for file in ['base.py']:
+            shutil.copy(os.path.join(source, file), os.path.join(target, file))
+        with open(f'{target}/__init__.py', 'w') as f:
+            f.write('')
 
     async def check_state(self, context):
         if self.state == types_pb2.ServiceState.State.UNINITED:
@@ -74,13 +89,20 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
             message = f'Invalid {e.filename} function, error in line {e.lineno}, column {e.offset}, {e.text}'
             await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
 
-        if request.name not in RLModels:
-            message = f'{request.name} model not supported'
-            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
+        if request.name in RLModels:
+            model_class = RLModels[request.name]
+        else:
+            try:
+                module = importlib.import_module(f'data.models.{request.name.lower()}')
+                importlib.reload(module)
+                model_class = getattr(module, request.name)
+            except Exception:
+                message = f'{request.name} model not supported'
+                await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
 
         try:
             hypers = json.loads(request.hypers) if request.hypers else {}
-            self.model = RLModels[request.name](training=request.training, **hypers)
+            self.model = model_class(training=request.training, **hypers)
         except Exception as e:
             message = f'Invalid hypers for {request.name} model, info: {e}'
             await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
@@ -313,9 +335,19 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
         return json_format.ParseDict({'actions': actions}, types_pb2.SimAction())
 
     async def Call(self, request, context):
-        await self.check_state(context)
-        name, dstr, dbin = self.model.call(request.name, request.dstr, request.dbin)
+        name, dstr, dbin = request.name, request.dstr, request.dbin
+        if name.startswith('@'):
+            name, dstr, dbin = self.call(name, dstr, dbin)
+        else:
+            await self.check_state(context)
+            name, dstr, dbin = self.model.call(name, dstr, dbin)
         return types_pb2.CallData(name=name, dstr=dstr, dbin=dbin)
+
+    def call(self, name, dstr, dbin):
+        if name == '@custom-model':
+            with zipfile.ZipFile(io.BytesIO(dbin), 'r') as zip_ref:
+                zip_ref.extractall('data/models')
+        return name, 'OK', b''
 
 
 _cleanup_coroutines = []

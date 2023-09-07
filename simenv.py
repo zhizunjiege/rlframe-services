@@ -1,9 +1,14 @@
 import argparse
 from concurrent import futures
+import importlib
+import io
 import json
 import logging
+import os
+import shutil
 import signal
 import sys
+import zipfile
 
 import grpc
 
@@ -20,6 +25,7 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
 
     def __init__(self):
         self.reset()
+        self.copy()
 
     def reset(self):
         self.state = types_pb2.ServiceState.State.UNINITED
@@ -27,6 +33,15 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
         self.configs = None
 
         self.engine = None
+
+    def copy(self):
+        source, target = 'engines', 'data/engines'
+        if not os.path.exists(target):
+            os.makedirs(target, exist_ok=True)
+        for file in ['base.py']:
+            shutil.copy(os.path.join(source, file), os.path.join(target, file))
+        with open(f'{target}/__init__.py', 'w') as f:
+            f.write('')
 
     def check_state(self, context):
         if self.state == types_pb2.ServiceState.State.UNINITED:
@@ -44,13 +59,20 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
         return self.configs
 
     def SetSimenvConfig(self, request, context):
-        if request.name not in SimEngines:
-            message = f'{request.name} engine not supported'
-            context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
+        if request.name in SimEngines:
+            engine_class = SimEngines[request.name]
+        else:
+            try:
+                module = importlib.import_module(f'data.engines.{request.name.lower()}')
+                importlib.reload(module)
+                engine_class = getattr(module, request.name)
+            except Exception:
+                message = f'{request.name} engine not supported'
+                context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
 
         try:
             args = json.loads(request.args) if request.args else {}
-            self.engine = SimEngines[request.name](**args)
+            self.engine = engine_class(**args)
         except Exception as e:
             message = f'Invalid args for {request.name} engine, info: {e}'
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
@@ -78,9 +100,19 @@ class SimenvServicer(simenv_pb2_grpc.SimenvServicer):
         return simenv_pb2.SimInfo(state=state, data=data, logs=logs)
 
     def Call(self, request, context):
-        self.check_state(context)
-        name, dstr, dbin = self.engine.call(request.name, request.dstr, request.dbin)
+        name, dstr, dbin = request.name, request.dstr, request.dbin
+        if name.startswith('@'):
+            name, dstr, dbin = self.call(name, dstr, dbin)
+        else:
+            self.check_state(context)
+            name, dstr, dbin = self.engine.call(name, dstr, dbin)
         return types_pb2.CallData(name=name, dstr=dstr, dbin=dbin)
+
+    def call(self, name, dstr, dbin):
+        if name == '@custom-engine':
+            with zipfile.ZipFile(io.BytesIO(dbin), 'r') as zip_ref:
+                zip_ref.extractall('data/engines')
+        return name, 'OK', b''
 
 
 def simenv_server(host, port, max_workers, max_msg_len):
