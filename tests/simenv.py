@@ -1,4 +1,6 @@
 import json
+import shutil
+import tempfile
 import time
 import unittest
 
@@ -82,3 +84,25 @@ class SimenvServiceTestCase(unittest.TestCase):
         print('state: ', res.state)
         print('data: ', json.loads(res.data))
         print('logs: ', json.loads(res.logs))
+
+    def test_04_customengine(self):
+        tmp = tempfile.gettempdir()
+        cwd = 'tests/examples/simenv'
+        arch = shutil.make_archive(f'{tmp}/temp', 'zip', root_dir=cwd, base_dir='custom')
+        with open(arch, 'rb') as f:
+            file = f.read()
+
+        req = types_pb2.CallData(name='@custom', dstr='', dbin=file)
+        self.stub.Call(req)
+
+        req = simenv_pb2.SimenvConfig()
+        with open('tests/examples/simenv/configs.json', 'r') as f1, \
+             open('tests/examples/simenv/sim_term_func.cpp', 'r') as f2:
+            configs = json.load(f1)
+            req.name = 'Custom'
+            configs['args']['sim_term_func'] = f2.read()
+            req.args = json.dumps({'scenario_id': 0, 'exp_design_id': 0})
+        self.stub.SetSimenvConfig(req)
+
+        res = self.stub.GetSimenvConfig(types_pb2.CommonRequest())
+        self.assertEqual(res.name, 'Custom')
