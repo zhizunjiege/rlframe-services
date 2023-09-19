@@ -46,7 +46,7 @@ waitress-serve --listen 0.0.0.0:8888 web:app </dev/null >"data/logs/$time.web.lo
 
 # run python in background
 echo "starting python..."
-python -u bff.py -p 10000 -w ${workers:-10} -m ${msglen:-256} -l ${loglvl:info}  </dev/null >"data/logs/$time.bff.log" 2>&1 &
+python -u bff.py -p 10000 -w ${workers:-10} -m ${msglen:-256} -l ${loglvl:-info}  </dev/null >"data/logs/$time.bff.log" 2>&1 &
 
 # wait for subprocess
 wait
