@@ -1,0 +1,25 @@
+{
+    "type": "QMIX",
+    "hypers": {
+      "obs_dim": 4,
+      "act_num": 18,
+      "hidden_layers": [
+        64,
+        64
+      ],
+      "lr": 0.0005,
+      "gamma": 0.99,
+      "replay_size": 100000,
+      "batch_size": 32,
+      "epsilon_max": 1.0,
+      "epsilon_min": 0.01,
+      "epsilon_decay": 0.999,
+      "start_steps": 0,
+      "update_after": 20,
+      "update_online_every": 1,
+      "update_target_every": 200,
+      "seed": null,
+      "agent_num": 2
+    }
+  }
+  
