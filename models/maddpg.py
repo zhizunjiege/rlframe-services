@@ -1,11 +1,10 @@
-from datetime import datetime
 from typing import Dict, Iterable, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
 
-from models.base import RLModelBase
-from models.replay.multi_replay import MultiReplay
+from .base import RLModelBase
+from .replay.multi_replay import MultiReplay
 
 
 class NormalNoise:
@@ -69,10 +68,10 @@ class MADDPG(RLModelBase):
         hidden_layers_critic: List[int] = [64, 64],
         lr_actor: float = 0.0001,
         lr_critic: float = 0.001,
-        gamma: float = 0.9,
+        gamma: float = 0.99,
         tau: float = 0.001,
         replay_size: int = 1000000,
-        batch_size: int = 32,
+        batch_size: int = 64,
         noise_type: Literal['normal', 'ou'] = 'ou',
         noise_sigma: Union[float, Iterable[float]] = 0.2,
         noise_theta: Union[float, Iterable[float]] = 0.15,
@@ -80,15 +79,15 @@ class MADDPG(RLModelBase):
         noise_max: float = 1.0,
         noise_min: float = 1.0,
         noise_decay: float = 1.0,
-        update_after: int = 32,
+        update_after: int = 64,
         update_online_every: int = 1,
-        seed: Optional[int] = None,
         dtype: str = 'float32',
+        seed: Optional[int] = None,
     ):
         """Init a MADDPG model.
 
         Args:
-            training: Whether the model is in training mode.
+            training: whether model is used for `train` or `infer`.
 
             agent_num: Number of agents.
             obs_dim: Dimension of observation.
@@ -113,8 +112,8 @@ class MADDPG(RLModelBase):
                 Note: Ensures replay buffer is full enough for useful updates.
             update_online_every: Number of env interactions that should elapse between gradient descent updates.
                 Note: Regardless of how long you wait between updates, the ratio of env steps to gradient steps is locked to 1.
-            seed: Seed for random number generators.
             dtype: Data type of model.
+            seed: Seed for random number generators.
         """
         super().__init__(training)
 
@@ -138,8 +137,8 @@ class MADDPG(RLModelBase):
         self.noise_decay = noise_decay
         self.update_after = update_after
         self.update_online_every = update_online_every
-        self.seed = seed
         self.dtype = dtype
+        self.seed = seed
 
         if training:
             tf.random.set_seed(self.seed)
@@ -167,23 +166,12 @@ class MADDPG(RLModelBase):
 
             self.replay_buffer = MultiReplay(agent_num, obs_dim, act_dim, replay_size, dtype=dtype)
 
-            self.log_dir = f'data/logs/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
-            self.summary_writer = tf.summary.create_file_writer(self.log_dir)
-            tf.summary.trace_on(graph=True, profiler=False)
-
             self._noise_level = noise_max
             self._react_steps = 0
             self._train_steps = 0
-            self._episode = 0
-            self._episode_rewards = [0] * agent_num
-            self._graph_exported = False
         else:
             for i in range(agent_num):
                 self.actor_list.append(self.actor_net_builder(f'actor_{i}', trainable=False))
-
-    def __del__(self):
-        """Close model."""
-        ...
 
     def react(self, states: Dict[int, np.ndarray]) -> Dict[int, np.ndarray]:
         """Get action.
@@ -235,39 +223,27 @@ class MADDPG(RLModelBase):
             terminated: Whether a `terminal state` (as defined under the MDP of the task) is reached.
             truncated: Whether a truncation condition outside the scope of the MDP is satisfied.
         """
-        self.replay_buffer.store(
-            self.sorted_values(states),
-            self.sorted_values(actions),
-            self.sorted_values(next_states),
-            self.sorted_values(reward),
-            terminated,
-        )
+        if self.training:
+            self.replay_buffer.store(
+                self.sorted_values(states),
+                self.sorted_values(actions),
+                self.sorted_values(next_states),
+                self.sorted_values(reward),
+                terminated,
+            )
 
-        for i in range(self.agent_num):
-            self._episode_rewards[i] += reward[i]
-
-        if terminated or truncated:
-            for i in range(self.agent_num):
-                self.noise_list[i].reset()
-
-            self._episode += 1
-            with self.summary_writer.as_default():
+            if terminated or truncated:
                 for i in range(self.agent_num):
-                    tf.summary.scalar(
-                        f'episode_rewards_agent_{i}',
-                        self._episode_rewards[i],
-                        step=self._episode,
-                    )
-                tf.summary.scalar(
-                    'episode_rewards_total',
-                    sum(self._episode_rewards),
-                    step=self._episode,
-                )
-            self._episode_rewards = [0] * self.agent_num
+                    self.noise_list[i].reset()
 
     def train(self):
-        """Train model."""
-        if self.replay_buffer.size >= self.update_after and self._react_steps % self.update_online_every == 0:
+        """Train model.
+
+        Returns:
+            Losses of actor and critic.
+        """
+        losses = {}
+        if self.training and self.replay_buffer.size >= self.update_after and self._react_steps % self.update_online_every == 0:
             for _ in range(self.update_online_every):
                 batch = self.replay_buffer.sample(self.batch_size)
                 loss_actors, loss_critics = self.apply_gradients(
@@ -278,13 +254,10 @@ class MADDPG(RLModelBase):
                     batch['term'],
                 )
                 self._train_steps += 1
-                with self.summary_writer.as_default():
-                    for i in range(self.agent_num):
-                        tf.summary.scalar(f'loss_actor_agent_{i}', loss_actors[i], step=self._train_steps)
-                        tf.summary.scalar(f'loss_critic_agent_{i}', loss_critics[i], step=self._train_steps)
-                    if not self._graph_exported:
-                        tf.summary.trace_export(name='model', step=self._train_steps, profiler_outdir=self.log_dir)
-                        self._graph_exported = True
+                for i in range(self.agent_num):
+                    losses.setdefault(f'loss_actor_agent_{i}', []).append(loss_actors[i])
+                    losses.setdefault(f'loss_critic_agent_{i}', []).append(loss_critics[i])
+        return losses
 
     def actor_net_builder(self, name, trainable):
         inputs = tf.keras.Input(shape=(self.obs_dim,))
@@ -385,7 +358,10 @@ class MADDPG(RLModelBase):
         Returns:
             Internel state of the replay buffer.
         """
-        return self.replay_buffer.get()
+        if self.training:
+            return self.replay_buffer.get()
+        else:
+            return None
 
     def set_buffer(self, buffer: Dict[str, Union[int, str, Dict[str, Union[np.ndarray, List[np.ndarray]]]]]):
         """Set buffer of experience replay.
@@ -393,5 +369,6 @@ class MADDPG(RLModelBase):
         Args:
             buffer: Internel state of the replay buffer.
         """
-        self.replay_buffer.set(buffer)
-        self.replay_size = buffer['max_size']
+        if self.training:
+            if buffer is not None:
+                self.replay_buffer.set(buffer)

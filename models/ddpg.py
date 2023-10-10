@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Dict, Iterable, List, Literal, Optional, Tuple, Union
 
 import numpy as np
@@ -81,13 +80,13 @@ class DDPG(RLModelBase):
         noise_decay: float = 1.0,
         update_after: int = 64,
         update_online_every: int = 1,
-        seed: Optional[int] = None,
         dtype: str = 'float32',
+        seed: Optional[int] = None,
     ):
         """Init a DDPG model.
 
         Args:
-            training: Whether the model is in training mode.
+            training: whether model is used for `train` or `infer`.
 
             obs_dim: Dimension of observation.
             act_dim: Dimension of actions.
@@ -111,8 +110,8 @@ class DDPG(RLModelBase):
                 Note: Ensures replay buffer is full enough for useful updates.
             update_online_every: Number of env interactions that should elapse between gradient descent updates.
                 Note: Regardless of how long you wait between updates, the ratio of env steps to gradient steps is locked to 1.
-            seed: Seed for random number generators.
             dtype: Data type of model.
+            seed: Seed for random number generators.
         """
         super().__init__(training)
 
@@ -135,8 +134,8 @@ class DDPG(RLModelBase):
         self.noise_decay = noise_decay
         self.update_after = update_after
         self.update_online_every = update_online_every
-        self.seed = seed
         self.dtype = dtype
+        self.seed = seed
 
         if training:
             tf.random.set_seed(self.seed)
@@ -159,22 +158,11 @@ class DDPG(RLModelBase):
             else:
                 self.noise = OrnsteinUhlenbeckNoise(sigma=noise_sigma, theta=noise_theta, dt=noise_dt, shape=(act_dim,))
 
-            self.log_dir = f'data/logs/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
-            self.summary_writer = tf.summary.create_file_writer(self.log_dir)
-            tf.summary.trace_on(graph=True, profiler=False)
-
             self._noise_level = noise_max
             self._react_steps = 0
             self._train_steps = 0
-            self._episode = 0
-            self._episode_rewards = 0
-            self._graph_exported = False
         else:
             self.actor = self.actor_net_builder('actor', obs_dim, hidden_layers_actor, act_dim)
-
-    def __del__(self):
-        """Close model."""
-        ...
 
     def react(self, states: np.ndarray) -> np.ndarray:
         """Get action.
@@ -213,21 +201,20 @@ class DDPG(RLModelBase):
             terminated: Whether a `terminal state` (as defined under the MDP of the task) is reached.
             truncated: Whether a truncation condition outside the scope of the MDP is satisfied.
         """
-        self.replay_buffer.store(states, actions, next_states, reward, terminated)
+        if self.training:
+            self.replay_buffer.store(states, actions, next_states, reward, terminated)
 
-        self._episode_rewards += reward
-
-        if terminated or truncated:
-            self.noise.reset()
-
-            self._episode += 1
-            with self.summary_writer.as_default():
-                tf.summary.scalar('episode_rewards', self._episode_rewards, step=self._episode)
-            self._episode_rewards = 0
+            if terminated or truncated:
+                self.noise.reset()
 
     def train(self):
-        """Train model."""
-        if self.replay_buffer.size >= self.update_after and self._react_steps % self.update_online_every == 0:
+        """Train model.
+
+        Returns:
+            Losses of actor and critic.
+        """
+        losses = {}
+        if self.training and self.replay_buffer.size >= self.update_after and self._react_steps % self.update_online_every == 0:
             for _ in range(self.update_online_every):
                 batch = self.replay_buffer.sample(self.batch_size)
                 actor_loss, critic_loss = self.apply_grads(
@@ -238,12 +225,9 @@ class DDPG(RLModelBase):
                     batch['term'],
                 )
                 self._train_steps += 1
-                with self.summary_writer.as_default():
-                    tf.summary.scalar('actor_loss', actor_loss, step=self._train_steps)
-                    tf.summary.scalar('critic_loss', critic_loss, step=self._train_steps)
-                    if not self._graph_exported:
-                        tf.summary.trace_export(name='model', step=self._train_steps, profiler_outdir=self.log_dir)
-                        self._graph_exported = True
+                losses.setdefault('actor_loss', []).append(float(actor_loss))
+                losses.setdefault('critic_loss', []).append(float(critic_loss))
+        return losses
 
     def actor_net_builder(self, name, input_dim, hidden_layers, output_dim):
         inputs = tf.keras.Input(shape=(input_dim,))
@@ -273,7 +257,7 @@ class DDPG(RLModelBase):
             target_q = rew + self.gamma * next_q_target * (1 - term)
             current_q = self.critic(tf.concat((obs, act), axis=1))
             td_errors = tf.stop_gradient(target_q) - current_q
-            critic_loss = tf.reduce_mean(tf.math.square(td_errors))
+            critic_loss = tf.reduce_mean(tf.square(td_errors))
         critic_grads = tape.gradient(critic_loss, self.critic.trainable_variables)
         self.critic_optimizer.apply_gradients(zip(critic_grads, self.critic.trainable_variables))
 
@@ -324,7 +308,10 @@ class DDPG(RLModelBase):
         Returns:
             Internel state of the replay buffer.
         """
-        return self.replay_buffer.get()
+        if self.training:
+            return self.replay_buffer.get()
+        else:
+            return None
 
     def set_buffer(self, buffer: Dict[str, Union[int, str, Dict[str, np.ndarray]]]):
         """Set buffer of experience replay.
@@ -332,5 +319,6 @@ class DDPG(RLModelBase):
         Args:
             buffer: Internel state of the replay buffer.
         """
-        self.replay_buffer.set(buffer)
-        self.replay_size = buffer['max_size']
+        if self.training:
+            if buffer is not None:
+                self.replay_buffer.set(buffer)

@@ -8,12 +8,6 @@ AnyDict = Dict[str, Any]
 class RLModelBase(ABC):
     """Abstract base class for all reinforcement learning models."""
 
-    @classmethod
-    @property
-    def name(cls) -> str:
-        """Return name of this model."""
-        return cls.__name__
-
     def __init__(self, training: bool):
         """Init model.
 

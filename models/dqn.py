@@ -1,4 +1,3 @@
-# from datetime import datetime
 from typing import Dict, List, Optional, Union
 
 import numpy as np
@@ -175,12 +174,12 @@ class DQN(RLModelBase):
     def apply_grads(self, states, actions, next_states, rewards, terminated):
         with tf.GradientTape() as tape:
             logits = self.online_net(states, training=True)
-            q_values = tf.math.reduce_sum(logits * tf.one_hot(actions, self.act_num), axis=1)
+            q_values = tf.reduce_sum(logits * tf.one_hot(actions, self.act_num), axis=1)
             next_logits = self.target_net(next_states, training=True)
-            next_q_values = tf.math.reduce_max(next_logits, axis=1)
+            next_q_values = tf.reduce_max(next_logits, axis=1)
             target_q_values = rewards + self.gamma * (1 - terminated) * next_q_values
             td_errors = tf.stop_gradient(target_q_values) - q_values
-            loss = tf.math.reduce_mean(tf.math.square(td_errors))
+            loss = tf.reduce_mean(tf.square(td_errors))
         grads = tape.gradient(loss, self.online_net.trainable_variables)
         self.optimizer.apply_gradients(zip(grads, self.online_net.trainable_variables))
         return loss

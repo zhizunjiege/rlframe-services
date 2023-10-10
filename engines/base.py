@@ -31,12 +31,6 @@ class EngineState(Enum):
 class SimEngineBase(ABC):
     """Abstract base class for all simulation engines."""
 
-    @classmethod
-    @property
-    def name(cls) -> str:
-        """Return name of this engine."""
-        return cls.__name__
-
     def __init__(self):
         """Init engine."""
         self._state = EngineState.UNINITED

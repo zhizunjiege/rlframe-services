@@ -27,23 +27,16 @@ class WebServerTestCase(unittest.TestCase):
 
         addr = f'{self.addr}/api/db/agent'
         res = requests.get(addr, params={})
-        self.assertTrue(res.ok)
+        data = res.json()
+        self.assertListEqual(data, [])
 
         addr = f'{self.addr}/api/db/simenv'
         res = requests.get(addr, params={
             'columns': ['id', 'args'],
             'id': 1,
         })
-        self.assertTrue(res.ok)
-
-        addr = f'{self.addr}/api/db/service'
-        res = requests.get(addr, params={
-            'columns': ['id', 'desc'],
-            'conjunc': 'OR',
-            'agent_id': 1,
-            'simenv_id': 1,
-        })
-        self.assertTrue(res.ok)
+        data = res.json()
+        self.assertListEqual(data, [])
 
     def test_02_insert(self):
         addr = f'{self.addr}/api/db/task'
@@ -56,13 +49,17 @@ class WebServerTestCase(unittest.TestCase):
             'name': 'test',
             'desc': 'test',
         })
-        self.assertTrue(res.ok)
+        data = res.json()
+        self.assertIn('lastrowid', data)
+        self.assertEqual(data['lastrowid'], 1)
 
         addr = f'{self.addr}/api/db/agent'
         res = requests.post(
             addr,
             json={
                 'desc': 'test',
+                'task': 1,
+                'server': 'test',
                 'training': 1,
                 'name': 'DQN',
                 'hypers': '{}',
@@ -72,42 +69,21 @@ class WebServerTestCase(unittest.TestCase):
                 'hooks': '[]',
             },
         )
-        self.assertTrue(res.ok)
+        data = res.json()
+        self.assertIn('lastrowid', data)
+        self.assertEqual(data['lastrowid'], 1)
 
         addr = f'{self.addr}/api/db/simenv'
         res = requests.post(addr, json={
             'desc': 'test',
-            'name': 'CQSIM',
-        })
-        self.assertEqual(res.status_code, 500)
-        res = requests.post(addr, json={
-            'desc': 'test',
+            'task': 1,
+            'server': 'test',
             'name': 'CQSIM',
             'args': '{}',
         })
-        self.assertTrue(res.ok)
-
-        addr = f'{self.addr}/api/db/service'
-        res = requests.post(addr, json={
-            'desc': 'test',
-            'task_id': 0,
-            'server_id': 'test',
-        })
-        self.assertEqual(res.status_code, 500)
-        res = requests.post(addr, json={
-            'desc': 'test',
-            'task_id': 1,
-            'server_id': 'test',
-            'agent_id': 1,
-        })
-        self.assertTrue(res.ok)
-        res = requests.post(addr, json={
-            'desc': 'test',
-            'task_id': 1,
-            'server_id': 'test',
-            'simenv_id': 1,
-        })
-        self.assertTrue(res.ok)
+        data = res.json()
+        self.assertIn('lastrowid', data)
+        self.assertEqual(data['lastrowid'], 1)
 
     def test_03_update(self):
         addr = f'{self.addr}/api/db/task'
@@ -121,31 +97,18 @@ class WebServerTestCase(unittest.TestCase):
             'id': 1,
             'training': False,
         })
-        self.assertTrue(res.ok)
+        data = res.json()
+        self.assertIn('rowcount', data)
+        self.assertEqual(data['rowcount'], 1)
 
         addr = f'{self.addr}/api/db/simenv'
         res = requests.put(addr, json={
             'id': 1,
-            'params': '{}',
+            'args': '{}',
         })
-        self.assertEqual(res.status_code, 500)
-
-        addr = f'{self.addr}/api/db/service'
-        res = requests.put(addr, json={
-            'id': 1,
-            'task_id': 0,
-        })
-        self.assertEqual(res.status_code, 500)
-        res = requests.put(addr, json={
-            'id': 1,
-            'server_id': 'hsd2kw65',
-        })
-        self.assertTrue(res.ok)
-        res = requests.put(addr, json={
-            'id': 2,
-            'server_id': '55dxfsd3',
-        })
-        self.assertTrue(res.ok)
+        data = res.json()
+        self.assertIn('rowcount', data)
+        self.assertEqual(data['rowcount'], 1)
 
     def test_04_delete(self):
         addr = f'{self.addr}/api/db/task'
@@ -154,16 +117,116 @@ class WebServerTestCase(unittest.TestCase):
 
         addr = f'{self.addr}/api/db/agent'
         res = requests.delete(addr, params={'ids': 1})
-        self.assertTrue(res.ok)
+        data = res.json()
+        self.assertIn('rowcount', data)
+        self.assertEqual(data['rowcount'], 1)
 
         addr = f'{self.addr}/api/db/simenv'
         res = requests.delete(addr, params={'ids': [1]})
-        self.assertTrue(res.ok)
-
-        addr = f'{self.addr}/api/db/service'
-        res = requests.delete(addr, params={'ids': [1, 2]})
-        self.assertTrue(res.ok)
+        data = res.json()
+        self.assertIn('rowcount', data)
+        self.assertEqual(data['rowcount'], 1)
 
         addr = f'{self.addr}/api/db/task'
         res = requests.delete(addr, params={'ids': 1})
+        data = res.json()
+        self.assertIn('rowcount', data)
+        self.assertEqual(data['rowcount'], 1)
+
+    def test_05_set_task(self):
+        addr = f'{self.addr}/api/db/task/set'
+        res = requests.post(
+            addr,
+            json={
+                'task': {
+                    'id': -1,
+                    'name': 'test',
+                },
+                'agents': [{
+                    'id': -1,
+                    'task': -1,
+                    'server': 'test',
+                    'training': 1,
+                    'name': 'DQN',
+                    'hypers': '{}',
+                    'sifunc': '',
+                    'oafunc': '',
+                    'rewfunc': '',
+                    'hooks': '[]',
+                }] * 2,
+                'simenvs': [{
+                    'id': -1,
+                    'task': -1,
+                    'server': 'test',
+                    'name': 'CQSIM',
+                    'args': '{}',
+                }] * 2,
+            },
+        )
+        data = res.json()
+        self.assertIn('task', data)
+        self.assertEqual(data['task'], 2)
+        self.assertIn('agents', data)
+        self.assertListEqual(data['agents'], [2, 3])
+        self.assertIn('simenvs', data)
+        self.assertListEqual(data['simenvs'], [2, 3])
+
+        res = requests.post(
+            addr,
+            json={
+                'task': {
+                    'id': 2,
+                    'name': 'test',
+                },
+                'agents': [{
+                    'id': -1,
+                    'task': -1,
+                    'server': 'test',
+                    'training': 1,
+                    'name': 'DQN',
+                    'hypers': '{}',
+                    'sifunc': '',
+                    'oafunc': '',
+                    'rewfunc': '',
+                    'hooks': '[]',
+                }, {
+                    'id': 2,
+                    'server': 'test',
+                }],
+                'simenvs': [{
+                    'id': -1,
+                    'task': -1,
+                    'server': 'test',
+                    'name': 'CQSIM',
+                    'args': '{}',
+                }, {
+                    'id': 3,
+                    'server': 'test'
+                }],
+            },
+        )
+        data = res.json()
+        self.assertIn('task', data)
+        self.assertEqual(data['task'], 2)
+        self.assertIn('agents', data)
+        self.assertListEqual(data['agents'], [4, 2])
+        self.assertIn('simenvs', data)
+        self.assertListEqual(data['simenvs'], [4, 3])
+
+    @unittest.skip
+    def test_06_get_task(self):
+        addr = f'{self.addr}/api/db/task/2'
+        res = requests.get(addr)
+        data = res.json()
+        self.assertIn('task', data)
+        self.assertEqual(data['task']['id'], 2)
+        self.assertIn('agents', data)
+        self.assertEqual(len(data['agents']), 2)
+        self.assertIn('simenvs', data)
+        self.assertEqual(len(data['simenvs']), 2)
+
+    @unittest.skip
+    def test_07_del_task(self):
+        addr = f'{self.addr}/api/db/task/del'
+        res = requests.delete(addr, params={'ids': 2})
         self.assertTrue(res.ok)

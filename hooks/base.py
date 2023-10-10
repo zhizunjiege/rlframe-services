@@ -11,12 +11,6 @@ LOGGER_NAME = 'hook'
 class HookBase(ABC):
     """Abstract base class for all hooks."""
 
-    @classmethod
-    @property
-    def name(cls) -> str:
-        """Return name of this hook."""
-        return cls.__name__
-
     def __init__(self, model: RLModelBase):
         """Init hook.
 
