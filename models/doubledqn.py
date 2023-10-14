@@ -8,8 +8,8 @@ from .buffer.single import SingleAgentBuffer
 from .core.models import MLPModel
 
 
-class DQN(RLModelBase):
-    """Deep Q-learning Network model."""
+class DoubleDQN(RLModelBase):
+    """Double Deep Q-learning Network model."""
 
     def __init__(
         self,
@@ -31,7 +31,7 @@ class DQN(RLModelBase):
         update_target_every=200,
         seed: Optional[int] = None,
     ):
-        """Init a DQN model.
+        """Init a Double DQN model.
 
         Args:
             training: whether model is used for `train` or `infer`.
@@ -165,8 +165,9 @@ class DQN(RLModelBase):
         with tf.GradientTape() as tape:
             logits = self.online_net(states, training=True)
             q_values = tf.reduce_sum(logits * tf.one_hot(actions, self.act_num), axis=1, keepdims=True)
+            qmax_acts = tf.argmax(self.online_net(next_states, training=True), axis=1)
             next_logits = self.target_net(next_states, training=True)
-            next_q_values = tf.reduce_max(next_logits, axis=1, keepdims=True)
+            next_q_values = tf.reduce_sum(next_logits * tf.one_hot(qmax_acts, self.act_num), axis=1, keepdims=True)
             target_q_values = rewards + self.gamma * next_q_values * (1 - terminated)
             td_error = tf.stop_gradient(target_q_values) - q_values
             loss = tf.reduce_mean(tf.square(td_error))

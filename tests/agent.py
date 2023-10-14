@@ -78,8 +78,8 @@ class AgentServiceTestCase(unittest.TestCase):
     def test_04_modelbuffer(self):
         res = self.stub.GetModelBuffer(types_pb2.CommonRequest())
         buffer = pickle.loads(res.buffer)
-        self.assertEqual(buffer['size'], 0)
-        self.assertEqual(buffer['acts_buf'].shape, (0, 1))
+        self.assertEqual(buffer['ptr'], 0)
+        self.assertEqual(buffer['acts'].shape, (0, 1))
 
         self.stub.SetModelBuffer(agent_pb2.ModelBuffer(buffer=res.buffer))
 

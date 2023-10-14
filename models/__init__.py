@@ -1,5 +1,5 @@
 from .dqn import DQN
-from .double_dqn import DoubleDQN
+from .doubledqn import DoubleDQN
 
 from .ddpg import DDPG
 from .maddpg import MADDPG
