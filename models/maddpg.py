@@ -1,58 +1,12 @@
-from typing import Dict, Iterable, List, Literal, Optional, Tuple, Union
+from typing import Dict, Iterable, List, Literal, Optional, Union
 
 import numpy as np
 import tensorflow as tf
 
 from .base import RLModelBase
-from .replay.multi_replay import MultiReplay
-
-
-class NormalNoise:
-
-    def __init__(
-        self,
-        mu: Union[float, Iterable[float]] = 0.0,
-        sigma: Union[float, Iterable[float]] = 1.0,
-        shape: Optional[Union[int, Tuple[int, ...]]] = None,
-    ):
-        self.mu = mu
-        self.sigma = sigma
-        self.shape = shape
-
-    def __call__(self):
-        return np.random.normal(loc=self.mu, scale=self.sigma, size=self.shape)
-
-    def reset(self):
-        ...
-
-
-class OrnsteinUhlenbeckNoise:
-
-    def __init__(
-        self,
-        mu: Union[float, Iterable[float]] = 0.0,
-        sigma: Union[float, Iterable[float]] = 0.2,
-        theta: Union[float, Iterable[float]] = 0.15,
-        dt: float = 0.01,
-        shape: Optional[Union[int, Tuple[int, ...]]] = None,
-    ):
-        self.mu = mu
-        self.sigma = sigma
-        self.theta = theta
-        self.dt = dt
-        self.shape = shape
-
-        self.reset()
-
-        self.shape = self.x.shape
-
-    def __call__(self):
-        self.x = self.x + self.theta * (self.mu - self.x) * self.dt + self.sigma * np.sqrt(
-            self.dt) * np.random.normal(size=self.shape)
-        return self.x
-
-    def reset(self):
-        self.x = np.random.normal(loc=self.mu, scale=self.sigma, size=self.shape)
+from .buffer import MultiAgentBuffer
+from .core import MLPModel
+from .noise import NormalNoise, OrnsteinUhlenbeckNoise
 
 
 class MADDPG(RLModelBase):
@@ -61,27 +15,26 @@ class MADDPG(RLModelBase):
         self,
         training: bool,
         *,
-        agent_num: int = 2,
-        obs_dim: int = 4,
-        act_dim: int = 2,
+        number: int,
+        obs_dim: int,
+        act_dim: int,
         hidden_layers_actor: List[int] = [64, 64],
         hidden_layers_critic: List[int] = [64, 64],
-        lr_actor: float = 0.0001,
-        lr_critic: float = 0.001,
-        gamma: float = 0.99,
-        tau: float = 0.001,
-        replay_size: int = 1000000,
-        batch_size: int = 64,
-        noise_type: Literal['normal', 'ou'] = 'ou',
+        lr_actor=0.0001,
+        lr_critic=0.001,
+        gamma=0.99,
+        tau=0.001,
+        buffer_size=1000000,
+        batch_size=64,
+        noise_type: Literal['normal', 'ou'] = 'normal',
         noise_sigma: Union[float, Iterable[float]] = 0.2,
         noise_theta: Union[float, Iterable[float]] = 0.15,
-        noise_dt: float = 0.01,
-        noise_max: float = 1.0,
-        noise_min: float = 1.0,
-        noise_decay: float = 1.0,
-        update_after: int = 64,
-        update_online_every: int = 1,
-        dtype: str = 'float32',
+        noise_dt=0.01,
+        noise_max=1.0,
+        noise_min=1.0,
+        noise_decay=1.0,
+        update_after=64,
+        update_every=1,
         seed: Optional[int] = None,
     ):
         """Init a MADDPG model.
@@ -89,7 +42,7 @@ class MADDPG(RLModelBase):
         Args:
             training: whether model is used for `train` or `infer`.
 
-            agent_num: Number of agents.
+            number: Number of agents.
             obs_dim: Dimension of observation.
             act_dim: Dimension of actions.
             hidden_layers_actor: Units of actor hidden layers.
@@ -98,7 +51,7 @@ class MADDPG(RLModelBase):
             lr_critic: Learning rate of critic network.
             gamma: Discount factor.
             tau: Soft update factor.
-            replay_size: Maximum size of replay buffer.
+            buffer_size: Maximum size of buffer.
             batch_size: Size of batch.
             noise_type: Type of noise, `normal` or `ou`.
             noise_sigma: Sigma of noise.
@@ -109,15 +62,14 @@ class MADDPG(RLModelBase):
             noise_decay: Decay rate of noise.
                 Note: Noise decayed exponentially, so always between 0 and 1.
             update_after: Number of env interactions to collect before starting to do gradient descent updates.
-                Note: Ensures replay buffer is full enough for useful updates.
-            update_online_every: Number of env interactions that should elapse between gradient descent updates.
+                Note: Ensures buffer is full enough for useful updates.
+            update_every: Number of env interactions that should elapse between gradient descent updates.
                 Note: Regardless of how long you wait between updates, the ratio of env steps to gradient steps is locked to 1.
-            dtype: Data type of model.
             seed: Seed for random number generators.
         """
         super().__init__(training)
 
-        self.agent_num = agent_num
+        self.number = number
         self.obs_dim = obs_dim
         self.act_dim = act_dim
         self.hidden_layers_actor = hidden_layers_actor
@@ -126,7 +78,7 @@ class MADDPG(RLModelBase):
         self.lr_critic = lr_critic
         self.gamma = gamma
         self.tau = tau
-        self.replay_size = replay_size
+        self.buffer_size = buffer_size
         self.batch_size = batch_size
         self.noise_type = noise_type
         self.noise_sigma = noise_sigma
@@ -136,8 +88,7 @@ class MADDPG(RLModelBase):
         self.noise_min = noise_min
         self.noise_decay = noise_decay
         self.update_after = update_after
-        self.update_online_every = update_online_every
-        self.dtype = dtype
+        self.update_every = update_every
         self.seed = seed
 
         if training:
@@ -146,32 +97,46 @@ class MADDPG(RLModelBase):
 
             self.actor_list = []
             self.actor_target_list = []
+            self.actor_optimizer_list = []
             self.critic_list = []
             self.critic_target_list = []
+            self.critic_optimizer_list = []
             self.noise_list = []
-            for i in range(agent_num):
-                self.actor_list.append(self.actor_net_builder(f'actor_{i}', trainable=True))
-                self.actor_target_list.append(self.actor_net_builder(f'actor_target_{i}', trainable=False))
+            for i in range(number):
+                actor = MLPModel(f'actor_{i}', True, hidden_layers_actor, 'relu', act_dim, 'tanh')
+                self.actor_list.append(actor)
+                actor_target = MLPModel(f'actor_target_{i}', False, hidden_layers_actor, 'relu', act_dim, 'tanh')
+                self.actor_target_list.append(actor_target)
+                self.actor_optimizer_list.append(tf.keras.optimizers.Adam(self.lr_actor))
                 self.update_target_weights(self.actor_list[i].weights, self.actor_target_list[i].weights, 1)
 
-                self.critic_list.append(self.critic_net_builder(f'critic_{i}', trainable=True))
-                self.critic_target_list.append(self.critic_net_builder(f'critic_target_{i}', trainable=False))
+                critic = MLPModel(f'critic_{i}', True, hidden_layers_critic, 'relu', 1, 'linear')
+                self.critic_list.append(critic)
+                critic_target = MLPModel(f'critic_target_{i}', False, hidden_layers_critic, 'relu', 1, 'linear')
+                self.critic_target_list.append(critic_target)
+                self.critic_optimizer_list.append(tf.keras.optimizers.Adam(self.lr_critic))
                 self.update_target_weights(self.critic_list[i].weights, self.critic_target_list[i].weights, 1)
 
                 if noise_type == 'normal':
                     self.noise_list.append(NormalNoise(sigma=noise_sigma, shape=(act_dim,)))
-                else:
+                elif noise_type == 'ou':
                     self.noise_list.append(
-                        OrnsteinUhlenbeckNoise(sigma=noise_sigma, theta=noise_theta, dt=noise_dt, shape=(act_dim,)))
+                        OrnsteinUhlenbeckNoise(
+                            sigma=noise_sigma,
+                            theta=noise_theta,
+                            dt=noise_dt,
+                            shape=(act_dim,),
+                        ))
 
-            self.replay_buffer = MultiReplay(agent_num, obs_dim, act_dim, replay_size, dtype=dtype)
+            self.buffer = MultiAgentBuffer(number, obs_dim, act_dim, buffer_size)
 
             self._noise_level = noise_max
             self._react_steps = 0
             self._train_steps = 0
         else:
-            for i in range(agent_num):
-                self.actor_list.append(self.actor_net_builder(f'actor_{i}', trainable=False))
+            for i in range(number):
+                actor = MLPModel(f'actor_{i}', False, hidden_layers_actor, 'relu', act_dim, 'tanh')
+                self.actor_list.append(actor)
 
     def react(self, states: Dict[int, np.ndarray]) -> Dict[int, np.ndarray]:
         """Get action.
@@ -182,27 +147,19 @@ class MADDPG(RLModelBase):
         Returns:
             Dict of key for agent index and value for actions of model.
         """
-        action_n = {}
+        actions = {}
+        for i in range(self.number):
+            s = states[i][np.newaxis, :]
+            logits = self.actor_list[i](s, training=self.training)
+            actions[i] = np.array(logits[0])
         if self.training:
-            for i in range(self.agent_num):
-                s = states[i][np.newaxis, :]
-                logits = self.actor_list[i](s, training=False)
+            for i in range(self.number):
                 noise = self._noise_level * self.noise_list[i]()
-                action = logits[0] + noise
-                action = np.clip(action, -1, 1)
-                action_n[i] = action
+                actions[i] += noise
+                # actions[i] = np.clip(actions[i], -1, 1)
             self._react_steps += 1
             self._noise_level = max(self.noise_min, self._noise_level * self.noise_decay)
-        else:
-            for i in range(self.agent_num):
-                s = states[i][np.newaxis, :]
-                logits = self.actor_list[i](s, training=False)
-                action = logits[0]
-                action_n[i] = np.squeeze(action, axis=0)
-        return action_n
-
-    def sorted_values(self, d):
-        return [v for _, v in sorted(d.items())]
+        return actions
 
     def store(
         self,
@@ -224,16 +181,10 @@ class MADDPG(RLModelBase):
             truncated: Whether a truncation condition outside the scope of the MDP is satisfied.
         """
         if self.training:
-            self.replay_buffer.store(
-                self.sorted_values(states),
-                self.sorted_values(actions),
-                self.sorted_values(next_states),
-                self.sorted_values(reward),
-                terminated,
-            )
+            self.buffer.store(states, actions, next_states, reward, terminated)
 
             if terminated or truncated:
-                for i in range(self.agent_num):
+                for i in range(self.number):
                     self.noise_list[i].reset()
 
     def train(self):
@@ -243,10 +194,10 @@ class MADDPG(RLModelBase):
             Losses of actor and critic.
         """
         losses = {}
-        if self.training and self.replay_buffer.size >= self.update_after and self._react_steps % self.update_online_every == 0:
-            for _ in range(self.update_online_every):
-                batch = self.replay_buffer.sample(self.batch_size)
-                loss_actors, loss_critics = self.apply_gradients(
+        if self.training and self.buffer.size >= self.update_after and self._react_steps % self.update_every == 0:
+            for _ in range(self.update_every):
+                batch = self.buffer.sample(self.batch_size)
+                loss_actors, loss_critics = self.apply_grads(
                     batch['obs1'],
                     batch['acts'],
                     batch['obs2'],
@@ -254,67 +205,43 @@ class MADDPG(RLModelBase):
                     batch['term'],
                 )
                 self._train_steps += 1
-                for i in range(self.agent_num):
+                for i in range(self.number):
                     losses.setdefault(f'loss_actor_agent_{i}', []).append(loss_actors[i])
                     losses.setdefault(f'loss_critic_agent_{i}', []).append(loss_critics[i])
         return losses
-
-    def actor_net_builder(self, name, trainable):
-        inputs = tf.keras.Input(shape=(self.obs_dim,))
-        outputs = inputs
-        for layer in self.hidden_layers_actor:
-            outputs = tf.keras.layers.Dense(units=layer, activation='relu')(outputs)
-        outputs = tf.keras.layers.Dense(units=self.act_dim, activation='tanh')(outputs)
-        actor_model = tf.keras.Model(inputs=inputs, outputs=outputs, name=name, trainable=trainable)
-        actor_model.compile(optimizer=tf.keras.optimizers.Adam(self.lr_actor))
-        return actor_model
-
-    def critic_net_builder(self, name, trainable):
-        input_magent_s = tf.keras.Input(shape=(self.agent_num * self.obs_dim,))
-        input_magent_a = tf.keras.Input(shape=(self.agent_num * self.act_dim,))
-        outputs = tf.concat([input_magent_s, input_magent_a], axis=-1)
-        for layer in self.hidden_layers_critic:
-            outputs = tf.keras.layers.Dense(units=layer, activation='relu')(outputs)
-        outputs = tf.keras.layers.Dense(units=1, activation='linear')(outputs)
-        critic_model = tf.keras.Model(inputs=[input_magent_s, input_magent_a], outputs=outputs, name=name, trainable=trainable)
-        critic_model.compile(optimizer=tf.keras.optimizers.Adam(self.lr_critic))
-        return critic_model
 
     @tf.function
     def update_target_weights(self, weights, target_weights, tau):
         [a.assign(a * (1 - tau) + b * tau) for a, b in zip(target_weights, weights)]
 
     @tf.function
-    def apply_gradients(self, obs, act, next_obs, rew, term):
-        n = self.agent_num
-        all_obs = tf.concat(obs, axis=-1)
-        all_act = tf.concat(act, axis=-1)
-        all_next_obs = tf.concat(next_obs, axis=-1)
+    def apply_grads(self, obs, act, next_obs, rew, term):
+        loss_actors = tf.TensorArray(tf.float32, size=self.number)
+        loss_critics = tf.TensorArray(tf.float32, size=self.number)
 
-        loss_actors = tf.TensorArray(tf.float32, size=n)
-        loss_critics = tf.TensorArray(tf.float32, size=n)
-        with tf.GradientTape(persistent=True) as tape:
-            all_action = tf.concat([self.actor_list[i](obs[i]) for i in range(n)], axis=-1)
-            all_next_action = tf.concat([self.actor_target_list[i](next_obs[i]) for i in range(n)], axis=-1)
-            for i in range(n):
-                actor_pred = self.actor_list[i]
-                critic_pred = self.critic_list[i]
-                critic_target = self.critic_target_list[i]
-                q_pred_critic = critic_pred([all_obs, all_act])
-                q_target_critic = rew[i] + self.gamma * critic_target([all_next_obs, all_next_action]) * (1 - term)
-                loss_critic = tf.keras.losses.mse(tf.stop_gradient(q_target_critic), q_pred_critic)
-                loss_critic = tf.reduce_mean(loss_critic)
-                critic_gradients = tape.gradient(loss_critic, critic_pred.trainable_variables)
-                critic_pred.optimizer.apply_gradients(zip(critic_gradients, critic_pred.trainable_variables))
+        all_obs = tf.concat(obs, axis=1)
+        all_act = tf.concat(act, axis=1)
+        all_next_obs = tf.concat(next_obs, axis=1)
+        all_next_act = tf.concat([self.actor_target_list[i](next_obs[i]) for i in range(self.number)], axis=1)
+        for i in range(self.number):
+            with tf.GradientTape() as tape1:
+                q_pred = self.critic_list[i]([all_obs, all_act])
+                next_q_pred = self.critic_target_list[i]([all_next_obs, all_next_act])
+                q_target = rew[i] + self.gamma * next_q_pred * (1 - term)
+                td_error = tf.stop_gradient(q_target) - q_pred
+                loss_critic = tf.reduce_mean(tf.square(td_error))
+                critic_gradients = tape1.gradient(loss_critic, self.critic_list[i].trainable_variables)
+                self.critic_optimizer_list[i].apply_gradients(zip(critic_gradients, self.critic_list[i].trainable_variables))
                 loss_critics = loss_critics.write(i, loss_critic)
 
-                q_pred = critic_pred([all_obs, all_action])
-                loss_actor = -tf.math.reduce_mean(q_pred)
-                actor_gradients = tape.gradient(loss_actor, actor_pred.trainable_variables)
-                actor_pred.optimizer.apply_gradients(zip(actor_gradients, actor_pred.trainable_variables))
+            with tf.GradientTape() as tape2:
+                all_act_sub = tf.concat(act[:i] + [self.actor_list[i](obs[i])] + act[i + 1:], axis=1)
+                loss_actor = -tf.reduce_mean(self.critic_list[i]([all_obs, all_act_sub]))
+                actor_gradients = tape2.gradient(loss_actor, self.actor_list[i].trainable_variables)
+                self.actor_optimizer_list[i].apply_gradients(zip(actor_gradients, self.actor_list[i].trainable_variables))
                 loss_actors = loss_actors.write(i, loss_actor)
 
-        for i in range(n):
+        for i in range(self.number):
             self.update_target_weights(self.actor_list[i].weights, self.actor_target_list[i].weights, self.tau)
             self.update_target_weights(self.critic_list[i].weights, self.critic_target_list[i].weights, self.tau)
 
@@ -327,12 +254,12 @@ class MADDPG(RLModelBase):
             Weights of `actor` and `actor_target/critic/critic_target`(if exists).
         """
         weights = {
-            'actor': [self.actor_list[i].get_weights() for i in range(self.agent_num)],
+            'actor': [self.actor_list[i].get_weights() for i in range(self.number)],
         }
         if self.training:
-            weights['critic'] = [self.critic_list[i].get_weights() for i in range(self.agent_num)]
-            weights['actor_target'] = [self.actor_target_list[i].get_weights() for i in range(self.agent_num)]
-            weights['critic_target'] = [self.critic_target_list[i].get_weights() for i in range(self.agent_num)]
+            weights['critic'] = [self.critic_list[i].get_weights() for i in range(self.number)]
+            weights['actor_target'] = [self.actor_target_list[i].get_weights() for i in range(self.number)]
+            weights['critic_target'] = [self.critic_target_list[i].get_weights() for i in range(self.number)]
         return weights
 
     def set_weights(self, weights: Dict[str, List[List[np.ndarray]]]):
@@ -341,10 +268,11 @@ class MADDPG(RLModelBase):
         Args:
             weights: Weights of `actor` and `actor_target/critic/critic_target`(if exists).
         """
-        for i in range(self.agent_num):
-            self.actor_list[i].set_weights(weights['actor'][i])
+        for i in range(self.number):
+            if 'actor' in weights:
+                self.actor_list[i].set_weights(weights['actor'][i])
         if self.training:
-            for i in range(self.agent_num):
+            for i in range(self.number):
                 if 'critic' in weights:
                     self.critic_list[i].set_weights(weights['critic'][i])
                 if 'actor_target' in weights:
@@ -352,23 +280,23 @@ class MADDPG(RLModelBase):
                 if 'critic_target' in weights:
                     self.critic_target_list[i].set_weights(weights['critic_target'][i])
 
-    def get_buffer(self) -> Dict[str, Union[int, str, Dict[str, Union[np.ndarray, List[np.ndarray]]]]]:
-        """Get buffer of experience replay.
+    def get_buffer(self) -> Optional[Dict[str, Union[int, np.ndarray, List[np.ndarray]]]]:
+        """Get the internal state of the buffer.
 
         Returns:
-            Internel state of the replay buffer.
+            Internel state of the buffer.
         """
         if self.training:
-            return self.replay_buffer.get()
+            return self.buffer.get()
         else:
             return None
 
-    def set_buffer(self, buffer: Dict[str, Union[int, str, Dict[str, Union[np.ndarray, List[np.ndarray]]]]]):
-        """Set buffer of experience replay.
+    def set_buffer(self, buffer: Optional[Dict[str, Union[int, np.ndarray, List[np.ndarray]]]]):
+        """Set the internal state of the buffer.
 
         Args:
-            buffer: Internel state of the replay buffer.
+            buffer: Internel state of the buffer.
         """
         if self.training:
             if buffer is not None:
-                self.replay_buffer.set(buffer)
+                self.buffer.set(buffer)

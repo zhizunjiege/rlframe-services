@@ -213,7 +213,6 @@ class WebServerTestCase(unittest.TestCase):
         self.assertIn('simenvs', data)
         self.assertListEqual(data['simenvs'], [4, 3])
 
-    @unittest.skip
     def test_06_get_task(self):
         addr = f'{self.addr}/api/db/task/2'
         res = requests.get(addr)
@@ -225,7 +224,6 @@ class WebServerTestCase(unittest.TestCase):
         self.assertIn('simenvs', data)
         self.assertEqual(len(data['simenvs']), 2)
 
-    @unittest.skip
     def test_07_del_task(self):
         addr = f'{self.addr}/api/db/task/del'
         res = requests.delete(addr, params={'ids': 2})
