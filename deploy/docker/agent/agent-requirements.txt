@@ -1,0 +1,5 @@
+grpcio==1.48.2
+grpcio-tools==1.48.2
+numpy==1.23.2
+tensorboardX==2.6
+tensorflow_probability==0.21.0
