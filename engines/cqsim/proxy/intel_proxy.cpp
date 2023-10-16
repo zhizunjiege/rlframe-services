@@ -178,16 +178,17 @@ bool IntelProxy::Tick(double time) {
 
 		for (auto& [agent_addr, agent_models] : routes_) {
 			types::SimAction res;
-			auto status = streams_[agent_addr]->Read(&res);
-			for (auto& [model_name, model_msg] : res.actions()) {
-				auto entity = model_msg.entities(0);
-				for (auto& [input_name, msg_value] : entity.params()) {
-					outputs_[model_name][input_name] = MsgToAny(msg_value, data_[model_name][input_name]);
-				}
-			}
+			if (streams_[agent_addr]->Read(&res)){
+        for (auto& [model_name, model_msg] : res.actions()) {
+          auto entity = model_msg.entities(0);
+          for (auto& [input_name, msg_value] : entity.params()) {
+            outputs_[model_name][input_name] = MsgToAny(msg_value, data_[model_name][input_name]);
+          }
+        }
+      }
 		}
 
-		if (terminated || truncated) {
+		if (terminated && !truncated) {
 			grpc::ClientContext ctx;
 			simenv::SimCmd req;
 			types::CommonResponse res;
@@ -253,7 +254,6 @@ std::unordered_map<std::string, std::any>* IntelProxy::GetOutput() {
 		{
 			auto param_name = model_name + "_input_" + input_name;
 			params_.emplace(param_name, value);
-			WriteLog(param_name, 1);
 		}
 	}
 

@@ -192,7 +192,7 @@ class PPOBuffer:
         return min(self.ptr, self.max_size)
 
     @property
-    def full(self) -> int:
+    def full(self) -> bool:
         """Whether the buffer is full.
 
         Returns:
@@ -438,19 +438,19 @@ class PPO(RLModelBase):
         """Train model.
 
         Returns:
-            Losses of actor and critic.
+            Losses of pi and vf.
         """
         losses = {}
         if self.buffer.full:
             data = self.buffer.sample()
             losses_pi, approx_kls = self.apply_pi_grads(data['obs'], data['act'], data['adv'], data['lgp'])
             self._train_pi_steps += losses_pi.shape[0]
-            losses['loss_pi'] = list(losses_pi)
-            losses['approx_kl'] = list(approx_kls)
+            losses['loss_pi'] = np.array(losses_pi).tolist()
+            losses['approx_kl'] = np.array(approx_kls).tolist()
 
             losses_vf = self.apply_vf_grads(data['obs'], data['ret'])
             self._train_vf_steps += losses_vf.shape[0]
-            losses['loss_vf'] = list(losses_vf)
+            losses['loss_vf'] = np.array(losses_vf).tolist()
         return losses
 
     @tf.function
