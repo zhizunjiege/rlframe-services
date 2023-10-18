@@ -57,7 +57,6 @@ class QMIX(RLModelBase):
             update_target_every: Number of env interactions that should elapse between target network updates.
             seed: Seed for random number generators.
             agent_num: Numbers of agents
-            tau: Parameter for soft update
         """
         super().__init__(training)
         self.training = training

@@ -91,7 +91,7 @@ class QMIXModelTestCase(unittest.TestCase):
             batch_size=64,
             epsilon_max=1.0,
             epsilon_min=0.1,
-            epsilon_decay=0.9999,
+            epsilon_decay=0.999,
             update_after=200,
             update_online_every=1,
             update_target_every=200,
@@ -103,9 +103,9 @@ class QMIXModelTestCase(unittest.TestCase):
             # print(obs_dict)
             # obs_n = strkey2intkey(obs_dict, env.possible_agents)
             obs_n = np.array([obs_dict['agent_0'], obs_dict['agent_1'], obs_dict['agent_2']])
+            rew = 0
             for step in range(25):
                 act_n = model.react(obs_n)
-                rew = 0
                 # act_dict = intkey2strkey(act_n, env.possible_agents)
                 act_dict = {'agent_0': act_n[0][0],
                             'agent_1': act_n[1][0],
