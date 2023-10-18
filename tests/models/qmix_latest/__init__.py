@@ -2,9 +2,9 @@ import json
 import time
 import unittest
 import numpy as np
-
+import matplotlib.pyplot as plt
 from models.qmix_latest.qmix import QMIX
-from pettingzoo.mpe import simple_adversary_v2
+from pettingzoo.mpe import simple_spread_v2
 
 class QMIXModelTestCase(unittest.TestCase):
 
@@ -68,64 +68,68 @@ class QMIXModelTestCase(unittest.TestCase):
     #     self.assertEqual(status['train_steps'], 1000)
     #     self.assertIn('noise_level', status)
 
-    # def test_07_gymnasium(self):
+    def test_07_gymnasium(self):
 
-    #     SEED = 65535
-    #     env = simple_adversary_v2.parallel_env(continuous_actions=False, render_mode='human')
-    #     env.reset(seed=SEED)
+        SEED = 65535
+        env = simple_spread_v2.parallel_env(continuous_actions=False, render_mode='human')
+        env.reset(seed=SEED)
 
-    #     agent_num = env.max_num_agents - 1
-    #     # print(agent_num)
-    #     obs_dim = env.observation_space(env.agents[1]).shape[0]
-    #     act_dim = env.action_space(env.agents[1]).n
-    #     # print(act_dim, obs_dim)
-    #     model = QMIX(
-    #         training=True,
-    #         agent_num=agent_num,
-    #         obs_dim=obs_dim,
-    #         act_num=act_dim,
-    #         hidden_layers=[64, 64],
-    #         lr=0.01,
-    #         gamma=0.95,
-    #         replay_size=10000,
-    #         batch_size=256,
-    #         epsilon_max=1.0,
-    #         epsilon_min=1.0,
-    #         epsilon_decay=1.0,
-    #         update_after=20,
-    #         update_online_every=1,
-    #         update_target_every=200,
-    #         seed=SEED,
-    #     )
+        agent_num = env.max_num_agents
+        print(agent_num)
+        obs_dim = env.observation_space(env.agents[0]).shape[0]
+        act_dim = env.action_space(env.agents[0]).n
+        # print(act_dim, obs_dim)
+        model = QMIX(
+            training=True,
+            agent_num=agent_num,
+            obs_dim=obs_dim,
+            act_num=act_dim,
+            hidden_layers=[256, 256],
+            lr=0.03,
+            gamma=0.95,
+            replay_size=10000,
+            batch_size=64,
+            epsilon_max=1.0,
+            epsilon_min=0.1,
+            epsilon_decay=0.9999,
+            update_after=200,
+            update_online_every=1,
+            update_target_every=200,
+            seed=SEED,
+        )
+        rew_plot = []
+        for episode in range(5000):
+            obs_dict = env.reset(seed=SEED)
+            # print(obs_dict)
+            # obs_n = strkey2intkey(obs_dict, env.possible_agents)
+            rew = 0
+            obs_n = np.array([obs_dict['agent_0'], obs_dict['agent_1'], obs_dict['agent_2']])
+            for step in range(25):
+                act_n = model.react(obs_n)
+                # act_dict = intkey2strkey(act_n, env.possible_agents)
+                act_dict = {'agent_0': act_n[0][0],
+                            'agent_1': act_n[1][0],
+                            'agent_2': act_n[2][0]}
+                next_obs_dict, rews_dict, term_dict, trun_dict, _ = env.step(act_dict)
 
-    #     for episode in range(800):
-    #         obs_dict = env.reset(seed=SEED)
-    #         # print(obs_dict)
-    #         # obs_n = strkey2intkey(obs_dict, env.possible_agents)
-    #         obs_n = np.array([obs_dict['agent_0'], obs_dict['agent_1']])
-    #         for step in range(25):
-    #             act_n = model.react(obs_n)
-    #             rew = 0
-    #             # act_dict = intkey2strkey(act_n, env.possible_agents)
-    #             act_dict = {'agent_0': act_n[0][0],
-    #                         'agent_1': act_n[1][0]}
-    #             next_obs_dict, rews_dict, term_dict, trun_dict, _ = env.step(act_dict)
+                next_obs_n = np.array([next_obs_dict['agent_0'], next_obs_dict['agent_1'], obs_dict['agent_2']])
+                rews_n = np.array(list(rews_dict.values()), dtype=np.float32)
+                terminated = all(term_dict.values())
+                truncated = any(trun_dict.values())
 
-    #             next_obs_n = np.array([next_obs_dict['agent_0'], next_obs_dict['agent_1']])
-    #             rews_n = np.array(list(rews_dict.values()))
-    #             terminated = all(term_dict.values())
-    #             truncated = any(trun_dict.values())
+                model.store(obs_n, act_n, next_obs_n, rews_n, terminated)
 
-    #             model.store(obs_n, act_n, next_obs_n, rews_n, terminated)
+                loss_Q = model.train()
+                rew += rews_n.mean()
+                if terminated or truncated:
+                    break
+                else:
+                    obs_dict = next_obs_dict
+                    obs_n = next_obs_n
 
-    #             loss_Q = model.train()
-    #             rew += rews_n.mean()
-    #             if terminated or truncated:
-    #                 break
-    #             else:
-    #                 obs_dict = next_obs_dict
-    #                 obs_n = next_obs_n
-
-    #         print(f'Episode {episode} finished after {step+1} steps, episode_reward={rew}')
-
-    #     env.close()
+            print(f'Episode {episode} finished after {step+1} steps, episode_reward={rew}')
+            rew_plot.append(rew)
+        # x = [i for i in range(len(rew_plot))]
+        plt.plot(rew_plot)
+        plt.show()
+        env.close()

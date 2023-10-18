@@ -18,12 +18,12 @@ class ReplayMemory:
 	def store(self,*args):
 		if len(self.memory) < self.capacity:
 			self.memory.append(Experience(*args))
-
-		self.memory[self.position] = Experience(*args)
-		self.position = int((self.position + 1)%self.capacity)
+		else :
+			self.memory[self.position] = Experience(*args)
+			self.position = int((self.position + 1)%self.capacity)
 		self.size = min(self.size + 1, self.capacity)
 
-	def sample(self,batch_size):
+	def sample(self, batch_size):
 		# print(len(self.memory),batch_size)
 		return random.sample(self.memory, batch_size)
 	

@@ -230,11 +230,10 @@ class QMIX(RLModelBase):
     @tf.function
     def apply_grads(self, q_evals, state_batch, q_targets, non_final_next_states, reward_batch):
         with tf.GradientTape() as tape:
-            q_total_eval = self.eval_qmix_net(q_evals, state_batch)
-            q_total_target = self.target_qmix_net(q_targets, non_final_next_states)
+            q_total_eval = self.eval_qmix_net(q_evals, state_batch, self.batch_size)
+            q_total_target = self.target_qmix_net(q_targets, non_final_next_states, self.batch_size)
             # print(reward_batch)
             targets = tf.expand_dims(reward_batch, axis=1) + self.gamma * q_total_target   
-            # self.optimizer.zero_grad()
             loss_Q = tf.keras.losses.mean_squared_error(targets, q_total_eval)
             
         gradients = tape.gradient(loss_Q, self.trainable_variables)
