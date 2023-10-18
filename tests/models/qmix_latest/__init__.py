@@ -75,7 +75,7 @@ class QMIXModelTestCase(unittest.TestCase):
         env.reset(seed=SEED)
 
         agent_num = env.max_num_agents
-        print(agent_num)
+        # print(agent_num)
         obs_dim = env.observation_space(env.agents[0]).shape[0]
         act_dim = env.action_space(env.agents[0]).n
         # print(act_dim, obs_dim)
@@ -90,11 +90,10 @@ class QMIXModelTestCase(unittest.TestCase):
             replay_size=10000,
             batch_size=64,
             epsilon_max=1.0,
-            epsilon_min=0.1,
-            epsilon_decay=0.999,
+            epsilon_min=0.01,
+            epsilon_decay=0.9999,
             update_after=200,
             update_online_every=1,
-            update_target_every=200,
             seed=SEED,
         )
         rew_plot = []

@@ -30,7 +30,6 @@ class QMIX(RLModelBase):
         start_steps: int = 0,
         update_after: int = 32,
         update_online_every: int = 1,
-        update_target_every: int = 200,
         seed: Optional[int] = None,
         agent_num: int = 2
     ):
@@ -54,7 +53,6 @@ class QMIX(RLModelBase):
                 Note: Ensures replay buffer is full enough for useful updates.
             update_online_every: Number of env interactions that should elapse between gradient descent updates.
                 Note: Regardless of how long you wait between updates, the ratio of env steps to gradient steps is locked to 1.
-            update_target_every: Number of env interactions that should elapse between target network updates.
             seed: Seed for random number generators.
             agent_num: Numbers of agents
         """
@@ -73,7 +71,6 @@ class QMIX(RLModelBase):
         self.start_steps = start_steps
         self.update_after = update_after
         self.update_online_every = update_online_every
-        self.update_target_every = update_target_every
         self.seed = seed
         self.agent_num = agent_num
         self.dtype = 'float32'
