@@ -77,17 +77,17 @@ class QMIX(RLModelBase):
         self.agent_num = agent_num
         self.dtype = 'float32'
 
-        if self.training:   
+        if self.training:
             # 神经网络
             self.eval_mlp = []
             self.eval_mlp = [MLP(self.act_num) for _ in range(self.agent_num)]
             self.target_mlp = deepcopy(self.eval_mlp)
 
             # 把agentsQ值加起来的网络
-            self.eval_qmix_net = MixingNet(agent_num=self.agent_num, 
-                                           qmix_hidden_dim=self.hidden_layers[0], 
+            self.eval_qmix_net = MixingNet(agent_num=self.agent_num,
+                                           qmix_hidden_dim=self.hidden_layers[0],
                                            obs_dim=self.obs_dim
-                                           )  
+                                           )
             self.target_qmix_net = deepcopy(self.eval_qmix_net)
 
             self.epsilon = epsilon_max
@@ -95,12 +95,12 @@ class QMIX(RLModelBase):
             self._train_steps = 0
 
             self.replay_buffer = ReplayMemory(self.replay_size, self.agent_num, self.obs_dim, self.act_num, self.dtype)
-            
+
             self.trainable_variables = list(self.eval_qmix_net.trainable_variables)
             for x in self.eval_mlp:
                 self.trainable_variables += list(x.trainable_variables)
 
-            self.optimizer = tf.keras.optimizers.Adam(self.trainable_variables, 
+            self.optimizer = tf.keras.optimizers.Adam(self.trainable_variables,
                                                       lr=self.lr)
             self._graph_exported = False
             self.log_dir = f'data/logs/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
@@ -108,7 +108,7 @@ class QMIX(RLModelBase):
             tf.summary.trace_on(graph=True, profiler=False)
         else:
             self.eval_mlp = [MLP(self.act_num) for _ in range(self.agent_num)]
-    
+
     def __del__(self):
         """Close QMIX model."""
         ...
@@ -141,13 +141,13 @@ class QMIX(RLModelBase):
                 else:
                         act = tf.argmax(q_value)
             else:
-                act = tf.argmax(q_value) 
+                act = tf.argmax(q_value)
             actions = tf.py_function(self.my_function, [actions, i, act], Tout=act.dtype)
-            # actions[i, :] = act    
+            # actions[i, :] = act
         # actions = tf.squeeze(actions)
         self._react_steps += 1
         return tf.stop_gradient(actions).numpy()
-    
+
     def my_function(self, actions, i, act):
         actions = actions.numpy()
         actions[i,:] = act
@@ -177,10 +177,10 @@ class QMIX(RLModelBase):
     # @tf.function
     def train(self):
         """Train model."""
-        if self.replay_buffer.size >= self.update_after and self._react_steps % self.update_online_every == 0: 
+        if self.replay_buffer.size >= self.update_after and self._react_steps % self.update_online_every == 0:
             transitions = self.replay_buffer.sample(self.batch_size)
             batch = Experience(*zip(*transitions))
-     
+
             q_evals = []
             q_targets = []
 
@@ -195,16 +195,17 @@ class QMIX(RLModelBase):
                 reward_batch = tf.stack(batch.rewards)
                 non_final_next_states = tf.stack(
                     [s for s in batch.next_states if s is not None])
-                
+
                 # print(action_batch)
                 state_i = state_batch[:, agent, :]
                 # current_Q: batch_size x action_dim
                 current_Q = self.eval_mlp[agent](state_i)
                 # print(current_Q, action_batch[:,agent,:])
                 current_Q = tf.gather(current_Q, action_batch[:,agent,:], batch_dims=1) # TODO
+                # print(current_Q)
                 # print(current_Q, action_batch[:,agent,:])
                 q_evals.append(current_Q)
-                
+
                 target_Q = tf.zeros(self.batch_size, dtype=tf.float32)
                 next_state_i = non_final_next_states[:, agent, :]
 
@@ -223,7 +224,7 @@ class QMIX(RLModelBase):
                 self.target_qmix_net.set_weights(self.eval_qmix_net.get_weights())
             for i in range(self.agent_num):
                 self.target_mlp[i].set_weights(self.eval_mlp[i].get_weights())
-                
+
             with self.summary_writer.as_default():
                 tf.summary.scalar('loss', tf.reduce_mean(loss_Q), step=self._train_steps)
                 # tf.summary.scalar('td_error', tf.math.reduce_mean(tf.math.abs(td_errors)), step=self._train_steps)
@@ -237,9 +238,10 @@ class QMIX(RLModelBase):
             q_total_eval = self.eval_qmix_net(q_evals, state_batch, self.batch_size)
             q_total_target = self.target_qmix_net(q_targets, non_final_next_states, self.batch_size)
             # print(reward_batch)
-            targets = tf.expand_dims(reward_batch, axis=1) + self.gamma * q_total_target   
-            loss_Q = tf.keras.losses.mean_squared_error(targets, q_total_eval)
-            
+            targets = tf.expand_dims(reward_batch, axis=1) + self.gamma * q_total_target
+
+            loss_Q = tf.keras.losses.mean_squared_error(tf.stop_gradient(targets), q_total_eval)
+
         gradients = tape.gradient(loss_Q, self.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
         return loss_Q
