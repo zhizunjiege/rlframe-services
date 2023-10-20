@@ -30,6 +30,7 @@ class QMIX(RLModelBase):
         start_steps: int = 0,
         update_after: int = 32,
         update_online_every: int = 1,
+        update_target_every: int = 1,
         seed: Optional[int] = None,
         agent_num: int = 2
     ):
@@ -71,6 +72,7 @@ class QMIX(RLModelBase):
         self.start_steps = start_steps
         self.update_after = update_after
         self.update_online_every = update_online_every
+        self.update_target_every = update_target_every
         self.seed = seed
         self.agent_num = agent_num
         self.dtype = 'float32'
@@ -199,14 +201,14 @@ class QMIX(RLModelBase):
                 # current_Q: batch_size x action_dim
                 current_Q = self.eval_mlp[agent](state_i)
                 # print(current_Q, action_batch[:,agent,:])
-                current_Q = tf.gather(current_Q, action_batch[:,agent,:], batch_dims=1)
+                current_Q = tf.gather(current_Q, action_batch[:,agent,:], batch_dims=1) # TODO
                 # print(current_Q, action_batch[:,agent,:])
                 q_evals.append(current_Q)
                 
                 target_Q = tf.zeros(self.batch_size, dtype=tf.float32)
                 next_state_i = non_final_next_states[:, agent, :]
 
-                target_Q = tf.where(non_final_mask, tf.reduce_max(self.target_mlp[agent](next_state_i), axis=1), 0.0)
+                target_Q = tf.where(non_final_mask, tf.reduce_max(self.target_mlp[agent](next_state_i), axis=1), 0.0) # TODO
                 # target_Q[non_final_mask] = tf.reduce_max(self.target_mlp[agent](next_state_i), axis=1)[0]
                 target_Q = tf.reshape(target_Q, (self.batch_size, 1))
                 q_targets.append(target_Q)
@@ -214,8 +216,14 @@ class QMIX(RLModelBase):
             q_targets = tf.stack(q_targets, axis=1)
 
             loss_Q = self.apply_grads(q_evals, state_batch, q_targets, non_final_next_states, reward_batch)
+
             self._train_steps+=1
 
+            if self._train_steps % self.update_target_every == 0:
+                self.target_qmix_net.set_weights(self.eval_qmix_net.get_weights())
+            for i in range(self.agent_num):
+                self.target_mlp[i].set_weights(self.eval_mlp[i].get_weights())
+                
             with self.summary_writer.as_default():
                 tf.summary.scalar('loss', tf.reduce_mean(loss_Q), step=self._train_steps)
                 # tf.summary.scalar('td_error', tf.math.reduce_mean(tf.math.abs(td_errors)), step=self._train_steps)

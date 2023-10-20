@@ -14,19 +14,19 @@ class MixingNet(tf.keras.Model):
             self.qmix_hidden_dim *
             self.agent_num *
             self.agent_output_dim, 
-            input_shape=(self.agent_num * self.obs_dim,))
+            input_shape=(self.agent_num * self.obs_dim,),activation=None)
         
         self.hyper_b1 = Dense(units=self.qmix_hidden_dim, 
-                              input_shape=(self.agent_num * self.obs_dim,))
+                              input_shape=(self.agent_num * self.obs_dim,),activation=None)
 
         self.hyper_w2 = Dense(units=self.qmix_hidden_dim,
-                              input_shape=(self.agent_num * self.obs_dim,))
+                              input_shape=(self.agent_num * self.obs_dim,),activation=None)
         
         # inputs = tf.keras.Input(shape=((self.agent_num * self.obs_dim,)))
         
         # self.hyper_b21 = Dense(self.agent_num * self.obs_dim, activation='relu', input_shape=(self.agent_num * self.obs_dim,))
         self.hyper_b21 = Dense(self.qmix_hidden_dim, activation='relu', input_shape=(self.agent_num * self.obs_dim,))
-        self.hyper_b2 = Dense(1, input_shape=(self.qmix_hidden_dim,))
+        self.hyper_b2 = Dense(1, input_shape=(self.qmix_hidden_dim,),activation=None)
         
         # self.hyper_b2 = Sequential([
         #     Dense(self.agent_num * self.obs_dim, activation='relu', input_shape=(self.agent_num * self.obs_dim,)),

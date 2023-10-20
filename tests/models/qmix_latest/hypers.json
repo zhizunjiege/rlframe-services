@@ -17,6 +17,7 @@
       "start_steps": 0,
       "update_after": 20,
       "update_online_every": 1,
+      "update_target_every": 1,
       "seed": null,
       "agent_num": 2
     }

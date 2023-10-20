@@ -84,20 +84,21 @@ class QMIXModelTestCase(unittest.TestCase):
             agent_num=agent_num,
             obs_dim=obs_dim,
             act_num=act_dim,
-            hidden_layers=[64, 64],
+            hidden_layers=[256, 256],
             lr=0.01,
             gamma=0.95,
             replay_size=10000,
             batch_size=64,
             epsilon_max=1.0,
             epsilon_min=0.01,
-            epsilon_decay=0.9999,
+            epsilon_decay=0.999,
             update_after=200,
             update_online_every=1,
+            update_target_every=200,
             seed=SEED,
         )
         rew_plot = []
-        for episode in range(5000):
+        for episode in range(500):
             obs_dict = env.reset(seed=SEED)
             # print(obs_dict)
             # obs_n = strkey2intkey(obs_dict, env.possible_agents)
