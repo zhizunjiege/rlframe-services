@@ -92,13 +92,13 @@ class DDPG(RLModelBase):
             tf.random.set_seed(self.seed)
             np.random.seed(self.seed)
 
-            self.actor = MLPModel('actor', True, hidden_layers_actor, 'relu', act_dim, 'tanh')
-            self.actor_target = MLPModel('actor_target', False, hidden_layers_actor, 'relu', act_dim, 'tanh')
+            self.actor = MLPModel('actor', True, obs_dim, hidden_layers_actor, 'relu', act_dim, 'tanh')
+            self.actor_target = MLPModel('actor_target', False, obs_dim, hidden_layers_actor, 'relu', act_dim, 'tanh')
             self.actor_optimizer = tf.keras.optimizers.Adam(lr_actor)
             self.update_target_weights(self.actor.weights, self.actor_target.weights, 1)
 
-            self.critic = MLPModel('critic', True, hidden_layers_critic, 'relu', 1, 'linear')
-            self.critic_target = MLPModel('critic_target', False, hidden_layers_critic, 'relu', 1, 'linear')
+            self.critic = MLPModel('critic', True, [obs_dim, act_dim], hidden_layers_critic, 'relu', 1, 'linear')
+            self.critic_target = MLPModel('critic_target', False, [obs_dim, act_dim], hidden_layers_critic, 'relu', 1, 'linear')
             self.critic_optimizer = tf.keras.optimizers.Adam(lr_critic)
             self.update_target_weights(self.critic.weights, self.critic_target.weights, 1)
 
@@ -118,7 +118,7 @@ class DDPG(RLModelBase):
             self._react_steps = 0
             self._train_steps = 0
         else:
-            self.actor = MLPModel('actor', False, hidden_layers_actor, 'relu', act_dim, 'tanh')
+            self.actor = MLPModel('actor', False, obs_dim, hidden_layers_actor, 'relu', act_dim, 'tanh')
 
     def react(self, states: np.ndarray) -> np.ndarray:
         """Get action.

@@ -41,34 +41,66 @@ class Logging(HookBase):
             self.writer = SummaryWriter(logdir=self.logdir)
 
         self.rewards, self.returns = {}, {}
-        self.step = 0
 
-    def after_react(self, step: int, siargs: AnyDict, oaargs: AnyDict):
+        self.episode = 0
+        self.global_react_steps, self.global_train_steps = 0, 0
+        self.local_react_steps, self.local_train_steps = 0, 0
+
+    def before_episode(self, shared: AnyDict):
+        self.local_react_steps, self.local_train_steps = 0, 0
         if self.terminal:
-            self.logger.debug(f'React step {step} ended, states: {siargs["states"]}, actions: {oaargs["actions"]}.')
+            self.logger.info(f'Episode {self.episode} start...training: {self.model.training}.')
 
-    def react2train(self, rewargs: AnyDict):
+    def before_react(self, siargs: AnyDict):
+        if self.terminal:
+            self.logger.debug(f'React step {self.local_react_steps}/{self.global_react_steps}...')
+            self.logger.debug(f'\tstates: {siargs["states"]}.')
+            self.logger.debug(f'\tinputs: {siargs["inputs"]}.')
+
+    def after_react(self, oaargs: AnyDict):
+        if self.terminal:
+            self.logger.debug(f'\toutputs: {oaargs["outputs"]}.')
+            self.logger.debug(f'\tactions: {oaargs["actions"]}.')
+
+        self.global_react_steps += 1
+        self.local_react_steps += 1
+
+    def react_train(self, rewargs: AnyDict):
+        terminated = rewargs['terminated']
+        truncated = rewargs['truncated']
         reward = rewargs['reward']
 
         if isinstance(reward, dict):
             for k, v in reward.items():
-                self.rewards.setdefault(k, []).append(v)
+                self.rewards.setdefault(k, []).append(float(v))
         else:
-            self.rewards.setdefault('#', []).append(reward)
+            self.rewards.setdefault('#', []).append(float(reward))
 
         if self.terminal:
-            self.logger.debug(f'React to Train: reward: {reward}.')
+            self.logger.debug(f'Between react & train...terminated: {terminated}, truncated: {truncated}, reward: {reward}.')
 
-    def after_train(self, step: int, infos: AnyDict):
-        self.step = step
-
+    def before_train(self, data: AnyDict):
         if self.terminal:
-            self.logger.debug(f'Train step {step} ended, infos: {infos}.')
+            self.logger.debug(f'Train step {self.local_train_steps}/{self.global_train_steps}...')
+            self.logger.debug(f'\tnext_states: {data["next_states"]}.')
+            self.logger.debug(f'\tnext_inputs: {data["next_inputs"]}.')
+
+    def after_train(self, infos: AnyDict):
+        if self.terminal:
+            self.logger.debug(f'\tinfos: {infos}.')
+
         if self.tensorboard:
             for k, v in infos.items():
-                self.writer.add_scalar(f'train/{k}', sum(v) / len(v) if isinstance(v, Iterable) else v, step)
+                if isinstance(v, Iterable):
+                    if len(v) > 0:
+                        self.writer.add_scalar(f'train/{k}', float(sum(v) / len(v)), self.global_train_steps)
+                else:
+                    self.writer.add_scalar(f'train/{k}', float(v), self.global_train_steps)
 
-    def after_episode(self, episode: int, shared: AnyDict):
+        self.global_train_steps += 1
+        self.local_train_steps += 1
+
+    def after_episode(self, shared: AnyDict):
         if self.model.training:
             self.returns.clear()
 
@@ -77,16 +109,19 @@ class Logging(HookBase):
         self.rewards.clear()
 
         if self.terminal:
-            self.logger.info(f'Episode {episode} ended, traning: {self.model.training}, returns: {self.returns}.')
+            self.logger.info(f'Episode {self.episode} end...returns: {self.returns}.')
+
         if self.tensorboard:
             if self.model.training or shared['test_episode'] == shared['test_policy_total'] - 1:
                 title = 'train/return' if self.model.training else 'test/return'
                 if len(self.returns) > 1:
                     for k, v in self.returns.items():
-                        self.writer.add_scalar(f'{title}/{k}', sum(v) / len(v), self.step)
+                        self.writer.add_scalar(f'{title}/{k}', sum(v) / len(v), self.global_train_steps)
                 elif len(self.returns) == 1:
-                    self.writer.add_scalar(title, sum(self.returns['#']) / len(self.returns['#']), self.step)
+                    self.writer.add_scalar(title, sum(self.returns['#']) / len(self.returns['#']), self.global_train_steps)
                 self.returns.clear()
+
+        self.episode += 1
 
     def __del__(self):
         if self.terminal:

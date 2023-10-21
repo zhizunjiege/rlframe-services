@@ -11,8 +11,8 @@ from .core import MLPModel, discount_cumsum
 
 class MLPDiscretePolicy(MLPModel):
 
-    def __init__(self, name: str, trainable: bool, hidden_layers: List[int], act_dim: int):
-        super().__init__(name, trainable, hidden_layers, 'relu', act_dim, 'softmax')
+    def __init__(self, name: str, trainable: bool, obs_dim: int, hidden_layers: List[int], act_dim: int):
+        super().__init__(name, trainable, obs_dim, hidden_layers, 'relu', act_dim, 'softmax')
 
     @tf.function
     def call(self, obs: tf.Tensor, training: bool) -> Tuple[tf.Tensor, tf.Tensor]:
@@ -36,8 +36,8 @@ class MLPDiscretePolicy(MLPModel):
 
 class MLPContinuousPolicy(MLPModel):
 
-    def __init__(self, name: str, trainable: bool, hidden_layers: List[int], act_dim: int):
-        super().__init__(name, trainable, hidden_layers, 'relu', act_dim, 'tanh')
+    def __init__(self, name: str, trainable: bool, obs_dim: int, hidden_layers: List[int], act_dim: int):
+        super().__init__(name, trainable, obs_dim, hidden_layers, 'relu', act_dim, 'tanh')
         log_std = -0.5 * tf.ones(act_dim, dtype=tf.float32)
         self.log_std = tf.Variable(log_std, trainable=True)
 
@@ -63,8 +63,8 @@ class MLPContinuousPolicy(MLPModel):
 
 class MLPMultiDiscretePolicy(MLPModel):
 
-    def __init__(self, name: str, trainable: bool, hidden_layers: List[int], act_dims: List[int]):
-        super().__init__(name, trainable, hidden_layers, 'relu', act_dims, 'softmax')
+    def __init__(self, name: str, trainable: bool, obs_dim: int, hidden_layers: List[int], act_dims: List[int]):
+        super().__init__(name, trainable, obs_dim, hidden_layers, 'relu', act_dims, 'softmax')
 
     @tf.function
     def call(self, obs: tf.Tensor, training: bool) -> Tuple[tf.Tensor, tf.Tensor]:
@@ -89,8 +89,9 @@ class MLPMultiDiscretePolicy(MLPModel):
 
 class MLPHybridPolicy(MLPModel):
 
-    def __init__(self, name: str, trainable: bool, hidden_layers: List[int], act_dims: List[List[int]]):
-        super().__init__(name, trainable, hidden_layers, 'relu', [len(act_dims), len(act_dims[0])], ['softmax', 'tanh'])
+    def __init__(self, name: str, trainable: bool, obs_dim: int, hidden_layers: List[int], act_dims: List[List[int]]):
+        adims = [len(act_dims), len(act_dims[0])]
+        super().__init__(name, trainable, obs_dim, hidden_layers, 'relu', adims, ['softmax', 'tanh'])
         multi_log_std = -0.5 * tf.ones(len(act_dims[0]), dtype=tf.float32)
         self.multi_log_std = tf.Variable(multi_log_std, trainable=True)
 
@@ -367,8 +368,8 @@ class PPO(RLModelBase):
             tf.random.set_seed(self.seed)
             np.random.seed(self.seed)
 
-            self.pi = policies[policy]('pi', True, hidden_layers_pi, act_dim)
-            self.vf = MLPModel('vf', True, hidden_layers_vf, 'relu', 1, 'linear')
+            self.pi = policies[policy]('pi', True, obs_dim, hidden_layers_pi, act_dim)
+            self.vf = MLPModel('vf', True, obs_dim, hidden_layers_vf, 'relu', 1, 'linear')
             self.pi_optimizer = optimizers.Adam(lr_pi)
             self.vf_optimizer = optimizers.Adam(lr_vf)
 
@@ -388,7 +389,7 @@ class PPO(RLModelBase):
             self._train_pi_steps = 0
             self._train_vf_steps = 0
         else:
-            self.pi = policies[policy]('pi', False, hidden_layers_pi, act_dim)
+            self.pi = policies[policy]('pi', obs_dim, False, hidden_layers_pi, act_dim)
 
     def react(self, states: np.ndarray) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
         """Get action.

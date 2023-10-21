@@ -19,34 +19,31 @@ class HookBase(ABC):
         """
         self.model = model
 
-    def before_episode(self, episode: int, shared: AnyDict):
+    def before_episode(self, shared: AnyDict):
         """Before episode.
 
         Args:
-            episode: Current episode.
             shared: Shared data between hooks.
         """
         ...
 
-    def before_react(self, step: int):
+    def before_react(self, siargs: AnyDict):
         """Before react.
 
         Args:
-            step: Current react step.
+            siargs: Arguments of state to input function.
         """
         ...
 
-    def after_react(self, step: int, siargs: AnyDict, oaargs: AnyDict):
+    def after_react(self, oaargs: AnyDict):
         """After react.
 
         Args:
-            step: Current react step.
-            siargs: Arguments of state to input function.
             oaargs: Arguments of output to action function.
         """
         ...
 
-    def react2train(self, rewargs: AnyDict):
+    def react_train(self, rewargs: AnyDict):
         """Between react and train.
 
         Args:
@@ -54,28 +51,26 @@ class HookBase(ABC):
         """
         ...
 
-    def before_train(self, step: int):
+    def before_train(self, data: AnyDict):
         """Before train.
 
         Args:
-            step: Current train step.
+            data: MDP data to store.
         """
         ...
 
-    def after_train(self, step: int, infos: AnyDict):
+    def after_train(self, infos: AnyDict):
         """After train.
 
         Args:
-            step: Current train step.
             infos: Returned informations of train function.
         """
         ...
 
-    def after_episode(self, episode: int, shared: AnyDict):
+    def after_episode(self, shared: AnyDict):
         """After episode.
 
         Args:
-            episode: Current episode.
             shared: Shared data between hooks.
         """
         ...

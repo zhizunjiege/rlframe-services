@@ -31,13 +31,13 @@ class AutoSave(HookBase):
 
         self._save_weights(f'{self.savedir}/init.pkl')
 
-    def after_train(self, step: int, infos: AnyDict):
+    def after_train(self, infos: AnyDict):
         if self.model.training:
             self.train_steps += 1
             if self.per_steps is not None and self.train_steps % self.per_steps == 0:
                 self._save_weights(f'{self.savedir}/step-{self.train_steps}.pkl')
 
-    def after_episode(self, episode: int, shared: AnyDict):
+    def after_episode(self, shared: AnyDict):
         if self.model.training:
             self.train_episodes += 1
             if self.per_episodes is not None and self.train_episodes % self.per_episodes == 0:

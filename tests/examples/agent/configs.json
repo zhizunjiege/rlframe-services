@@ -35,7 +35,7 @@
     {
       "name": "Logging",
       "args": {
-        "loglvl": "INFO",
+        "loglvl": "DEBUG",
         "terminal": true,
         "tensorboard": true
       }

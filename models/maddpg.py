@@ -102,17 +102,19 @@ class MADDPG(RLModelBase):
             self.critic_target_list = []
             self.critic_optimizer_list = []
             self.noise_list = []
+
+            critic_inputs = [obs_dim * number, act_dim * number]
             for i in range(number):
-                actor = MLPModel(f'actor_{i}', True, hidden_layers_actor, 'relu', act_dim, 'tanh')
+                actor = MLPModel(f'actor_{i}', True, obs_dim, hidden_layers_actor, 'relu', act_dim, 'tanh')
                 self.actor_list.append(actor)
-                actor_target = MLPModel(f'actor_target_{i}', False, hidden_layers_actor, 'relu', act_dim, 'tanh')
+                actor_target = MLPModel(f'actor_target_{i}', False, obs_dim, hidden_layers_actor, 'relu', act_dim, 'tanh')
                 self.actor_target_list.append(actor_target)
                 self.actor_optimizer_list.append(tf.keras.optimizers.Adam(self.lr_actor))
                 self.update_target_weights(self.actor_list[i].weights, self.actor_target_list[i].weights, 1)
 
-                critic = MLPModel(f'critic_{i}', True, hidden_layers_critic, 'relu', 1, 'linear')
+                critic = MLPModel(f'critic_{i}', True, critic_inputs, hidden_layers_critic, 'relu', 1, 'linear')
                 self.critic_list.append(critic)
-                critic_target = MLPModel(f'critic_target_{i}', False, hidden_layers_critic, 'relu', 1, 'linear')
+                critic_target = MLPModel(f'critic_target_{i}', False, critic_inputs, hidden_layers_critic, 'relu', 1, 'linear')
                 self.critic_target_list.append(critic_target)
                 self.critic_optimizer_list.append(tf.keras.optimizers.Adam(self.lr_critic))
                 self.update_target_weights(self.critic_list[i].weights, self.critic_target_list[i].weights, 1)
@@ -135,7 +137,7 @@ class MADDPG(RLModelBase):
             self._train_steps = 0
         else:
             for i in range(number):
-                actor = MLPModel(f'actor_{i}', False, hidden_layers_actor, 'relu', act_dim, 'tanh')
+                actor = MLPModel(f'actor_{i}', False, obs_dim, hidden_layers_actor, 'relu', act_dim, 'tanh')
                 self.actor_list.append(actor)
 
     def react(self, states: Dict[int, np.ndarray]) -> Dict[int, np.ndarray]:
@@ -206,8 +208,8 @@ class MADDPG(RLModelBase):
                 )
                 self._train_steps += 1
                 for i in range(self.number):
-                    losses.setdefault(f'loss_actor_agent_{i}', []).append(loss_actors[i])
-                    losses.setdefault(f'loss_critic_agent_{i}', []).append(loss_critics[i])
+                    losses.setdefault(f'loss_actor_agent_{i}', []).append(float(loss_actors[i]))
+                    losses.setdefault(f'loss_critic_agent_{i}', []).append(float(loss_critics[i]))
         return losses
 
     @tf.function

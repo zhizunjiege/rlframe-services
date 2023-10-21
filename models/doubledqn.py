@@ -4,8 +4,8 @@ import numpy as np
 import tensorflow as tf
 
 from .base import RLModelBase
-from .buffer.single import SingleAgentBuffer
-from .core.models import MLPModel
+from .buffer import SingleAgentBuffer
+from .core import MLPModel
 
 
 class DoubleDQN(RLModelBase):
@@ -78,8 +78,8 @@ class DoubleDQN(RLModelBase):
             tf.random.set_seed(seed)
             np.random.seed(seed)
 
-            self.online_net = MLPModel('online', True, hidden_layers, 'relu', act_num, 'linear')
-            self.target_net = MLPModel('target', False, hidden_layers, 'relu', act_num, 'linear')
+            self.online_net = MLPModel('online', True, obs_dim, hidden_layers, 'relu', act_num, 'linear')
+            self.target_net = MLPModel('target', False, obs_dim, hidden_layers, 'relu', act_num, 'linear')
             self.update_target()
 
             self.optimizer = tf.keras.optimizers.Adam(lr)
@@ -89,7 +89,7 @@ class DoubleDQN(RLModelBase):
             self._react_steps = 0
             self._train_steps = 0
         else:
-            self.online_net = MLPModel('online', False, hidden_layers, 'relu', act_num, 'linear')
+            self.online_net = MLPModel('online', False, obs_dim, hidden_layers, 'relu', act_num, 'linear')
 
     def react(self, states: np.ndarray) -> int:
         """Get action.

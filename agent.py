@@ -10,6 +10,7 @@ import pickle
 import shutil
 import signal
 import sys
+import traceback
 import zipfile
 
 from google.protobuf import json_format
@@ -46,10 +47,6 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
 
         self.hooks = []
         self.shared = {}
-
-        self.episodes = 0
-        self.react_steps = 0
-        self.train_steps = 0
 
     def copy(self):
         source, target = 'models', 'data/models'
@@ -183,108 +180,105 @@ class AgentServicer(agent_pb2_grpc.AgentServicer):
     async def GetAction(self, request_iterator, context):
         await self.check_state(context)
 
-        enabled = self.training
-        self.model.training = self.training
+        try:
+            enabled = self.training
+            self.model.training = self.training
 
-        if enabled:
-            for hook in self.hooks:
-                hook.before_episode(self.episodes, self.shared)
+            if enabled:
+                for hook in self.hooks:
+                    hook.before_episode(self.shared)
 
-        init, done = False, False
-        siargs, oaargs, rewargs, caches = {}, {}, {}, {}
+            init, done = False, False
+            siargs, oaargs, rewargs, caches = {}, {}, {}, {}
 
-        task = None
-        loop = asyncio.get_running_loop()
-        async for request in request_iterator:
-            if task is not None:
-                await task
-                task = None
-
-            states, terminated, truncated, reward = self.parse_state(request)
-
-            done = terminated or truncated
-
-            if not done:
-                if enabled:
-                    for hook in self.hooks:
-                        hook.before_react(self.react_steps)
-
-            siargs['caches'] = caches
-            siargs['states'] = states
-            exec(self.sifunc, siargs)
-            inputs = siargs['inputs']
-
-            if not done:
-                outputs = self.model.react(inputs)
-
-                oaargs['caches'] = caches
-                oaargs['outputs'] = outputs
-                exec(self.oafunc, oaargs)
-                actions = oaargs['actions']
-
-                if enabled:
-                    for hook in reversed(self.hooks):
-                        hook.after_react(self.react_steps, siargs, oaargs)
-
-                    self.react_steps += 1
-
-            if init:
-                if enabled:
-                    rewargs['next_states'] = states
-                    rewargs['next_inputs'] = inputs
-                    rewargs['terminated'] = terminated
-                    rewargs['truncated'] = truncated
-                    rewargs['reward'] = reward
-                    exec(self.rewfunc, rewargs)
-
-                    for hook in self.hooks:
-                        hook.react2train(rewargs)
-
-                    if self.model.training:
-                        self.model.store(
-                            states=rewargs['inputs'],
-                            actions=rewargs['outputs'],
-                            next_states=rewargs['next_inputs'],
-                            reward=rewargs['reward'],
-                            terminated=rewargs['terminated'],
-                            truncated=rewargs['truncated'],
-                        )
-                        task = asyncio.create_task(self.learn(loop))
-            else:
-                init = True
-
-            if not done:
-                if enabled:
-                    rewargs['caches'] = caches
-                    rewargs['states'] = states
-                    rewargs['inputs'] = inputs
-                    rewargs['actions'] = actions
-                    rewargs['outputs'] = outputs
-
-                response = self.wrap_action(actions)
-                yield response
-            else:
+            task = None
+            loop = asyncio.get_running_loop()
+            async for request in request_iterator:
                 if task is not None:
                     await task
                     task = None
-                break
 
-        if enabled:
-            for hook in reversed(self.hooks):
-                hook.after_episode(self.episodes, self.shared)
+                states, terminated, truncated, reward = self.parse_state(request)
 
-            self.episodes += 1
+                siargs['caches'] = caches
+                siargs['states'] = states
+                exec(self.sifunc, siargs)
+                inputs = siargs['inputs']
 
-    async def learn(self, loop):
+                done = terminated or truncated
+                if not done:
+                    if enabled:
+                        for hook in self.hooks:
+                            hook.before_react(siargs)
+
+                    outputs = self.model.react(inputs)
+
+                    oaargs['caches'] = caches
+                    oaargs['outputs'] = outputs
+                    exec(self.oafunc, oaargs)
+                    actions = oaargs['actions']
+
+                    if enabled:
+                        for hook in reversed(self.hooks):
+                            hook.after_react(oaargs)
+
+                if init:
+                    if enabled:
+                        rewargs['next_states'] = states
+                        rewargs['next_inputs'] = inputs
+                        rewargs['terminated'] = terminated
+                        rewargs['truncated'] = truncated
+                        rewargs['reward'] = reward
+                        exec(self.rewfunc, rewargs)
+
+                        for hook in self.hooks:
+                            hook.react_train(rewargs)
+
+                        if self.model.training:
+                            self.model.store(
+                                states=rewargs['inputs'],
+                                actions=rewargs['outputs'],
+                                next_states=rewargs['next_inputs'],
+                                reward=rewargs['reward'],
+                                terminated=rewargs['terminated'],
+                                truncated=rewargs['truncated'],
+                            )
+                            task = asyncio.create_task(self.learn(loop, rewargs))
+                else:
+                    init = True
+
+                if not done:
+                    if enabled:
+                        rewargs['caches'] = caches
+                        rewargs['states'] = states
+                        rewargs['inputs'] = inputs
+                        rewargs['actions'] = actions
+                        rewargs['outputs'] = outputs
+
+                    response = self.wrap_action(actions)
+                    yield response
+                else:
+                    if task is not None:
+                        await task
+                        task = None
+                    break
+
+            if enabled:
+                for hook in reversed(self.hooks):
+                    hook.after_episode(self.shared)
+        except Exception:
+            traceback.print_exc()
+            message = f'Unknown error: info: {traceback.format_exc()}'
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
+
+    async def learn(self, loop, data):
         for hook in self.hooks:
-            hook.before_train(self.train_steps)
+            hook.before_train(data)
 
         infos = await loop.run_in_executor(None, self.model.train)
 
         for hook in reversed(self.hooks):
-            hook.after_train(self.train_steps, infos)
-
-        self.train_steps += 1
+            hook.after_train(infos)
 
     def parse_param(self, param):
         if 'vdouble' in param:

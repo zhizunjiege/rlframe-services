@@ -14,6 +14,7 @@ class MLPDiscretePolicyTestCase(unittest.TestCase):
         cls.model = MLPDiscretePolicy(
             name='test_discrete',
             trainable=True,
+            obs_dim=12,
             hidden_layers=[256, 256],
             act_dim=8,
         )
@@ -83,6 +84,7 @@ class MLPContinuousPolicyTestCase(unittest.TestCase):
         cls.model = MLPContinuousPolicy(
             name='test_continuous',
             trainable=True,
+            obs_dim=12,
             hidden_layers=[256, 256],
             act_dim=1,
         )
@@ -136,7 +138,7 @@ class MLPContinuousPolicyTestCase(unittest.TestCase):
     @unittest.expectedFailure
     def test_01_logp_case2(self):
         obs = np.random.random((64, 12))
-        act = np.random.random((64, )).astype(np.int32)
+        act = np.random.random((64,)).astype(np.int32)
         logp = self.model.logp(obs, act)
         self.assertIsInstance(logp, tf.Tensor)
         self.assertEqual(logp.shape, (64,))
@@ -152,6 +154,7 @@ class MLPMultiDiscretePolicyTestCase(unittest.TestCase):
         cls.model = MLPMultiDiscretePolicy(
             name='test_multi_discrete',
             trainable=True,
+            obs_dim=12,
             hidden_layers=[256, 256],
             act_dims=[2, 4, 8],
         )
@@ -221,6 +224,7 @@ class MLPHybridPolicyTestCase(unittest.TestCase):
         cls.model = MLPHybridPolicy(
             name='test_hybrid',
             trainable=True,
+            obs_dim=12,
             hidden_layers=[256, 256],
             act_dims=[
                 [1, 0, 0, 0],

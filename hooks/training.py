@@ -22,7 +22,7 @@ class Training(HookBase):
         self.train_episode = 0
         self.test_episode = 0
 
-    def before_episode(self, episode: int, shared: AnyDict):
+    def before_episode(self, shared: AnyDict):
         every = self.train_episode % self.test_policy_every == 0
         total = self.test_episode < self.test_policy_total
 
@@ -34,7 +34,7 @@ class Training(HookBase):
         shared['test_policy_total'] = self.test_policy_total
         shared['test_episode'] = self.test_episode
 
-    def after_episode(self, episode: int, shared: AnyDict):
+    def after_episode(self, shared: AnyDict):
         if self.model.training:
             self.train_episode += 1
         else:
