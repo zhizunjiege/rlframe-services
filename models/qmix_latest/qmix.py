@@ -3,8 +3,9 @@ from typing import Dict, List, Optional
 
 import numpy as np
 import tensorflow as tf
-
+from models.buffer.single import SingleAgentBuffer
 from .base_net import MLP
+from models.core.models import MLPModel
 from copy import deepcopy
 from models.base import RLModelBase
 from .memory import ReplayMemory, Experience
@@ -30,7 +31,7 @@ class QMIX(RLModelBase):
         start_steps: int = 0,
         update_after: int = 32,
         update_online_every: int = 1,
-        update_target_every: int = 1,
+        update_target_every: int = 200,
         seed: Optional[int] = None,
         agent_num: int = 2
     ):
@@ -78,34 +79,41 @@ class QMIX(RLModelBase):
         self.dtype = 'float32'
 
         if self.training:
+            tf.random.set_seed(seed)
+            np.random.seed(seed)
             # 神经网络
             self.eval_mlp = []
-            self.eval_mlp = [MLP(self.act_num) for _ in range(self.agent_num)]
-            self.target_mlp = deepcopy(self.eval_mlp)
-
+            self.eval_mlp = [MLPModel('online', True, hidden_layers, 'relu', act_num, 'linear') for _ in range(self.agent_num)]
+            # self.target_mlp = deepcopy(self.eval_mlp)
+            self.target_mlp = [MLPModel('target', False, hidden_layers, 'relu', act_num, 'linear') for _ in range(self.agent_num)]
+            for i in range(self.agent_num):
+                self.target_mlp[i].set_weights(self.eval_mlp[i].get_weights())
             # 把agentsQ值加起来的网络
             self.eval_qmix_net = MixingNet(agent_num=self.agent_num,
                                            qmix_hidden_dim=self.hidden_layers[0],
-                                           obs_dim=self.obs_dim
+                                           obs_dim=self.obs_dim,
+                                           trainable = True
                                            )
-            self.target_qmix_net = deepcopy(self.eval_qmix_net)
+            self.target_qmix_net = MixingNet(agent_num=self.agent_num,
+                                           qmix_hidden_dim=self.hidden_layers[0],
+                                           obs_dim=self.obs_dim,
+                                           trainable = False
+                                           )
+            # self.target_qmix_net = deepcopy(self.eval_qmix_net)
+            self.target_qmix_net.set_weights(self.eval_qmix_net.get_weights())
 
             self.epsilon = epsilon_max
             self._react_steps = 0
             self._train_steps = 0
-
+            # self.trainable_variables = None
             self.replay_buffer = ReplayMemory(self.replay_size, self.agent_num, self.obs_dim, self.act_num, self.dtype)
-
-            self.trainable_variables = list(self.eval_qmix_net.trainable_variables)
-            for x in self.eval_mlp:
-                self.trainable_variables += list(x.trainable_variables)
-
-            self.optimizer = tf.keras.optimizers.Adam(self.trainable_variables,
-                                                      lr=self.lr)
+            # self.replay_buffer = SingleAgentBuffer(obs_dim, 1, self.replay_size)
+            self.optimizer = tf.keras.optimizers.Adam(lr)
             self._graph_exported = False
             self.log_dir = f'data/logs/{datetime.now().strftime("%Y%m%d-%H%M%S")}'
             self.summary_writer = tf.summary.create_file_writer(self.log_dir)
             tf.summary.trace_on(graph=True, profiler=False)
+
         else:
             self.eval_mlp = [MLP(self.act_num) for _ in range(self.agent_num)]
 
@@ -122,36 +130,23 @@ class QMIX(RLModelBase):
         Returns:
             Action.
         """
-        obs = tf.convert_to_tensor(np.stack(states), dtype=tf.float32)
-        obs = obs.numpy()
-        actions = tf.zeros((self.agent_num, 1), dtype=tf.float32)
-        # obs1 = np.array([obs]*self.agent_num)
-
+        actions = []
         for i in range(self.agent_num):
-            sb = tf.stop_gradient(obs[i])
-            sb = tf.expand_dims(sb, axis=0)
-            # print(tf.shape(sb))
-            q_value = tf.squeeze(self.eval_mlp[i](sb))
-
+            state = states[i][np.newaxis, :]
             if self.training:
-                self.epsilon = max(self.epsilon_min, self.epsilon*self.epsilon_decay)
-                if np.random.uniform() < self.epsilon:
-                        act = np.random.choice(self.act_num)  # action是一个整数
-                        act = tf.convert_to_tensor([act])
+                if self._react_steps < self.start_steps or np.random.random() < self.epsilon:
+                    action = np.random.randint(0, self.act_num)
                 else:
-                        act = tf.argmax(q_value)
+                    logits = self.eval_mlp[i](state, training=True)
+                    action = np.argmax(logits[0])
+                actions.append([action])
+                self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
             else:
-                act = tf.argmax(q_value)
-            actions = tf.py_function(self.my_function, [actions, i, act], Tout=act.dtype)
-            # actions[i, :] = act
-        # actions = tf.squeeze(actions)
+                logits = self.eval_mlp[i](state, training=False)
+                action = np.argmax(logits[0])
+                actions.append([action])
         self._react_steps += 1
-        return tf.stop_gradient(actions).numpy()
-
-    def my_function(self, actions, i, act):
-        actions = actions.numpy()
-        actions[i,:] = act
-        return actions
+        return np.array(actions, dtype=np.int32)
 
     def store(
         self,
@@ -174,56 +169,24 @@ class QMIX(RLModelBase):
         self.replay_buffer.store(states, actions, next_states, reward, terminated)
 
 
-    # @tf.function
     def train(self):
         """Train model."""
         if self.replay_buffer.size >= self.update_after and self._react_steps % self.update_online_every == 0:
             transitions = self.replay_buffer.sample(self.batch_size)
             batch = Experience(*zip(*transitions))
-
-            q_evals = []
-            q_targets = []
-
-            for agent in range(self.agent_num):
-                non_final_mask = tf.convert_to_tensor(list(map(lambda s: s is not None,
-                                                batch.next_states)))
-                # state_batch: batch_size x n_agents x dim_obs
-                state_batch = tf.stack(batch.states)
-                # action_batch: batch_size x n_agents x 1
-                action_batch = tf.stack(batch.actions)
-                # reward_batch: batch_size x n_agents x 1
-                reward_batch = tf.stack(batch.rewards)
-                non_final_next_states = tf.stack(
-                    [s for s in batch.next_states if s is not None])
-
-                # print(action_batch)
-                state_i = state_batch[:, agent, :]
-                # current_Q: batch_size x action_dim
-                current_Q = self.eval_mlp[agent](state_i)
-                # print(current_Q, action_batch[:,agent,:])
-                current_Q = tf.gather(current_Q, action_batch[:,agent,:], batch_dims=1) # TODO
-                # print(current_Q)
-                # print(current_Q, action_batch[:,agent,:])
-                q_evals.append(current_Q)
-
-                target_Q = tf.zeros(self.batch_size, dtype=tf.float32)
-                next_state_i = non_final_next_states[:, agent, :]
-
-                target_Q = tf.where(non_final_mask, tf.reduce_max(self.target_mlp[agent](next_state_i), axis=1), 0.0) # TODO
-                # target_Q[non_final_mask] = tf.reduce_max(self.target_mlp[agent](next_state_i), axis=1)[0]
-                target_Q = tf.reshape(target_Q, (self.batch_size, 1))
-                q_targets.append(target_Q)
-            q_evals = tf.stack(q_evals, axis=1)
-            q_targets = tf.stack(q_targets, axis=1)
-
-            loss_Q = self.apply_grads(q_evals, state_batch, q_targets, non_final_next_states, reward_batch)
-
+            # batch = self.replay_buffer.sample(self.batch_size)
+            # loss_Q = self.apply_grads(batch['obs1'],
+            #                         batch['acts'].astype(np.int32).squeeze(axis=1),
+            #                         batch['obs2'],
+            #                         batch['rews'],
+            #                         batch['term'],)
+            loss_Q = self.apply_grads(batch)
             self._train_steps+=1
 
             if self._train_steps % self.update_target_every == 0:
                 self.target_qmix_net.set_weights(self.eval_qmix_net.get_weights())
-            for i in range(self.agent_num):
-                self.target_mlp[i].set_weights(self.eval_mlp[i].get_weights())
+                for i in range(self.agent_num):
+                    self.target_mlp[i].set_weights(self.eval_mlp[i].get_weights())
 
             with self.summary_writer.as_default():
                 tf.summary.scalar('loss', tf.reduce_mean(loss_Q), step=self._train_steps)
@@ -232,18 +195,61 @@ class QMIX(RLModelBase):
                     tf.summary.trace_export(name='QMIX model', step=self._train_steps, profiler_outdir=self.log_dir)
                     self._graph_exported = True
 
-    @tf.function
-    def apply_grads(self, q_evals, state_batch, q_targets, non_final_next_states, reward_batch):
-        with tf.GradientTape() as tape:
+    @tf.function(reduce_retracing=True)
+    def apply_grads(self, batch):
+        with tf.GradientTape(persistent=True) as tape1:
+            q_evals = []
+            q_targets = []
+            non_final_mask = tf.convert_to_tensor(list(map(lambda s: s is not None,
+                                            batch.next_states)))
+            # state_batch: batch_size x n_agents x dim_obs
+            state_batch = tf.stack(batch.states)
+            # action_batch: batch_size x n_agents x 1
+            action_batch = tf.stack(batch.actions)
+            # reward_batch: batch_size x n_agents x 1
+            reward_batch = tf.stack(batch.rewards)
+            non_final_next_states = tf.stack(
+                [s for s in batch.next_states if s is not None])
+            non_final_next_states= tf.stack(batch.next_states)
+            reward_batch = tf.expand_dims(reward_batch, axis=2)
+
+            for agent in range(self.agent_num):
+                state_i = state_batch[:, agent, :]
+                action_i = action_batch[:, agent, :]
+                action_i = tf.squeeze(action_i, axis=1)
+                next_state_i = non_final_next_states[:, agent, :]
+                
+                logits = self.eval_mlp[agent](state_i, training = True)
+                current_Q = tf.reduce_sum(logits * tf.one_hot(action_i, self.act_num), axis=1, keepdims=True)
+
+                next_logits = self.target_mlp[agent](next_state_i, training=True)
+                next_q_values = tf.reduce_max(next_logits, axis=1, keepdims=True)
+                target_Q = reward_batch[:, agent, :] + self.gamma * next_q_values
+                # target_Q = next_q_values
+                q_evals.append(current_Q)
+                q_targets.append(target_Q)
+            q_evals = tf.stack(q_evals, axis=1)
+            q_targets = tf.stack(q_targets, axis=1)
+
+            # q_total_eval = current_Q
+            # q_total_target = target_Q
             q_total_eval = self.eval_qmix_net(q_evals, state_batch, self.batch_size)
             q_total_target = self.target_qmix_net(q_targets, non_final_next_states, self.batch_size)
-            # print(reward_batch)
-            targets = tf.expand_dims(reward_batch, axis=1) + self.gamma * q_total_target
 
-            loss_Q = tf.keras.losses.mean_squared_error(tf.stop_gradient(targets), q_total_eval)
+            # q_total_target = reward_batch + self.gamma * q_total_target
+            td_error = tf.stop_gradient(q_total_target) - q_total_eval
+            loss_Q = tf.reduce_mean(tf.square(td_error))
 
-        gradients = tape.gradient(loss_Q, self.trainable_variables)
-        self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
+            for agent in range(self.agent_num):
+                gradients = tape1.gradient(loss_Q, self.eval_mlp[agent].trainable_variables)
+                self.optimizer.apply_gradients(zip(gradients, self.eval_mlp[agent].trainable_variables))
+
+            gradients = tape1.gradient(loss_Q, self.eval_qmix_net.trainable_variables)
+            self.optimizer.apply_gradients(zip(gradients, self.eval_qmix_net.trainable_variables))
+            # with tf.GradientTape() as tape2:
+            #     gradients = tape2.gradient(loss_Q, self.eval_qmix_net.trainable_variables)
+            #     self.optimizer.apply_gradients(zip(gradients, self.eval_qmix_net.trainable_variables))
+        del tape1
         return loss_Q
 
     def get_weights(self) -> Dict[str, np.ndarray]:

@@ -1,32 +1,32 @@
 import tensorflow as tf
-from tensorflow import keras
-from tensorflow.python.keras.layers import Dense     # for the hidden layer
-from tensorflow.python.keras import Sequential
-class MixingNet(tf.keras.Model):
-    def __init__(self, agent_num, qmix_hidden_dim, obs_dim):
+
+from keras import layers, models     # for the hidden layer
+
+class MixingNet(models.Model):
+    def __init__(self, agent_num, qmix_hidden_dim, obs_dim, trainable):
         super(MixingNet, self).__init__()
         self.agent_num = agent_num
         self.obs_dim = obs_dim
         self.qmix_hidden_dim = qmix_hidden_dim
         self.agent_output_dim = 1
 
-        self.hyper_w1 = Dense(units=
+        self.hyper_w1 = layers.Dense(units=
             self.qmix_hidden_dim *
             self.agent_num *
             self.agent_output_dim,
-            input_shape=(self.agent_num * self.obs_dim,),activation=None)
+            input_shape=(self.agent_num * self.obs_dim,),activation=None, trainable = trainable, use_bias=True)
 
-        self.hyper_b1 = Dense(units=self.qmix_hidden_dim,
-                              input_shape=(self.agent_num * self.obs_dim,),activation=None)
+        self.hyper_b1 = layers.Dense(units=self.qmix_hidden_dim,
+                              input_shape=(self.agent_num * self.obs_dim,),activation=None, trainable = trainable)
 
-        self.hyper_w2 = Dense(units=self.qmix_hidden_dim,
-                              input_shape=(self.agent_num * self.obs_dim,),activation=None)
+        self.hyper_w2 = layers.Dense(units=self.qmix_hidden_dim,
+                              input_shape=(self.agent_num * self.obs_dim,),activation=None, trainable = trainable, use_bias=True)
 
         # inputs = tf.keras.Input(shape=((self.agent_num * self.obs_dim,)))
 
         # self.hyper_b21 = Dense(self.agent_num * self.obs_dim, activation='relu', input_shape=(self.agent_num * self.obs_dim,))
-        self.hyper_b21 = Dense(self.qmix_hidden_dim, activation='relu', input_shape=(self.agent_num * self.obs_dim,))
-        self.hyper_b2 = Dense(1, input_shape=(self.qmix_hidden_dim,),activation=None)
+        self.hyper_b21 = layers.Dense(self.qmix_hidden_dim, activation='relu', input_shape=(self.agent_num * self.obs_dim,),trainable = trainable)
+        self.hyper_b2 = layers.Dense(1, input_shape=(self.qmix_hidden_dim,),activation=None,trainable = trainable)
 
         # self.hyper_b2 = Sequential([
         #     Dense(self.agent_num * self.obs_dim, activation='relu', input_shape=(self.agent_num * self.obs_dim,)),
@@ -44,7 +44,7 @@ class MixingNet(tf.keras.Model):
         w1 = tf.reshape(w1, (-1, self.agent_num, self.qmix_hidden_dim))  # (batch_size, n_agents, 64)
         b1 = tf.reshape(b1, (-1, 1, self.qmix_hidden_dim))
 
-        hidden = tf.nn.relu(tf.matmul(q_values, w1) + b1)  # (batch_size, 1, 64)
+        hidden = tf.nn.elu(tf.matmul(q_values, w1) + b1)  # (batch_size, 1, 64)
         w2 = tf.abs(self.hyper_w2(states))
 
         b21 = self.hyper_b21(states)
