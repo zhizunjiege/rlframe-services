@@ -41,6 +41,9 @@ service SimController {
 
   // 获取当前运行的想定信息
   rpc GetScenarioInfo(CommonRequest) returns (ScenarioInfo);
+
+  // 获取数据服务地址
+  rpc GetDataAddress(CommonRequest) returns (CommonResponse);
 }
 
 // 通用返回结果
@@ -195,6 +198,10 @@ message ControlCmd {
     double speed_ratio = 5;
     // 工作模式
     Mode mode = 6;
+    // 设置回放进度(仅回放模式) (0.00-100.00)
+    double schedule_val = 7;
+    // 仿真回溯时间 绝对时间 ms
+    int64 back_track_time = 8;
   }
 }
 
@@ -214,6 +221,8 @@ message EngineNodeState {
     STOPPED = 4;
     // 发生异常
     ERROR = 5;
+    // 离线
+    OFFLINE = 6;
   }
   // 节点IP:PORT
   string address = 1;
@@ -247,6 +256,8 @@ message SysInfoResponse {
   repeated EngineNodeState node_state = 7;
   // 当前样本数量
   uint32 current_sample_id = 8;
+  // 参与仿真节点列表
+  repeated string sim_address = 9;
 }
 
 // 数据服务系统信息响应
@@ -265,6 +276,8 @@ message DataSysInfoResponse {
     STOPPED = 4;
     // 发生异常
     ERROR = 5;
+    // 离线
+    OFFLINE = 6;
   }
   // 服务状态
   ServiceState state = 1;
@@ -274,6 +287,12 @@ message DataSysInfoResponse {
   google.protobuf.Duration duration = 3;
   // 运行进度
   double schedule_val = 4;
+  // CPU占用率
+  double cpu_load = 5;
+  // 存储占用率
+  double memory_load = 6;
+  // 网络利用率
+  double network_load = 7;
 }
 
 // 所有节点

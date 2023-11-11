@@ -134,11 +134,16 @@ bool IntelProxy::Init(const std::unordered_map<std::string, std::any>& value) {
 	}
 
 	state_ = CSInstanceState::IS_INITIALIZED;
-	WriteLog("intel_proxy model Init", 1);
+
+	WriteLog("intel_proxy model Init", 0);
 	return true;
 }
 
 bool IntelProxy::Tick(double time) {
+  if (state_ == CSInstanceState::IS_DESTROYED) {
+		return true;
+	}
+
 	sim_times_ += time;
 	if (sim_steps_ % sim_step_ratio_ != 0)
 	{
@@ -154,8 +159,8 @@ bool IntelProxy::Tick(double time) {
 		serialize::Serializer serializer;
 		auto data = serializer.Serialize(inputs_);
 
-		auto terminated = sim_term_func_((const char*)data.data(), (int32_t)data.size());
-		auto truncated = sim_times_ + time * ((double)sim_step_ratio_ - 1) + 0.001 >= sim_duration_;
+		bool terminated = sim_term_func_((const char*)data.data(), (int32_t)data.size());
+		bool truncated = sim_times_ + time * ((double)sim_step_ratio_ - 1) + 0.001 >= sim_duration_;
 
 		for (auto& [agent_addr, agent_models] : routes_) {
 			types::SimState req;
@@ -176,33 +181,37 @@ bool IntelProxy::Tick(double time) {
 			streams_[agent_addr]->Write(req);
 		}
 
-		for (auto& [agent_addr, agent_models] : routes_) {
-			types::SimAction res;
-			if (streams_[agent_addr]->Read(&res)){
-        for (auto& [model_name, model_msg] : res.actions()) {
-          auto entity = model_msg.entities(0);
-          for (auto& [input_name, msg_value] : entity.params()) {
-            outputs_[model_name][input_name] = MsgToAny(msg_value, data_[model_name][input_name]);
-          }
-        }
-      }
-		}
-
-		if (terminated && !truncated) {
+		if (terminated || truncated) {
 			grpc::ClientContext ctx;
 			simenv::SimCmd req;
 			types::CommonResponse res;
 			req.set_type("episode");
 			req.set_params("{}");
 			simenv_->SimControl(&ctx, req, &res);
+
+			state_ = CSInstanceState::IS_DESTROYED;
+		}
+		else {
+			for (auto& [agent_addr, agent_models] : routes_) {
+				types::SimAction res;
+				if (streams_[agent_addr]->Read(&res)) {
+					for (auto& [model_name, model_msg] : res.actions()) {
+						auto entity = model_msg.entities(0);
+						for (auto& [input_name, msg_value] : entity.params()) {
+							outputs_[model_name][input_name] = MsgToAny(msg_value, data_[model_name][input_name]);
+						}
+					}
+				}
+			}
+
+			state_ = CSInstanceState::IS_RUNNING;
 		}
 	}
 	catch (std::exception& e) {
 		WriteLog(e.what(), 5);
 	}
 
-	state_ = CSInstanceState::IS_RUNNING;
-	WriteLog("intel_proxy model Tick", 1);
+	WriteLog("intel_proxy model Tick", 0);
 	return true;
 }
 
@@ -230,8 +239,7 @@ bool IntelProxy::SetInput(const std::unordered_map<std::string, std::any>& value
 		inputs_[model_name].emplace_back(model_entity);
 	}
 
-	state_ = CSInstanceState::IS_RUNNING;
-	WriteLog("intel_proxy model SetInput", 1);
+	WriteLog("intel_proxy model SetInput", 0);
 	return true;
 }
 
@@ -262,8 +270,7 @@ std::unordered_map<std::string, std::any>* IntelProxy::GetOutput() {
 		it.second.clear();
 	}
 
-	state_ = CSInstanceState::IS_RUNNING;
-	WriteLog("intel_proxy model GetOutput", 1);
+	WriteLog("intel_proxy model GetOutput", 0);
 	return &params_;
 }
 
@@ -530,10 +537,10 @@ types::SimParam IntelProxy::AnyToMsg(const std::any& value, const std::string& t
 	{
 		// 数组类型
 		auto array_param = new types::SimParam_Array();
-		auto array_item = array_param->add_items();
 		auto any_vector = std::any_cast<CSValueVec>(value);
 		auto item_type = type.substr(0, idx);
 		for (auto& it : any_vector) {
+		  auto array_item = array_param->add_items();
 			*array_item = AnyToMsg(it, item_type);
 		}
 		ret.set_allocated_varray(array_param);

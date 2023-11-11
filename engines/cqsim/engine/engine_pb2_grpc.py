@@ -75,6 +75,11 @@ class SimControllerStub(object):
             request_serializer=engine__pb2.CommonRequest.SerializeToString,
             response_deserializer=engine__pb2.ScenarioInfo.FromString,
         )
+        self.GetDataAddress = channel.unary_unary(
+            '/cqsim.control.SimController/GetDataAddress',
+            request_serializer=engine__pb2.CommonRequest.SerializeToString,
+            response_deserializer=engine__pb2.CommonResponse.FromString,
+        )
 
 
 class SimControllerServicer(object):
@@ -165,6 +170,13 @@ class SimControllerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetDataAddress(self, request, context):
+        """获取数据服务地址
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_SimControllerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -240,6 +252,12 @@ def add_SimControllerServicer_to_server(servicer, server):
                 request_deserializer=engine__pb2.CommonRequest.FromString,
                 response_serializer=engine__pb2.ScenarioInfo.SerializeToString,
             ),
+        'GetDataAddress':
+            grpc.unary_unary_rpc_method_handler(
+                servicer.GetDataAddress,
+                request_deserializer=engine__pb2.CommonRequest.FromString,
+                response_serializer=engine__pb2.CommonResponse.SerializeToString,
+            ),
     }
     generic_handler = grpc.method_handlers_generic_handler('cqsim.control.SimController', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
@@ -263,9 +281,8 @@ class SimController(object):
                       metadata=None):
         return grpc.experimental.unary_unary(request, target, '/cqsim.control.SimController/GetEntityList',
                                              engine__pb2.EntityListRequest.SerializeToString,
-                                             engine__pb2.EntityListResponse.FromString, options,
-                                             channel_credentials, insecure, call_credentials, compression, wait_for_ready,
-                                             timeout, metadata)
+                                             engine__pb2.EntityListResponse.FromString, options, channel_credentials, insecure,
+                                             call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def Init(request,
@@ -279,10 +296,9 @@ class SimController(object):
              timeout=None,
              metadata=None):
         return grpc.experimental.unary_unary(request, target, '/cqsim.control.SimController/Init',
-                                             engine__pb2.InitInfo.SerializeToString,
-                                             engine__pb2.CommonResponse.FromString, options,
-                                             channel_credentials, insecure, call_credentials, compression, wait_for_ready,
-                                             timeout, metadata)
+                                             engine__pb2.InitInfo.SerializeToString, engine__pb2.CommonResponse.FromString,
+                                             options, channel_credentials, insecure, call_credentials, compression,
+                                             wait_for_ready, timeout, metadata)
 
     @staticmethod
     def Control(request,
@@ -296,10 +312,9 @@ class SimController(object):
                 timeout=None,
                 metadata=None):
         return grpc.experimental.unary_unary(request, target, '/cqsim.control.SimController/Control',
-                                             engine__pb2.ControlCmd.SerializeToString,
-                                             engine__pb2.CommonResponse.FromString, options,
-                                             channel_credentials, insecure, call_credentials, compression, wait_for_ready,
-                                             timeout, metadata)
+                                             engine__pb2.ControlCmd.SerializeToString, engine__pb2.CommonResponse.FromString,
+                                             options, channel_credentials, insecure, call_credentials, compression,
+                                             wait_for_ready, timeout, metadata)
 
     @staticmethod
     def GetSysInfo(request,
@@ -314,9 +329,8 @@ class SimController(object):
                    metadata=None):
         return grpc.experimental.unary_stream(request, target, '/cqsim.control.SimController/GetSysInfo',
                                               engine__pb2.CommonRequest.SerializeToString,
-                                              engine__pb2.SysInfoResponse.FromString, options,
-                                              channel_credentials, insecure, call_credentials, compression, wait_for_ready,
-                                              timeout, metadata)
+                                              engine__pb2.SysInfoResponse.FromString, options, channel_credentials, insecure,
+                                              call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def GetDataSysInfo(request,
@@ -331,9 +345,8 @@ class SimController(object):
                        metadata=None):
         return grpc.experimental.unary_stream(request, target, '/cqsim.control.SimController/GetDataSysInfo',
                                               engine__pb2.CommonRequest.SerializeToString,
-                                              engine__pb2.DataSysInfoResponse.FromString, options,
-                                              channel_credentials, insecure, call_credentials, compression, wait_for_ready,
-                                              timeout, metadata)
+                                              engine__pb2.DataSysInfoResponse.FromString, options, channel_credentials,
+                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def GetAllNode(request,
@@ -347,10 +360,9 @@ class SimController(object):
                    timeout=None,
                    metadata=None):
         return grpc.experimental.unary_unary(request, target, '/cqsim.control.SimController/GetAllNode',
-                                             engine__pb2.CommonRequest.SerializeToString,
-                                             engine__pb2.NodeResponse.FromString, options,
-                                             channel_credentials, insecure, call_credentials, compression, wait_for_ready,
-                                             timeout, metadata)
+                                             engine__pb2.CommonRequest.SerializeToString, engine__pb2.NodeResponse.FromString,
+                                             options, channel_credentials, insecure, call_credentials, compression,
+                                             wait_for_ready, timeout, metadata)
 
     @staticmethod
     def GetInitedPercent(request,
@@ -365,9 +377,8 @@ class SimController(object):
                          metadata=None):
         return grpc.experimental.unary_stream(request, target, '/cqsim.control.SimController/GetInitedPercent',
                                               engine__pb2.CommonRequest.SerializeToString,
-                                              engine__pb2.InitedResponse.FromString, options,
-                                              channel_credentials, insecure, call_credentials, compression, wait_for_ready,
-                                              timeout, metadata)
+                                              engine__pb2.InitedResponse.FromString, options, channel_credentials, insecure,
+                                              call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def GetErrorMsg(request,
@@ -382,9 +393,8 @@ class SimController(object):
                     metadata=None):
         return grpc.experimental.unary_stream(request, target, '/cqsim.control.SimController/GetErrorMsg',
                                               engine__pb2.CommonRequest.SerializeToString,
-                                              engine__pb2.ErrMsgResponse.FromString, options,
-                                              channel_credentials, insecure, call_credentials, compression, wait_for_ready,
-                                              timeout, metadata)
+                                              engine__pb2.ErrMsgResponse.FromString, options, channel_credentials, insecure,
+                                              call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def GetNodeJoinExit(request,
@@ -399,9 +409,8 @@ class SimController(object):
                         metadata=None):
         return grpc.experimental.unary_stream(request, target, '/cqsim.control.SimController/GetNodeJoinExit',
                                               engine__pb2.CommonRequest.SerializeToString,
-                                              engine__pb2.NodeJoinExitResponse.FromString, options,
-                                              channel_credentials, insecure, call_credentials, compression, wait_for_ready,
-                                              timeout, metadata)
+                                              engine__pb2.NodeJoinExitResponse.FromString, options, channel_credentials,
+                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def SetLogLevel(request,
@@ -416,9 +425,8 @@ class SimController(object):
                     metadata=None):
         return grpc.experimental.unary_unary(request, target, '/cqsim.control.SimController/SetLogLevel',
                                              engine__pb2.LogLevelRequest.SerializeToString,
-                                             engine__pb2.CommonResponse.FromString, options,
-                                             channel_credentials, insecure, call_credentials, compression, wait_for_ready,
-                                             timeout, metadata)
+                                             engine__pb2.CommonResponse.FromString, options, channel_credentials, insecure,
+                                             call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def SetHttpInfo(request,
@@ -432,10 +440,9 @@ class SimController(object):
                     timeout=None,
                     metadata=None):
         return grpc.experimental.unary_unary(request, target, '/cqsim.control.SimController/SetHttpInfo',
-                                             engine__pb2.HttpInfo.SerializeToString,
-                                             engine__pb2.CommonResponse.FromString, options,
-                                             channel_credentials, insecure, call_credentials, compression, wait_for_ready,
-                                             timeout, metadata)
+                                             engine__pb2.HttpInfo.SerializeToString, engine__pb2.CommonResponse.FromString,
+                                             options, channel_credentials, insecure, call_credentials, compression,
+                                             wait_for_ready, timeout, metadata)
 
     @staticmethod
     def GetScenarioInfo(request,
@@ -449,7 +456,22 @@ class SimController(object):
                         timeout=None,
                         metadata=None):
         return grpc.experimental.unary_unary(request, target, '/cqsim.control.SimController/GetScenarioInfo',
-                                             engine__pb2.CommonRequest.SerializeToString,
-                                             engine__pb2.ScenarioInfo.FromString, options,
-                                             channel_credentials, insecure, call_credentials, compression, wait_for_ready,
-                                             timeout, metadata)
+                                             engine__pb2.CommonRequest.SerializeToString, engine__pb2.ScenarioInfo.FromString,
+                                             options, channel_credentials, insecure, call_credentials, compression,
+                                             wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetDataAddress(request,
+                       target,
+                       options=(),
+                       channel_credentials=None,
+                       call_credentials=None,
+                       insecure=False,
+                       compression=None,
+                       wait_for_ready=None,
+                       timeout=None,
+                       metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/cqsim.control.SimController/GetDataAddress',
+                                             engine__pb2.CommonRequest.SerializeToString, engine__pb2.CommonResponse.FromString,
+                                             options, channel_credentials, insecure, call_credentials, compression,
+                                             wait_for_ready, timeout, metadata)

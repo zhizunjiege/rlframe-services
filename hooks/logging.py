@@ -109,7 +109,7 @@ class Logging(HookBase):
         self.rewards.clear()
 
         if self.terminal:
-            self.logger.info(f'Episode {self.episode} end...returns: {self.returns}.')
+            self.logger.info(f'Episode {self.episode} end after {self.local_react_steps} steps...returns: {self.returns}.')
 
         if self.tensorboard:
             if self.model.training or shared['test_episode'] == shared['test_policy_total'] - 1:

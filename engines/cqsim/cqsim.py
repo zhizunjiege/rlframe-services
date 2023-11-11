@@ -585,6 +585,7 @@ class CQSIM(SimEngineBase):
                             'topicName': topic_name,
                             'topicParamName': input_name,
                             'modelParamName': input_name,
+                            'isTaskFlow': 'false',
                         },
                     )
 
@@ -626,6 +627,7 @@ class CQSIM(SimEngineBase):
                             'topicName': topic_name,
                             'topicParamName': output_name,
                             'modelParamName': f'{model_name}_output_{output_name}',
+                            'isTaskFlow': 'false',
                         },
                     )
 

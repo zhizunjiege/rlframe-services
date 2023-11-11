@@ -7,13 +7,13 @@ Use below command to build protos:
 For Linux:
 
 ```bash
-./tools/build-protos.sh
+./tools/gen-protos.sh
 ```
 
 For Windows:
 
 ```powershell
-./tools/build-protos.bat
+./tools/gen-protos.bat
 ```
 
 ## Tests
@@ -23,13 +23,13 @@ Use below command to run tests:
 For Linux:
 
 ```bash
-./tools/unittests.sh
+./tools/run-tests.sh
 ```
 
 For Windows:
 
 ```powershell
-./tools/unittests.bat
+./tools/run-tests.bat
 ```
 
 ## Build
