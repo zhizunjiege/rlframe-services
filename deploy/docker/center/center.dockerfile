@@ -10,7 +10,9 @@ WORKDIR /app
 COPY . ./deploy/docker/center ./
 COPY --from=ui /app/ui/dist /app/static
 ENV TZ=Asia/Shanghai
-RUN apt-get update \
+RUN sed -i s@/deb.debian.org/@/mirrors.aliyun.com/@g /etc/apt/sources.list \
+  && apt-get clean \
+  && apt-get update \
   && apt-get -y install curl procps \
   && curl https://func-e.io/install.sh | bash -s -- -b /usr/local/bin \
   && pip install -i https://mirrors.aliyun.com/pypi/simple --no-cache-dir -r center-requirements.txt \
