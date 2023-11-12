@@ -389,7 +389,7 @@ class PPO(RLModelBase):
             self._train_pi_steps = 0
             self._train_vf_steps = 0
         else:
-            self.pi = policies[policy]('pi', obs_dim, False, hidden_layers_pi, act_dim)
+            self.pi = policies[policy]('pi', False, obs_dim, hidden_layers_pi, act_dim)
 
     def react(self, states: np.ndarray) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
         """Get action.

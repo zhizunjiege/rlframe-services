@@ -17,9 +17,9 @@ class AutoSave(HookBase):
         *,
         per_steps=10000,
         per_episodes=100,
-        save_weights: True,
-        save_buffer: False,
-        save_status: False,
+        save_weights=True,
+        save_buffer=False,
+        save_status=False,
     ):
         """Init hook.
 
