@@ -227,7 +227,6 @@ class CQSIM(SimEngineBase):
             True if success.
         """
         if type == CommandType.INIT:
-            self.join_threads()
             self.init_threads()
             self.engine.SetHttpInfo(engine_pb2.HttpInfo(token=self.x_token))
             if self.exp_design_id > 0:
@@ -267,6 +266,7 @@ class CQSIM(SimEngineBase):
             return True
         elif type == CommandType.STOP:
             self.engine.Control(engine_pb2.ControlCmd(run_cmd=engine_pb2.ControlCmd.RunCmdType.STOP))
+            self.join_threads()
             self.state = EngineState.STOPPED
             self.logger.info('CQSIM engine stopped.')
             return True
